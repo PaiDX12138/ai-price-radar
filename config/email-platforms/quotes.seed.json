@@ -1,0 +1,137 @@
+{
+  "capturedAt": "2026-10-15T12:00:00.000Z",
+  "fxUsdToCny": 6.7739,
+  "fxNote": "对齐官网定价 USD→CNY 参考汇率（2026-06-04）",
+  "quotes": [
+    {
+      "typeId": "gmail",
+      "platformId": "youjianma",
+      "price": 0.7,
+      "currency": "CNY",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开 FAQ 标价",
+      "sourceUrl": "https://www.youjianma.com/"
+    },
+    {
+      "typeId": "outlook",
+      "platformId": "youjianma",
+      "price": 0.5,
+      "currency": "CNY",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "Hotmail / Outlook 等非 Gmail 域名",
+      "sourceUrl": "https://www.youjianma.com/"
+    },
+    {
+      "typeId": "yahoo",
+      "platformId": "youjianma",
+      "price": 0.5,
+      "currency": "CNY",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "非 Gmail 域名公开标价",
+      "sourceUrl": "https://www.youjianma.com/"
+    },
+    {
+      "typeId": "gmail",
+      "platformId": "smsbulk",
+      "price": 0.08,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开价目 gmail.com",
+      "sourceUrl": "https://smsbulk.net/zh/email-verification"
+    },
+    {
+      "typeId": "outlook",
+      "platformId": "smsbulk",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "outlook.com / hotmail.com ≈ $0.02",
+      "sourceUrl": "https://smsbulk.net/zh/email-verification"
+    },
+    {
+      "typeId": "domain",
+      "platformId": "smsbulk",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "gmx.com / mail.com from $0.02",
+      "sourceUrl": "https://smsbulk.net/zh/email-verification"
+    },
+    {
+      "typeId": "gmail",
+      "platformId": "anymessage",
+      "price": 0.01,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "非热门站约 $0.008–0.015，取中位 $0.01",
+      "sourceUrl": "https://anymessage.shop/"
+    },
+    {
+      "typeId": "outlook",
+      "platformId": "anymessage",
+      "price": 0.0024,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "outlook.com / hotmail.com 公开表价",
+      "sourceUrl": "https://anymessage.shop/"
+    },
+    {
+      "typeId": "domain",
+      "platformId": "anymessage",
+      "price": 0.0015,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "gmx / mail.com / email.com",
+      "sourceUrl": "https://anymessage.shop/"
+    },
+    {
+      "typeId": "gmail",
+      "platformId": "otpgmail",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "OpenAI 行 Gmail 实时参考",
+      "sourceUrl": "https://otpgmail.net/zh/app/services"
+    },
+    {
+      "typeId": "icloud",
+      "platformId": "otpgmail",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "OpenAI 行 iCloud 实时参考",
+      "sourceUrl": "https://otpgmail.net/zh/app/services"
+    },
+    {
+      "typeId": "education",
+      "platformId": "anymessage",
+      "price": null,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "unsupported",
+      "priceNote": "主流接码站少见纯 edu 域名；卡网短租另见行情页",
+      "sourceUrl": "https://anymessage.shop/"
+    },
+    {
+      "typeId": "qq",
+      "platformId": "youjianma",
+      "price": null,
+      "currency": "CNY",
+      "unit": "per_activation",
+      "status": "unsupported",
+      "priceNote": "邮件码公开价目未列 qq.com",
+      "sourceUrl": "https://www.youjianma.com/"
+    }
+  ]
+}

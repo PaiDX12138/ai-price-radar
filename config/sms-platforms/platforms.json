@@ -1,0 +1,44 @@
+[
+  {
+    "id": "5sim",
+    "name": "5SIM",
+    "url": "https://5sim.net/",
+    "region": "INTL",
+    "note": "公开 guest 价目 API，自动采集全球最低起价。"
+  },
+  {
+    "id": "grizzly",
+    "name": "GrizzlySMS",
+    "url": "https://grizzlysms.com/",
+    "region": "INTL",
+    "note": "部分服务可匿名 getPrices；其余需 Key。"
+  },
+  {
+    "id": "hero",
+    "name": "HeroSMS",
+    "url": "https://hero-sms.com/",
+    "region": "INTL",
+    "note": "SMS-Activate 继任；设 HERO_SMS_API_KEY 后自动采。"
+  },
+  {
+    "id": "smsbulk",
+    "name": "SMSBulk",
+    "url": "https://smsbulk.net/",
+    "region": "INTL",
+    "note": "短信 + 邮箱；公开页 from 价（种子/探针）。"
+  },
+  {
+    "id": "sms-man",
+    "name": "SMS-Man",
+    "url": "https://sms-man.com/",
+    "region": "INTL",
+    "note": "大型稳定站；设 SMS_MAN_TOKEN 后自动采。"
+  },
+  {
+    "id": "onlinesim",
+    "name": "OnlineSim",
+    "url": "https://onlinesim.io/",
+    "region": "INTL",
+    "note": "长期租号+单次；设 ONLINE_SIM_APIKEY 后自动采。"
+  }
+]

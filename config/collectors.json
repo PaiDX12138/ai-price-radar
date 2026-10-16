@@ -1,0 +1,200 @@
+{
+  "kinds": [
+    {
+      "kind": "kami",
+      "label": "Kami",
+      "hosts": [
+        "123456787kelie.top",
+        "acg.nbcode.xyz",
+        "ai666.dnxb.cc",
+        "ai666.id",
+        "aichongz.cc",
+        "aisou.pro",
+        "caowo.store",
+        "cool.cheggnow.com",
+        "dimosky.com",
+        "douyiner.cn",
+        "faka.bbanai.site",
+        "faka.redeemai.me",
+        "faka.redeemgpt.com",
+        "feifei.shop",
+        "fk.10886.xyz",
+        "fk.desolate.codes",
+        "fk.gptcz.cc",
+        "fk.gptkt.pro",
+        "fk.ybkjs.top",
+        "gemini91.shop",
+        "gmail1888.com",
+        "gmailsol.com",
+        "google7676.top",
+        "hiemail.store",
+        "kbshub.store",
+        "lynnzee.myweb999.cfd",
+        "nikoers.com",
+        "nodeexs.com",
+        "shihuiai.cn",
+        "shop.558686.xyz",
+        "shop.bmoplus.com",
+        "shop.gpt365.wiki",
+        "shop.sunnydolls.dpdns.org",
+        "shopcardai.click",
+        "shopgpt.plus",
+        "store.codesky.qzz.io",
+        "talkai.cyou",
+        "tehuio.com",
+        "web3chirou.com",
+        "wiki123.top",
+        "yh-mo.xyz",
+        "yufenggpt.com",
+        "zhanghao66.com",
+        "zzshu.com"
+      ]
+    },
+    {
+      "kind": "dujiao",
+      "label": "独角数卡",
+      "hosts": [
+        "11.id2323.top",
+        "98-xj.com",
+        "ac-card.org",
+        "burstpro-ai.online",
+        "card.kxandyou.com",
+        "cccrad.uk",
+        "ccdawang.win",
+        "faka.aiceo.dev",
+        "fk.txspvip.xyz",
+        "flyai.qzz.io",
+        "geekaihub.com",
+        "gmail91.shop",
+        "jzai1688.com",
+        "kapay.shop",
+        "morimm.com",
+        "n1.ccnmgpt.com",
+        "shop.aictk.shop",
+        "shop.aitonse.com",
+        "shop.auto-subscribe.com",
+        "shop.callai.one",
+        "shop.mfttai.com",
+        "shop.olimap.top",
+        "shop.txyxt.dpdns.org",
+        "shop.whh985.com",
+        "ultra.makelove.cloud",
+        "xtacc.top",
+        "zhang520.store"
+      ]
+    },
+    {
+      "kind": "shopApi",
+      "label": "ShopApi",
+      "hosts": [
+        "catfk.com",
+        "ldxp.cn",
+        "www.ldxp.cn",
+        "pay.ldxp.cn",
+        "pay.qxvx.cn"
+      ]
+    },
+    {
+      "kind": "shop16688",
+      "label": "16688",
+      "hosts": [
+        "www.16688.com.cn",
+        "16688.com.cn"
+      ]
+    },
+    {
+      "kind": "xiaoheiwan",
+      "label": "小黑丸",
+      "hosts": [
+        "upgrade.xiaoheiwan.com"
+      ]
+    },
+    {
+      "kind": "opensoraHtml",
+      "label": "OpenSora HTML",
+      "hosts": [
+        "aifk.opensora.de"
+      ]
+    },
+    {
+      "kind": "makerichHtml",
+      "label": "Makerich HTML",
+      "hosts": [
+        "makerich.club"
+      ]
+    },
+    {
+      "kind": "beibeiHtml",
+      "label": "贝贝 HTML",
+      "hosts": [
+        "bei-bei.shop"
+      ]
+    },
+    {
+      "kind": "ikunloveApi",
+      "label": "IkunLove API",
+      "hosts": [
+        "ikunlove.best"
+      ]
+    },
+    {
+      "kind": "getgptApi",
+      "label": "GetGPT API",
+      "hosts": [
+        "getgpt.pro"
+      ]
+    },
+    {
+      "kind": "publicProductsApi",
+      "label": "公开商品 API",
+      "hosts": [
+        "academicgate.org",
+        "catcard.uk"
+      ]
+    },
+    {
+      "kind": "shopUserProductsApi",
+      "label": "Shop User API",
+      "hosts": [
+        "sd.ncet.top"
+      ]
+    },
+    {
+      "kind": "unicornHtml",
+      "label": "Unicorn HTML",
+      "hosts": [
+        "meowka.vip",
+        "ouvg.top"
+      ]
+    },
+    {
+      "kind": "mooncakeCatalog",
+      "label": "Mooncake Catalog",
+      "hosts": [
+        "fk1.ybkjs.top"
+      ]
+    },
+    {
+      "kind": "blackcatWholesale",
+      "label": "BlackCat 批发",
+      "hosts": [
+        "autopixel.qzz.io"
+      ]
+    },
+    {
+      "kind": "genericHtml",
+      "label": "通用 HTML",
+      "hosts": [
+        "19cm.tech",
+        "chong.nerver.cc",
+        "gpt.ybkjs.top",
+        "lemon-watermelon.com",
+        "of365.vip",
+        "sulanjun.cc",
+        "woaimaihao.com",
+        "xingbao-ai.shop",
+        "xxxyan.cc"
+      ]
+    }
+  ]
+}

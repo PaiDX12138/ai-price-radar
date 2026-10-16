@@ -1,0 +1,29 @@
+{
+  "$schema_comment": "Copy to sources.shopapi.json and replace shopToken with live /shop/<token> values. Demo tokens may already be dead.",
+  "sources": [
+    {
+      "id": "ldxp-example",
+      "platform": "liandong",
+      "name": "链动示例店（请替换）",
+      "baseUrl": "https://pay.ldxp.cn",
+      "shopToken": "REPLACE_ME",
+      "enabled": false
+    },
+    {
+      "id": "yunmao-example",
+      "platform": "yunmao",
+      "name": "云猫示例店（请替换）",
+      "baseUrl": "https://catfk.com",
+      "shopToken": "REPLACE_ME",
+      "enabled": false
+    },
+    {
+      "id": "qxvx-example",
+      "platform": "qxvx",
+      "name": "QXVX 示例店（请替换）",
+      "baseUrl": "https://pay.qxvx.cn",
+      "shopToken": "REPLACE_ME",
+      "enabled": false
+    }
+  ]
+}

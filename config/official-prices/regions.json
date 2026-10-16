@@ -1,0 +1,1874 @@
+[
+  {
+    "countryCode": "US",
+    "countryLabel": "美国",
+    "currencyCode": "USD",
+    "storefrontId": "143441",
+    "enabled": true,
+    "priority": 10
+  },
+  {
+    "countryCode": "AD",
+    "countryLabel": "安道尔",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 20
+  },
+  {
+    "countryCode": "AE",
+    "countryLabel": "阿拉伯联合酋长国",
+    "currencyCode": "AED",
+    "storefrontId": "143481",
+    "enabled": true,
+    "priority": 30
+  },
+  {
+    "countryCode": "AF",
+    "countryLabel": "阿富汗",
+    "currencyCode": "USD",
+    "storefrontId": "143610",
+    "enabled": true,
+    "priority": 40
+  },
+  {
+    "countryCode": "AG",
+    "countryLabel": "安提瓜和巴布达",
+    "currencyCode": "USD",
+    "storefrontId": "143540",
+    "enabled": true,
+    "priority": 50
+  },
+  {
+    "countryCode": "AI",
+    "countryLabel": "安圭拉",
+    "currencyCode": "USD",
+    "storefrontId": "143538",
+    "enabled": true,
+    "priority": 60
+  },
+  {
+    "countryCode": "AL",
+    "countryLabel": "阿尔巴尼亚",
+    "currencyCode": "USD",
+    "storefrontId": "143575",
+    "enabled": true,
+    "priority": 70
+  },
+  {
+    "countryCode": "AM",
+    "countryLabel": "亚美尼亚",
+    "currencyCode": "USD",
+    "storefrontId": "143524",
+    "enabled": true,
+    "priority": 80
+  },
+  {
+    "countryCode": "AO",
+    "countryLabel": "安哥拉",
+    "currencyCode": "USD",
+    "storefrontId": "143564",
+    "enabled": true,
+    "priority": 90
+  },
+  {
+    "countryCode": "AQ",
+    "countryLabel": "南极洲",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 100
+  },
+  {
+    "countryCode": "AR",
+    "countryLabel": "阿根廷",
+    "currencyCode": "USD",
+    "storefrontId": "143505",
+    "enabled": true,
+    "priority": 110
+  },
+  {
+    "countryCode": "AS",
+    "countryLabel": "美属萨摩亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 120
+  },
+  {
+    "countryCode": "AT",
+    "countryLabel": "奥地利",
+    "currencyCode": "EUR",
+    "storefrontId": "143445",
+    "enabled": true,
+    "priority": 130
+  },
+  {
+    "countryCode": "AU",
+    "countryLabel": "澳大利亚",
+    "currencyCode": "AUD",
+    "storefrontId": "143460",
+    "enabled": true,
+    "priority": 140
+  },
+  {
+    "countryCode": "AW",
+    "countryLabel": "阿鲁巴",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 150
+  },
+  {
+    "countryCode": "AX",
+    "countryLabel": "奥兰群岛",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 160
+  },
+  {
+    "countryCode": "AZ",
+    "countryLabel": "阿塞拜疆",
+    "currencyCode": "USD",
+    "storefrontId": "143568",
+    "enabled": true,
+    "priority": 170
+  },
+  {
+    "countryCode": "BA",
+    "countryLabel": "波斯尼亚和黑塞哥维那",
+    "currencyCode": "EUR",
+    "storefrontId": "143612",
+    "enabled": true,
+    "priority": 180
+  },
+  {
+    "countryCode": "BB",
+    "countryLabel": "巴巴多斯",
+    "currencyCode": "USD",
+    "storefrontId": "143541",
+    "enabled": true,
+    "priority": 190
+  },
+  {
+    "countryCode": "BD",
+    "countryLabel": "孟加拉国",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 200
+  },
+  {
+    "countryCode": "BE",
+    "countryLabel": "比利时",
+    "currencyCode": "EUR",
+    "storefrontId": "143446",
+    "enabled": true,
+    "priority": 210
+  },
+  {
+    "countryCode": "BF",
+    "countryLabel": "布基纳法索",
+    "currencyCode": "USD",
+    "storefrontId": "143578",
+    "enabled": true,
+    "priority": 220
+  },
+  {
+    "countryCode": "BG",
+    "countryLabel": "保加利亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143526",
+    "enabled": true,
+    "priority": 230
+  },
+  {
+    "countryCode": "BH",
+    "countryLabel": "巴林",
+    "currencyCode": "USD",
+    "storefrontId": "143559",
+    "enabled": true,
+    "priority": 240
+  },
+  {
+    "countryCode": "BI",
+    "countryLabel": "布隆迪",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 250
+  },
+  {
+    "countryCode": "BJ",
+    "countryLabel": "贝宁",
+    "currencyCode": "USD",
+    "storefrontId": "143576",
+    "enabled": true,
+    "priority": 260
+  },
+  {
+    "countryCode": "BL",
+    "countryLabel": "圣巴泰勒米",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 270
+  },
+  {
+    "countryCode": "BM",
+    "countryLabel": "百慕大",
+    "currencyCode": "USD",
+    "storefrontId": "143542",
+    "enabled": true,
+    "priority": 280
+  },
+  {
+    "countryCode": "BN",
+    "countryLabel": "文莱",
+    "currencyCode": "USD",
+    "storefrontId": "143560",
+    "enabled": true,
+    "priority": 290
+  },
+  {
+    "countryCode": "BO",
+    "countryLabel": "玻利维亚",
+    "currencyCode": "USD",
+    "storefrontId": "143556",
+    "enabled": true,
+    "priority": 300
+  },
+  {
+    "countryCode": "BQ",
+    "countryLabel": "荷属加勒比区",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 310
+  },
+  {
+    "countryCode": "BR",
+    "countryLabel": "巴西",
+    "currencyCode": "BRL",
+    "storefrontId": "143503",
+    "enabled": true,
+    "priority": 320
+  },
+  {
+    "countryCode": "BS",
+    "countryLabel": "巴哈马",
+    "currencyCode": "USD",
+    "storefrontId": "143539",
+    "enabled": true,
+    "priority": 330
+  },
+  {
+    "countryCode": "BT",
+    "countryLabel": "不丹",
+    "currencyCode": "USD",
+    "storefrontId": "143577",
+    "enabled": true,
+    "priority": 340
+  },
+  {
+    "countryCode": "BW",
+    "countryLabel": "博茨瓦纳",
+    "currencyCode": "USD",
+    "storefrontId": "143525",
+    "enabled": true,
+    "priority": 350
+  },
+  {
+    "countryCode": "BZ",
+    "countryLabel": "伯利兹",
+    "currencyCode": "USD",
+    "storefrontId": "143555",
+    "enabled": true,
+    "priority": 360
+  },
+  {
+    "countryCode": "CA",
+    "countryLabel": "加拿大",
+    "currencyCode": "CAD",
+    "storefrontId": "143455",
+    "enabled": true,
+    "priority": 370
+  },
+  {
+    "countryCode": "CD",
+    "countryLabel": "刚果（金）",
+    "currencyCode": "USD",
+    "storefrontId": "143613",
+    "enabled": true,
+    "priority": 380
+  },
+  {
+    "countryCode": "CF",
+    "countryLabel": "中非共和国",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 390
+  },
+  {
+    "countryCode": "CG",
+    "countryLabel": "刚果（布）",
+    "currencyCode": "USD",
+    "storefrontId": "143582",
+    "enabled": true,
+    "priority": 400
+  },
+  {
+    "countryCode": "CH",
+    "countryLabel": "瑞士",
+    "currencyCode": "CHF",
+    "storefrontId": "143459",
+    "enabled": true,
+    "priority": 410
+  },
+  {
+    "countryCode": "CI",
+    "countryLabel": "科特迪瓦",
+    "currencyCode": "USD",
+    "storefrontId": "143527",
+    "enabled": true,
+    "priority": 420
+  },
+  {
+    "countryCode": "CK",
+    "countryLabel": "库克群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 430
+  },
+  {
+    "countryCode": "CL",
+    "countryLabel": "智利",
+    "currencyCode": "CLP",
+    "storefrontId": "143483",
+    "enabled": true,
+    "priority": 440
+  },
+  {
+    "countryCode": "CM",
+    "countryLabel": "喀麦隆",
+    "currencyCode": "USD",
+    "storefrontId": "143574",
+    "enabled": true,
+    "priority": 450
+  },
+  {
+    "countryCode": "CO",
+    "countryLabel": "哥伦比亚",
+    "currencyCode": "COP",
+    "storefrontId": "143501",
+    "enabled": true,
+    "priority": 460
+  },
+  {
+    "countryCode": "CR",
+    "countryLabel": "哥斯达黎加",
+    "currencyCode": "USD",
+    "storefrontId": "143495",
+    "enabled": true,
+    "priority": 470
+  },
+  {
+    "countryCode": "CV",
+    "countryLabel": "佛得角",
+    "currencyCode": "USD",
+    "storefrontId": "143580",
+    "enabled": true,
+    "priority": 480
+  },
+  {
+    "countryCode": "CW",
+    "countryLabel": "库拉索",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 490
+  },
+  {
+    "countryCode": "CY",
+    "countryLabel": "塞浦路斯",
+    "currencyCode": "EUR",
+    "storefrontId": "143557",
+    "enabled": true,
+    "priority": 500
+  },
+  {
+    "countryCode": "CZ",
+    "countryLabel": "捷克",
+    "currencyCode": "CZK",
+    "storefrontId": "143489",
+    "enabled": true,
+    "priority": 510
+  },
+  {
+    "countryCode": "DE",
+    "countryLabel": "德国",
+    "currencyCode": "EUR",
+    "storefrontId": "143443",
+    "enabled": true,
+    "priority": 520
+  },
+  {
+    "countryCode": "DJ",
+    "countryLabel": "吉布提",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 530
+  },
+  {
+    "countryCode": "DK",
+    "countryLabel": "丹麦",
+    "currencyCode": "DKK",
+    "storefrontId": "143458",
+    "enabled": true,
+    "priority": 540
+  },
+  {
+    "countryCode": "DM",
+    "countryLabel": "多米尼克",
+    "currencyCode": "USD",
+    "storefrontId": "143545",
+    "enabled": true,
+    "priority": 550
+  },
+  {
+    "countryCode": "DO",
+    "countryLabel": "多米尼加共和国",
+    "currencyCode": "USD",
+    "storefrontId": "143508",
+    "enabled": true,
+    "priority": 560
+  },
+  {
+    "countryCode": "DZ",
+    "countryLabel": "阿尔及利亚",
+    "currencyCode": "USD",
+    "storefrontId": "143563",
+    "enabled": true,
+    "priority": 570
+  },
+  {
+    "countryCode": "EC",
+    "countryLabel": "厄瓜多尔",
+    "currencyCode": "USD",
+    "storefrontId": "143509",
+    "enabled": true,
+    "priority": 580
+  },
+  {
+    "countryCode": "EE",
+    "countryLabel": "爱沙尼亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143518",
+    "enabled": true,
+    "priority": 590
+  },
+  {
+    "countryCode": "EG",
+    "countryLabel": "埃及",
+    "currencyCode": "EGP",
+    "storefrontId": "143516",
+    "enabled": true,
+    "priority": 600
+  },
+  {
+    "countryCode": "ER",
+    "countryLabel": "厄立特里亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 610
+  },
+  {
+    "countryCode": "ES",
+    "countryLabel": "西班牙",
+    "currencyCode": "EUR",
+    "storefrontId": "143454",
+    "enabled": true,
+    "priority": 620
+  },
+  {
+    "countryCode": "ET",
+    "countryLabel": "埃塞俄比亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 630
+  },
+  {
+    "countryCode": "FI",
+    "countryLabel": "芬兰",
+    "currencyCode": "EUR",
+    "storefrontId": "143447",
+    "enabled": true,
+    "priority": 640
+  },
+  {
+    "countryCode": "FJ",
+    "countryLabel": "斐济",
+    "currencyCode": "USD",
+    "storefrontId": "143583",
+    "enabled": true,
+    "priority": 650
+  },
+  {
+    "countryCode": "FK",
+    "countryLabel": "福克兰群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 660
+  },
+  {
+    "countryCode": "FM",
+    "countryLabel": "密克罗尼西亚",
+    "currencyCode": "USD",
+    "storefrontId": "143591",
+    "enabled": true,
+    "priority": 670
+  },
+  {
+    "countryCode": "FO",
+    "countryLabel": "法罗群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 680
+  },
+  {
+    "countryCode": "FR",
+    "countryLabel": "法国",
+    "currencyCode": "EUR",
+    "storefrontId": "143442",
+    "enabled": true,
+    "priority": 690
+  },
+  {
+    "countryCode": "GA",
+    "countryLabel": "加蓬",
+    "currencyCode": "USD",
+    "storefrontId": "143614",
+    "enabled": true,
+    "priority": 700
+  },
+  {
+    "countryCode": "GB",
+    "countryLabel": "英国",
+    "currencyCode": "GBP",
+    "storefrontId": "143444",
+    "enabled": true,
+    "priority": 710
+  },
+  {
+    "countryCode": "GD",
+    "countryLabel": "格林纳达",
+    "currencyCode": "USD",
+    "storefrontId": "143546",
+    "enabled": true,
+    "priority": 720
+  },
+  {
+    "countryCode": "GE",
+    "countryLabel": "格鲁吉亚",
+    "currencyCode": "USD",
+    "storefrontId": "143615",
+    "enabled": true,
+    "priority": 730
+  },
+  {
+    "countryCode": "GF",
+    "countryLabel": "法属圭亚那",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 740
+  },
+  {
+    "countryCode": "GG",
+    "countryLabel": "根西岛",
+    "currencyCode": "GBP",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 750
+  },
+  {
+    "countryCode": "GH",
+    "countryLabel": "加纳",
+    "currencyCode": "USD",
+    "storefrontId": "143573",
+    "enabled": true,
+    "priority": 760
+  },
+  {
+    "countryCode": "GI",
+    "countryLabel": "直布罗陀",
+    "currencyCode": "GBP",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 770
+  },
+  {
+    "countryCode": "GL",
+    "countryLabel": "格陵兰",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 780
+  },
+  {
+    "countryCode": "GM",
+    "countryLabel": "冈比亚",
+    "currencyCode": "USD",
+    "storefrontId": "143584",
+    "enabled": true,
+    "priority": 790
+  },
+  {
+    "countryCode": "GN",
+    "countryLabel": "几内亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 800
+  },
+  {
+    "countryCode": "GP",
+    "countryLabel": "瓜德罗普",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 810
+  },
+  {
+    "countryCode": "GQ",
+    "countryLabel": "赤道几内亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 820
+  },
+  {
+    "countryCode": "GR",
+    "countryLabel": "希腊",
+    "currencyCode": "EUR",
+    "storefrontId": "143448",
+    "enabled": true,
+    "priority": 830
+  },
+  {
+    "countryCode": "GT",
+    "countryLabel": "危地马拉",
+    "currencyCode": "USD",
+    "storefrontId": "143504",
+    "enabled": true,
+    "priority": 840
+  },
+  {
+    "countryCode": "GU",
+    "countryLabel": "关岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 850
+  },
+  {
+    "countryCode": "GW",
+    "countryLabel": "几内亚比绍",
+    "currencyCode": "USD",
+    "storefrontId": "143585",
+    "enabled": true,
+    "priority": 860
+  },
+  {
+    "countryCode": "GY",
+    "countryLabel": "圭亚那",
+    "currencyCode": "USD",
+    "storefrontId": "143553",
+    "enabled": true,
+    "priority": 870
+  },
+  {
+    "countryCode": "HN",
+    "countryLabel": "洪都拉斯",
+    "currencyCode": "USD",
+    "storefrontId": "143510",
+    "enabled": true,
+    "priority": 880
+  },
+  {
+    "countryCode": "HK",
+    "countryLabel": "中国香港",
+    "currencyCode": "HKD",
+    "storefrontId": "143463",
+    "enabled": true,
+    "priority": 885
+  },
+  {
+    "countryCode": "HR",
+    "countryLabel": "克罗地亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143494",
+    "enabled": true,
+    "priority": 890
+  },
+  {
+    "countryCode": "HT",
+    "countryLabel": "海地",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 900
+  },
+  {
+    "countryCode": "HU",
+    "countryLabel": "匈牙利",
+    "currencyCode": "HUF",
+    "storefrontId": "143482",
+    "enabled": true,
+    "priority": 910
+  },
+  {
+    "countryCode": "ID",
+    "countryLabel": "印度尼西亚",
+    "currencyCode": "IDR",
+    "storefrontId": "143476",
+    "enabled": true,
+    "priority": 920
+  },
+  {
+    "countryCode": "IE",
+    "countryLabel": "爱尔兰",
+    "currencyCode": "EUR",
+    "storefrontId": "143449",
+    "enabled": true,
+    "priority": 930
+  },
+  {
+    "countryCode": "IL",
+    "countryLabel": "以色列",
+    "currencyCode": "ILS",
+    "storefrontId": "143491",
+    "enabled": true,
+    "priority": 940
+  },
+  {
+    "countryCode": "IM",
+    "countryLabel": "马恩岛",
+    "currencyCode": "GBP",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 950
+  },
+  {
+    "countryCode": "IN",
+    "countryLabel": "印度",
+    "currencyCode": "INR",
+    "storefrontId": "143467",
+    "enabled": true,
+    "priority": 960
+  },
+  {
+    "countryCode": "IQ",
+    "countryLabel": "伊拉克",
+    "currencyCode": "USD",
+    "storefrontId": "143617",
+    "enabled": true,
+    "priority": 970
+  },
+  {
+    "countryCode": "IS",
+    "countryLabel": "冰岛",
+    "currencyCode": "USD",
+    "storefrontId": "143558",
+    "enabled": true,
+    "priority": 980
+  },
+  {
+    "countryCode": "IT",
+    "countryLabel": "意大利",
+    "currencyCode": "EUR",
+    "storefrontId": "143450",
+    "enabled": true,
+    "priority": 990
+  },
+  {
+    "countryCode": "JE",
+    "countryLabel": "泽西岛",
+    "currencyCode": "GBP",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1000
+  },
+  {
+    "countryCode": "JM",
+    "countryLabel": "牙买加",
+    "currencyCode": "USD",
+    "storefrontId": "143511",
+    "enabled": true,
+    "priority": 1010
+  },
+  {
+    "countryCode": "JO",
+    "countryLabel": "约旦",
+    "currencyCode": "USD",
+    "storefrontId": "143528",
+    "enabled": true,
+    "priority": 1020
+  },
+  {
+    "countryCode": "JP",
+    "countryLabel": "日本",
+    "currencyCode": "JPY",
+    "storefrontId": "143462",
+    "enabled": true,
+    "priority": 1030
+  },
+  {
+    "countryCode": "KE",
+    "countryLabel": "肯尼亚",
+    "currencyCode": "USD",
+    "storefrontId": "143529",
+    "enabled": true,
+    "priority": 1040
+  },
+  {
+    "countryCode": "KG",
+    "countryLabel": "吉尔吉斯斯坦",
+    "currencyCode": "USD",
+    "storefrontId": "143586",
+    "enabled": true,
+    "priority": 1050
+  },
+  {
+    "countryCode": "KH",
+    "countryLabel": "柬埔寨",
+    "currencyCode": "USD",
+    "storefrontId": "143579",
+    "enabled": true,
+    "priority": 1060
+  },
+  {
+    "countryCode": "KI",
+    "countryLabel": "基里巴斯",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1070
+  },
+  {
+    "countryCode": "KM",
+    "countryLabel": "科摩罗",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1080
+  },
+  {
+    "countryCode": "KN",
+    "countryLabel": "圣基茨和尼维斯",
+    "currencyCode": "USD",
+    "storefrontId": "143548",
+    "enabled": true,
+    "priority": 1090
+  },
+  {
+    "countryCode": "KR",
+    "countryLabel": "韩国",
+    "currencyCode": "KRW",
+    "storefrontId": "143466",
+    "enabled": true,
+    "priority": 1100
+  },
+  {
+    "countryCode": "KW",
+    "countryLabel": "科威特",
+    "currencyCode": "USD",
+    "storefrontId": "143493",
+    "enabled": true,
+    "priority": 1110
+  },
+  {
+    "countryCode": "KY",
+    "countryLabel": "开曼群岛",
+    "currencyCode": "USD",
+    "storefrontId": "143544",
+    "enabled": true,
+    "priority": 1120
+  },
+  {
+    "countryCode": "KZ",
+    "countryLabel": "哈萨克斯坦",
+    "currencyCode": "KZT",
+    "storefrontId": "143517",
+    "enabled": true,
+    "priority": 1130
+  },
+  {
+    "countryCode": "LA",
+    "countryLabel": "老挝",
+    "currencyCode": "USD",
+    "storefrontId": "143587",
+    "enabled": true,
+    "priority": 1140
+  },
+  {
+    "countryCode": "LB",
+    "countryLabel": "黎巴嫩",
+    "currencyCode": "USD",
+    "storefrontId": "143497",
+    "enabled": true,
+    "priority": 1150
+  },
+  {
+    "countryCode": "LC",
+    "countryLabel": "圣卢西亚",
+    "currencyCode": "USD",
+    "storefrontId": "143549",
+    "enabled": true,
+    "priority": 1160
+  },
+  {
+    "countryCode": "LI",
+    "countryLabel": "列支敦士登",
+    "currencyCode": "CHF",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1170
+  },
+  {
+    "countryCode": "LK",
+    "countryLabel": "斯里兰卡",
+    "currencyCode": "USD",
+    "storefrontId": "143486",
+    "enabled": true,
+    "priority": 1180
+  },
+  {
+    "countryCode": "LR",
+    "countryLabel": "利比里亚",
+    "currencyCode": "USD",
+    "storefrontId": "143588",
+    "enabled": true,
+    "priority": 1190
+  },
+  {
+    "countryCode": "LS",
+    "countryLabel": "莱索托",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1200
+  },
+  {
+    "countryCode": "LT",
+    "countryLabel": "立陶宛",
+    "currencyCode": "EUR",
+    "storefrontId": "143520",
+    "enabled": true,
+    "priority": 1210
+  },
+  {
+    "countryCode": "LU",
+    "countryLabel": "卢森堡",
+    "currencyCode": "EUR",
+    "storefrontId": "143451",
+    "enabled": true,
+    "priority": 1220
+  },
+  {
+    "countryCode": "LV",
+    "countryLabel": "拉脱维亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143519",
+    "enabled": true,
+    "priority": 1230
+  },
+  {
+    "countryCode": "LY",
+    "countryLabel": "利比亚",
+    "currencyCode": "USD",
+    "storefrontId": "143567",
+    "enabled": true,
+    "priority": 1240
+  },
+  {
+    "countryCode": "MA",
+    "countryLabel": "摩洛哥",
+    "currencyCode": "USD",
+    "storefrontId": "143620",
+    "enabled": true,
+    "priority": 1250
+  },
+  {
+    "countryCode": "MC",
+    "countryLabel": "摩纳哥",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1260
+  },
+  {
+    "countryCode": "MD",
+    "countryLabel": "摩尔多瓦",
+    "currencyCode": "USD",
+    "storefrontId": "143523",
+    "enabled": true,
+    "priority": 1270
+  },
+  {
+    "countryCode": "ME",
+    "countryLabel": "黑山",
+    "currencyCode": "EUR",
+    "storefrontId": "143619",
+    "enabled": true,
+    "priority": 1280
+  },
+  {
+    "countryCode": "MF",
+    "countryLabel": "法属圣马丁",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1290
+  },
+  {
+    "countryCode": "MG",
+    "countryLabel": "马达加斯加",
+    "currencyCode": "USD",
+    "storefrontId": "143531",
+    "enabled": true,
+    "priority": 1300
+  },
+  {
+    "countryCode": "MH",
+    "countryLabel": "马绍尔群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1310
+  },
+  {
+    "countryCode": "MK",
+    "countryLabel": "北马其顿",
+    "currencyCode": "USD",
+    "storefrontId": "143530",
+    "enabled": true,
+    "priority": 1320
+  },
+  {
+    "countryCode": "ML",
+    "countryLabel": "马里",
+    "currencyCode": "USD",
+    "storefrontId": "143532",
+    "enabled": true,
+    "priority": 1330
+  },
+  {
+    "countryCode": "MM",
+    "countryLabel": "缅甸",
+    "currencyCode": "USD",
+    "storefrontId": "143570",
+    "enabled": true,
+    "priority": 1340
+  },
+  {
+    "countryCode": "MN",
+    "countryLabel": "蒙古",
+    "currencyCode": "USD",
+    "storefrontId": "143592",
+    "enabled": true,
+    "priority": 1350
+  },
+  {
+    "countryCode": "MO",
+    "countryLabel": "中国澳门",
+    "currencyCode": "MOP",
+    "storefrontId": "143515",
+    "enabled": true,
+    "priority": 1355
+  },
+  {
+    "countryCode": "MP",
+    "countryLabel": "北马里亚纳群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1360
+  },
+  {
+    "countryCode": "MQ",
+    "countryLabel": "马提尼克",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1370
+  },
+  {
+    "countryCode": "MR",
+    "countryLabel": "毛里塔尼亚",
+    "currencyCode": "USD",
+    "storefrontId": "143590",
+    "enabled": true,
+    "priority": 1380
+  },
+  {
+    "countryCode": "MS",
+    "countryLabel": "蒙特塞拉特",
+    "currencyCode": "USD",
+    "storefrontId": "143547",
+    "enabled": true,
+    "priority": 1390
+  },
+  {
+    "countryCode": "MT",
+    "countryLabel": "马耳他",
+    "currencyCode": "EUR",
+    "storefrontId": "143521",
+    "enabled": true,
+    "priority": 1400
+  },
+  {
+    "countryCode": "MU",
+    "countryLabel": "毛里求斯",
+    "currencyCode": "USD",
+    "storefrontId": "143533",
+    "enabled": true,
+    "priority": 1410
+  },
+  {
+    "countryCode": "MV",
+    "countryLabel": "马尔代夫",
+    "currencyCode": "USD",
+    "storefrontId": "143488",
+    "enabled": true,
+    "priority": 1420
+  },
+  {
+    "countryCode": "MW",
+    "countryLabel": "马拉维",
+    "currencyCode": "USD",
+    "storefrontId": "143589",
+    "enabled": true,
+    "priority": 1430
+  },
+  {
+    "countryCode": "MX",
+    "countryLabel": "墨西哥",
+    "currencyCode": "MXN",
+    "storefrontId": "143468",
+    "enabled": true,
+    "priority": 1440
+  },
+  {
+    "countryCode": "MY",
+    "countryLabel": "马来西亚",
+    "currencyCode": "MYR",
+    "storefrontId": "143473",
+    "enabled": true,
+    "priority": 1450
+  },
+  {
+    "countryCode": "MZ",
+    "countryLabel": "莫桑比克",
+    "currencyCode": "USD",
+    "storefrontId": "143593",
+    "enabled": true,
+    "priority": 1460
+  },
+  {
+    "countryCode": "NA",
+    "countryLabel": "纳米比亚",
+    "currencyCode": "USD",
+    "storefrontId": "143594",
+    "enabled": true,
+    "priority": 1470
+  },
+  {
+    "countryCode": "NC",
+    "countryLabel": "新喀里多尼亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1480
+  },
+  {
+    "countryCode": "NE",
+    "countryLabel": "尼日尔",
+    "currencyCode": "USD",
+    "storefrontId": "143534",
+    "enabled": true,
+    "priority": 1490
+  },
+  {
+    "countryCode": "NF",
+    "countryLabel": "诺福克岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1500
+  },
+  {
+    "countryCode": "NG",
+    "countryLabel": "尼日利亚",
+    "currencyCode": "NGN",
+    "storefrontId": "143561",
+    "enabled": true,
+    "priority": 1510
+  },
+  {
+    "countryCode": "NI",
+    "countryLabel": "尼加拉瓜",
+    "currencyCode": "USD",
+    "storefrontId": "143512",
+    "enabled": true,
+    "priority": 1520
+  },
+  {
+    "countryCode": "NL",
+    "countryLabel": "荷兰",
+    "currencyCode": "EUR",
+    "storefrontId": "143452",
+    "enabled": true,
+    "priority": 1530
+  },
+  {
+    "countryCode": "NO",
+    "countryLabel": "挪威",
+    "currencyCode": "NOK",
+    "storefrontId": "143457",
+    "enabled": true,
+    "priority": 1540
+  },
+  {
+    "countryCode": "NP",
+    "countryLabel": "尼泊尔",
+    "currencyCode": "USD",
+    "storefrontId": "143484",
+    "enabled": true,
+    "priority": 1550
+  },
+  {
+    "countryCode": "NR",
+    "countryLabel": "瑙鲁",
+    "currencyCode": "USD",
+    "storefrontId": "143606",
+    "enabled": true,
+    "priority": 1560
+  },
+  {
+    "countryCode": "NU",
+    "countryLabel": "纽埃",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1570
+  },
+  {
+    "countryCode": "NZ",
+    "countryLabel": "新西兰",
+    "currencyCode": "NZD",
+    "storefrontId": "143461",
+    "enabled": true,
+    "priority": 1580
+  },
+  {
+    "countryCode": "OM",
+    "countryLabel": "阿曼",
+    "currencyCode": "USD",
+    "storefrontId": "143562",
+    "enabled": true,
+    "priority": 1590
+  },
+  {
+    "countryCode": "PA",
+    "countryLabel": "巴拿马",
+    "currencyCode": "USD",
+    "storefrontId": "143485",
+    "enabled": true,
+    "priority": 1600
+  },
+  {
+    "countryCode": "PE",
+    "countryLabel": "秘鲁",
+    "currencyCode": "PEN",
+    "storefrontId": "143507",
+    "enabled": true,
+    "priority": 1610
+  },
+  {
+    "countryCode": "PF",
+    "countryLabel": "法属波利尼西亚",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1620
+  },
+  {
+    "countryCode": "PG",
+    "countryLabel": "巴布亚新几内亚",
+    "currencyCode": "USD",
+    "storefrontId": "143597",
+    "enabled": true,
+    "priority": 1630
+  },
+  {
+    "countryCode": "PH",
+    "countryLabel": "菲律宾",
+    "currencyCode": "PHP",
+    "storefrontId": "143474",
+    "enabled": true,
+    "priority": 1640
+  },
+  {
+    "countryCode": "PK",
+    "countryLabel": "巴基斯坦",
+    "currencyCode": "PKR",
+    "storefrontId": "143477",
+    "enabled": true,
+    "priority": 1650
+  },
+  {
+    "countryCode": "PL",
+    "countryLabel": "波兰",
+    "currencyCode": "PLN",
+    "storefrontId": "143478",
+    "enabled": true,
+    "priority": 1660
+  },
+  {
+    "countryCode": "PM",
+    "countryLabel": "圣皮埃尔和密克隆群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1670
+  },
+  {
+    "countryCode": "PN",
+    "countryLabel": "皮特凯恩群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1680
+  },
+  {
+    "countryCode": "PR",
+    "countryLabel": "波多黎各",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1690
+  },
+  {
+    "countryCode": "PS",
+    "countryLabel": "巴勒斯坦领土",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1700
+  },
+  {
+    "countryCode": "PT",
+    "countryLabel": "葡萄牙",
+    "currencyCode": "EUR",
+    "storefrontId": "143453",
+    "enabled": true,
+    "priority": 1710
+  },
+  {
+    "countryCode": "PW",
+    "countryLabel": "帕劳",
+    "currencyCode": "USD",
+    "storefrontId": "143595",
+    "enabled": true,
+    "priority": 1720
+  },
+  {
+    "countryCode": "PY",
+    "countryLabel": "巴拉圭",
+    "currencyCode": "USD",
+    "storefrontId": "143513",
+    "enabled": true,
+    "priority": 1730
+  },
+  {
+    "countryCode": "QA",
+    "countryLabel": "卡塔尔",
+    "currencyCode": "QAR",
+    "storefrontId": "143498",
+    "enabled": true,
+    "priority": 1740
+  },
+  {
+    "countryCode": "RE",
+    "countryLabel": "留尼汪",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1750
+  },
+  {
+    "countryCode": "RO",
+    "countryLabel": "罗马尼亚",
+    "currencyCode": "RON",
+    "storefrontId": "143487",
+    "enabled": true,
+    "priority": 1760
+  },
+  {
+    "countryCode": "RS",
+    "countryLabel": "塞尔维亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143500",
+    "enabled": true,
+    "priority": 1770
+  },
+  {
+    "countryCode": "RW",
+    "countryLabel": "卢旺达",
+    "currencyCode": "USD",
+    "storefrontId": "143621",
+    "enabled": true,
+    "priority": 1780
+  },
+  {
+    "countryCode": "SA",
+    "countryLabel": "沙特阿拉伯",
+    "currencyCode": "SAR",
+    "storefrontId": "143479",
+    "enabled": true,
+    "priority": 1790
+  },
+  {
+    "countryCode": "SB",
+    "countryLabel": "所罗门群岛",
+    "currencyCode": "USD",
+    "storefrontId": "143601",
+    "enabled": true,
+    "priority": 1800
+  },
+  {
+    "countryCode": "SC",
+    "countryLabel": "塞舌尔",
+    "currencyCode": "USD",
+    "storefrontId": "143599",
+    "enabled": true,
+    "priority": 1810
+  },
+  {
+    "countryCode": "SD",
+    "countryLabel": "苏丹",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1820
+  },
+  {
+    "countryCode": "SE",
+    "countryLabel": "瑞典",
+    "currencyCode": "SEK",
+    "storefrontId": "143456",
+    "enabled": true,
+    "priority": 1830
+  },
+  {
+    "countryCode": "SG",
+    "countryLabel": "新加坡",
+    "currencyCode": "SGD",
+    "storefrontId": "143464",
+    "enabled": true,
+    "priority": 1840
+  },
+  {
+    "countryCode": "SH",
+    "countryLabel": "圣赫勒拿",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1850
+  },
+  {
+    "countryCode": "SI",
+    "countryLabel": "斯洛文尼亚",
+    "currencyCode": "EUR",
+    "storefrontId": "143499",
+    "enabled": true,
+    "priority": 1860
+  },
+  {
+    "countryCode": "SJ",
+    "countryLabel": "斯瓦尔巴和扬马延",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1870
+  },
+  {
+    "countryCode": "SK",
+    "countryLabel": "斯洛伐克",
+    "currencyCode": "EUR",
+    "storefrontId": "143496",
+    "enabled": true,
+    "priority": 1880
+  },
+  {
+    "countryCode": "SL",
+    "countryLabel": "塞拉利昂",
+    "currencyCode": "USD",
+    "storefrontId": "143600",
+    "enabled": true,
+    "priority": 1890
+  },
+  {
+    "countryCode": "SM",
+    "countryLabel": "圣马力诺",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1900
+  },
+  {
+    "countryCode": "SN",
+    "countryLabel": "塞内加尔",
+    "currencyCode": "USD",
+    "storefrontId": "143535",
+    "enabled": true,
+    "priority": 1910
+  },
+  {
+    "countryCode": "SO",
+    "countryLabel": "索马里",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1920
+  },
+  {
+    "countryCode": "SR",
+    "countryLabel": "苏里南",
+    "currencyCode": "USD",
+    "storefrontId": "143554",
+    "enabled": true,
+    "priority": 1930
+  },
+  {
+    "countryCode": "SS",
+    "countryLabel": "南苏丹",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1940
+  },
+  {
+    "countryCode": "ST",
+    "countryLabel": "圣多美和普林西比",
+    "currencyCode": "USD",
+    "storefrontId": "143598",
+    "enabled": true,
+    "priority": 1950
+  },
+  {
+    "countryCode": "SV",
+    "countryLabel": "萨尔瓦多",
+    "currencyCode": "USD",
+    "storefrontId": "143506",
+    "enabled": true,
+    "priority": 1960
+  },
+  {
+    "countryCode": "SX",
+    "countryLabel": "荷属圣马丁",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 1970
+  },
+  {
+    "countryCode": "SZ",
+    "countryLabel": "斯威士兰",
+    "currencyCode": "USD",
+    "storefrontId": "143602",
+    "enabled": true,
+    "priority": 1980
+  },
+  {
+    "countryCode": "TC",
+    "countryLabel": "特克斯和凯科斯群岛",
+    "currencyCode": "USD",
+    "storefrontId": "143552",
+    "enabled": true,
+    "priority": 1990
+  },
+  {
+    "countryCode": "TD",
+    "countryLabel": "乍得",
+    "currencyCode": "USD",
+    "storefrontId": "143581",
+    "enabled": true,
+    "priority": 2000
+  },
+  {
+    "countryCode": "TF",
+    "countryLabel": "法属南部领地",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2010
+  },
+  {
+    "countryCode": "TG",
+    "countryLabel": "多哥",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2020
+  },
+  {
+    "countryCode": "TH",
+    "countryLabel": "泰国",
+    "currencyCode": "THB",
+    "storefrontId": "143475",
+    "enabled": true,
+    "priority": 2030
+  },
+  {
+    "countryCode": "TJ",
+    "countryLabel": "塔吉克斯坦",
+    "currencyCode": "USD",
+    "storefrontId": "143603",
+    "enabled": true,
+    "priority": 2040
+  },
+  {
+    "countryCode": "TK",
+    "countryLabel": "托克劳",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2050
+  },
+  {
+    "countryCode": "TL",
+    "countryLabel": "东帝汶",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2060
+  },
+  {
+    "countryCode": "TM",
+    "countryLabel": "土库曼斯坦",
+    "currencyCode": "USD",
+    "storefrontId": "143604",
+    "enabled": true,
+    "priority": 2070
+  },
+  {
+    "countryCode": "TN",
+    "countryLabel": "突尼斯",
+    "currencyCode": "USD",
+    "storefrontId": "143536",
+    "enabled": true,
+    "priority": 2080
+  },
+  {
+    "countryCode": "TO",
+    "countryLabel": "汤加",
+    "currencyCode": "USD",
+    "storefrontId": "143608",
+    "enabled": true,
+    "priority": 2090
+  },
+  {
+    "countryCode": "TR",
+    "countryLabel": "土耳其",
+    "currencyCode": "TRY",
+    "storefrontId": "143480",
+    "enabled": true,
+    "priority": 2100
+  },
+  {
+    "countryCode": "TT",
+    "countryLabel": "特立尼达和多巴哥",
+    "currencyCode": "USD",
+    "storefrontId": "143551",
+    "enabled": true,
+    "priority": 2110
+  },
+  {
+    "countryCode": "TV",
+    "countryLabel": "图瓦卢",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2120
+  },
+  {
+    "countryCode": "TW",
+    "countryLabel": "中国台湾",
+    "currencyCode": "TWD",
+    "storefrontId": "143470",
+    "enabled": true,
+    "priority": 2130
+  },
+  {
+    "countryCode": "TZ",
+    "countryLabel": "坦桑尼亚",
+    "currencyCode": "TZS",
+    "storefrontId": "143572",
+    "enabled": true,
+    "priority": 2140
+  },
+  {
+    "countryCode": "UA",
+    "countryLabel": "乌克兰",
+    "currencyCode": "USD",
+    "storefrontId": "143492",
+    "enabled": true,
+    "priority": 2150
+  },
+  {
+    "countryCode": "UG",
+    "countryLabel": "乌干达",
+    "currencyCode": "USD",
+    "storefrontId": "143537",
+    "enabled": true,
+    "priority": 2160
+  },
+  {
+    "countryCode": "UY",
+    "countryLabel": "乌拉圭",
+    "currencyCode": "USD",
+    "storefrontId": "143514",
+    "enabled": true,
+    "priority": 2170
+  },
+  {
+    "countryCode": "UZ",
+    "countryLabel": "乌兹别克斯坦",
+    "currencyCode": "USD",
+    "storefrontId": "143566",
+    "enabled": true,
+    "priority": 2180
+  },
+  {
+    "countryCode": "VA",
+    "countryLabel": "梵蒂冈",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2190
+  },
+  {
+    "countryCode": "VC",
+    "countryLabel": "圣文森特和格林纳丁斯",
+    "currencyCode": "USD",
+    "storefrontId": "143550",
+    "enabled": true,
+    "priority": 2200
+  },
+  {
+    "countryCode": "VG",
+    "countryLabel": "英属维尔京群岛",
+    "currencyCode": "USD",
+    "storefrontId": "143543",
+    "enabled": true,
+    "priority": 2210
+  },
+  {
+    "countryCode": "VI",
+    "countryLabel": "美属维尔京群岛",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2220
+  },
+  {
+    "countryCode": "VN",
+    "countryLabel": "越南",
+    "currencyCode": "VND",
+    "storefrontId": "143471",
+    "enabled": true,
+    "priority": 2230
+  },
+  {
+    "countryCode": "VU",
+    "countryLabel": "瓦努阿图",
+    "currencyCode": "USD",
+    "storefrontId": "143609",
+    "enabled": true,
+    "priority": 2240
+  },
+  {
+    "countryCode": "WF",
+    "countryLabel": "瓦利斯和富图纳",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2250
+  },
+  {
+    "countryCode": "WS",
+    "countryLabel": "萨摩亚",
+    "currencyCode": "USD",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2260
+  },
+  {
+    "countryCode": "XK",
+    "countryLabel": "科索沃",
+    "currencyCode": "EUR",
+    "storefrontId": "143624",
+    "enabled": true,
+    "priority": 2270
+  },
+  {
+    "countryCode": "YE",
+    "countryLabel": "也门",
+    "currencyCode": "USD",
+    "storefrontId": "143571",
+    "enabled": true,
+    "priority": 2280
+  },
+  {
+    "countryCode": "YT",
+    "countryLabel": "马约特",
+    "currencyCode": "EUR",
+    "storefrontId": null,
+    "enabled": true,
+    "priority": 2290
+  },
+  {
+    "countryCode": "ZA",
+    "countryLabel": "南非",
+    "currencyCode": "ZAR",
+    "storefrontId": "143472",
+    "enabled": true,
+    "priority": 2300
+  },
+  {
+    "countryCode": "ZM",
+    "countryLabel": "赞比亚",
+    "currencyCode": "USD",
+    "storefrontId": "143622",
+    "enabled": true,
+    "priority": 2310
+  },
+  {
+    "countryCode": "ZW",
+    "countryLabel": "津巴布韦",
+    "currencyCode": "USD",
+    "storefrontId": "143605",
+    "enabled": true,
+    "priority": 2320
+  }
+]

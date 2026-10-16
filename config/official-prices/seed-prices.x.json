@@ -1,0 +1,17 @@
+{
+  "fxDate": "2026-10-15",
+  "rates": {
+    "USD": 1,
+    "CNY": 6.706494
+  },
+  "channel": "web_direct",
+  "sourceUrl": "https://help.x.com/en/using-x/x-premium",
+  "prices": [
+    { "planSlug": "basic-monthly", "countryCode": "US", "priceText": "$3", "priceValue": 3 },
+    { "planSlug": "basic-annual", "countryCode": "US", "priceText": "$32", "priceValue": 32 },
+    { "planSlug": "premium-monthly", "countryCode": "US", "priceText": "$8", "priceValue": 8 },
+    { "planSlug": "premium-annual", "countryCode": "US", "priceText": "$84", "priceValue": 84 },
+    { "planSlug": "premium-plus-monthly", "countryCode": "US", "priceText": "$40", "priceValue": 40 },
+    { "planSlug": "premium-plus-annual", "countryCode": "US", "priceText": "$395", "priceValue": 395 }
+  ]
+}

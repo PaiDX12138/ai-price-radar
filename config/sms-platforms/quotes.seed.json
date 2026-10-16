@@ -1,0 +1,207 @@
+{
+  "capturedAt": "2026-10-15T14:00:00.000Z",
+  "fxUsdToCny": 6.7739,
+  "fxNote": "对齐官网定价 USD→CNY 参考汇率（2026-06-04）",
+  "quotes": [
+    {
+      "typeId": "openai",
+      "platformId": "5sim",
+      "price": 0.0128,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "guest /v1/guest/prices 全球最低起价",
+      "sourceUrl": "https://5sim.net/v1/guest/prices"
+    },
+    {
+      "typeId": "paypal",
+      "platformId": "5sim",
+      "price": 0.0385,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "guest 价目全球最低起价",
+      "sourceUrl": "https://5sim.net/v1/guest/prices"
+    },
+    {
+      "typeId": "google",
+      "platformId": "5sim",
+      "price": 0.0641,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "guest 价目全球最低起价",
+      "sourceUrl": "https://5sim.net/v1/guest/prices"
+    },
+    {
+      "typeId": "generic",
+      "platformId": "5sim",
+      "price": 0.0256,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "service=other 全球最低起价",
+      "sourceUrl": "https://5sim.net/v1/guest/prices"
+    },
+    {
+      "typeId": "google",
+      "platformId": "grizzly",
+      "price": 0.007,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开 getPrices service=go 最低起价",
+      "sourceUrl": "https://grizzlysms.com/gmail"
+    },
+    {
+      "typeId": "openai",
+      "platformId": "hero",
+      "price": 0.0075,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开页 OpenAI from $0.0075",
+      "sourceUrl": "https://hero-sms.com/"
+    },
+    {
+      "typeId": "google",
+      "platformId": "hero",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开页 Google from $0.02",
+      "sourceUrl": "https://hero-sms.com/"
+    },
+    {
+      "typeId": "paypal",
+      "platformId": "hero",
+      "price": 0.05,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "PayPal 支持列表；种子取公开中位起价",
+      "sourceUrl": "https://hero-sms.com/"
+    },
+    {
+      "typeId": "generic",
+      "platformId": "smsbulk",
+      "price": 0.008,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开短信起价 from $0.008",
+      "sourceUrl": "https://smsbulk.net/"
+    },
+    {
+      "typeId": "openai",
+      "platformId": "smsbulk",
+      "price": 0.02,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "站点公开区间估算（按服务浮动）",
+      "sourceUrl": "https://smsbulk.net/"
+    },
+    {
+      "typeId": "google",
+      "platformId": "sms-man",
+      "price": 0.05,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开宣传 from ~$0.05；有 SMS_MAN_TOKEN 时自动刷新",
+      "sourceUrl": "https://sms-man.com/"
+    },
+    {
+      "typeId": "openai",
+      "platformId": "sms-man",
+      "price": 0.05,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开宣传起价；有 Token 时自动刷新",
+      "sourceUrl": "https://sms-man.com/"
+    },
+    {
+      "typeId": "paypal",
+      "platformId": "sms-man",
+      "price": 0.12,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开区间估算；有 Token 时自动刷新",
+      "sourceUrl": "https://sms-man.com/"
+    },
+    {
+      "typeId": "generic",
+      "platformId": "sms-man",
+      "price": 0.03,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开宣传低价起；有 Token 时自动刷新",
+      "sourceUrl": "https://sms-man.com/"
+    },
+    {
+      "typeId": "generic",
+      "platformId": "onlinesim",
+      "price": 0.01,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开宣传 from ~$0.01；有 ONLINE_SIM_APIKEY 时自动刷新",
+      "sourceUrl": "https://onlinesim.io/"
+    },
+    {
+      "typeId": "google",
+      "platformId": "onlinesim",
+      "price": 0.08,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开区间估算；有 API Key 时自动刷新",
+      "sourceUrl": "https://onlinesim.io/"
+    },
+    {
+      "typeId": "openai",
+      "platformId": "onlinesim",
+      "price": 0.1,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开区间估算；有 API Key 时自动刷新",
+      "sourceUrl": "https://onlinesim.io/"
+    },
+    {
+      "typeId": "paypal",
+      "platformId": "onlinesim",
+      "price": 0.15,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "公开区间估算；有 API Key 时自动刷新",
+      "sourceUrl": "https://onlinesim.io/"
+    },
+    {
+      "typeId": "paypal",
+      "platformId": "smsbulk",
+      "price": 0.05,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "站点公开区间估算",
+      "sourceUrl": "https://smsbulk.net/"
+    },
+    {
+      "typeId": "google",
+      "platformId": "smsbulk",
+      "price": 0.015,
+      "currency": "USD",
+      "unit": "per_activation",
+      "status": "in_stock",
+      "priceNote": "站点公开区间估算",
+      "sourceUrl": "https://smsbulk.net/"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "openai",
+    "label": "OpenAI / ChatGPT 接码",
+    "catalogSlug": "sms-openai",
+    "serviceCodes": ["openai", "chatgpt"],
+    "summary": "OpenAI / ChatGPT 短信验证码（按次）",
+    "tags": ["OpenAI", "热门"]
+  },
+  {
+    "id": "paypal",
+    "label": "PayPal 接码",
+    "catalogSlug": "sms-paypal",
+    "serviceCodes": ["paypal"],
+    "summary": "PayPal 短信验证码",
+    "tags": ["PayPal"]
+  },
+  {
+    "id": "google",
+    "label": "Google / Gemini 接码",
+    "catalogSlug": "sms-google",
+    "serviceCodes": ["google", "go"],
+    "summary": "Google / YouTube / Gemini 短信验证",
+    "tags": ["Google", "热门"]
+  },
+  {
+    "id": "generic",
+    "label": "通用接码",
+    "catalogSlug": "sms-generic",
+    "serviceCodes": ["other", "any"],
+    "summary": "未单独列出的站点 / Any other",
+    "tags": ["通用"]
+  }
+]

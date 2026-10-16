@@ -1,0 +1,41 @@
+{
+  "fxDate": "2026-10-15",
+  "rates": {
+    "USD": 1,
+    "CNY": 6.706494
+  },
+  "channel": "web_direct",
+  "sourceUrl": "https://one.google.com/about/google-ai-plans/",
+  "prices": [
+    {
+      "planSlug": "plus-monthly",
+      "countryCode": "US",
+      "priceText": "$4.99",
+      "priceValue": 4.99
+    },
+    {
+      "planSlug": "pro-monthly",
+      "countryCode": "US",
+      "priceText": "$19.99",
+      "priceValue": 19.99
+    },
+    {
+      "planSlug": "pro-annual",
+      "countryCode": "US",
+      "priceText": "$199.99",
+      "priceValue": 199.99
+    },
+    {
+      "planSlug": "ultra-5x-monthly",
+      "countryCode": "US",
+      "priceText": "$99.99",
+      "priceValue": 99.99
+    },
+    {
+      "planSlug": "ultra-20x-monthly",
+      "countryCode": "US",
+      "priceText": "$199.99",
+      "priceValue": 199.99
+    }
+  ]
+}

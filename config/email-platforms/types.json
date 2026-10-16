@@ -1,0 +1,58 @@
+[
+  {
+    "id": "gmail",
+    "label": "Gmail / 谷歌邮箱",
+    "catalogSlug": "gmail-account",
+    "domains": ["gmail.com"],
+    "summary": "谷歌邮箱接码（按次收激活码/链接）",
+    "tags": ["谷歌", "主流"]
+  },
+  {
+    "id": "outlook",
+    "label": "Outlook / 微软邮箱",
+    "catalogSlug": "outlook-account",
+    "domains": ["outlook.com", "hotmail.com", "live.com"],
+    "summary": "Outlook / Hotmail 接码",
+    "tags": ["微软", "主流"]
+  },
+  {
+    "id": "yahoo",
+    "label": "Yahoo / 雅虎邮箱",
+    "catalogSlug": "yahoo-email",
+    "domains": ["yahoo.com", "ymail.com"],
+    "summary": "雅虎邮箱接码",
+    "tags": ["雅虎"]
+  },
+  {
+    "id": "education",
+    "label": "教育邮箱",
+    "catalogSlug": "education-email",
+    "domains": ["edu", ".edu", ".ac."],
+    "summary": "edu / 校友类邮箱接码或短租",
+    "tags": ["edu"]
+  },
+  {
+    "id": "domain",
+    "label": "域名邮箱",
+    "catalogSlug": "domain-email",
+    "domains": ["gmx.com", "mail.com", "email.com", "firstmail.ltd"],
+    "summary": "GMX / Mail.com 等域名邮箱接码",
+    "tags": ["域名", "批量"]
+  },
+  {
+    "id": "icloud",
+    "label": "iCloud / 苹果邮箱",
+    "catalogSlug": "icloud-email",
+    "domains": ["icloud.com", "me.com", "mac.com"],
+    "summary": "苹果 iCloud 隐私/转发邮箱接码",
+    "tags": ["苹果"]
+  },
+  {
+    "id": "qq",
+    "label": "QQ 邮箱",
+    "catalogSlug": "qq-email",
+    "domains": ["qq.com"],
+    "summary": "腾讯 QQ 邮箱接码",
+    "tags": ["腾讯"]
+  }
+]

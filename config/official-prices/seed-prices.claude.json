@@ -1,0 +1,35 @@
+{
+  "fxDate": "2026-10-15",
+  "rates": {
+    "USD": 1,
+    "CNY": 6.706494
+  },
+  "channel": "web_direct",
+  "sourceUrl": "https://claude.com/pricing",
+  "prices": [
+    {
+      "planSlug": "pro-monthly",
+      "countryCode": "US",
+      "priceText": "$20",
+      "priceValue": 20
+    },
+    {
+      "planSlug": "pro-annual",
+      "countryCode": "US",
+      "priceText": "$200",
+      "priceValue": 200
+    },
+    {
+      "planSlug": "max-5x",
+      "countryCode": "US",
+      "priceText": "$100",
+      "priceValue": 100
+    },
+    {
+      "planSlug": "max-20x",
+      "countryCode": "US",
+      "priceText": "$200",
+      "priceValue": 200
+    }
+  ]
+}

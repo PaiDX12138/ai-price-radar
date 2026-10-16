@@ -1,0 +1,59 @@
+{
+  "fxDate": "2026-10-15",
+  "rates": {
+    "USD": 1,
+    "CNY": 6.706494
+  },
+  "channel": "web_direct",
+  "sourceUrl": "https://cursor.com/pricing",
+  "prices": [
+    {
+      "planSlug": "plus-monthly",
+      "countryCode": "US",
+      "priceText": "$8",
+      "priceValue": 8
+    },
+    {
+      "planSlug": "plus-annual",
+      "countryCode": "US",
+      "priceText": "$80",
+      "priceValue": 80
+    },
+    {
+      "planSlug": "premium-monthly",
+      "countryCode": "US",
+      "priceText": "$30",
+      "priceValue": 30
+    },
+    {
+      "planSlug": "premium-annual",
+      "countryCode": "US",
+      "priceText": "$300",
+      "priceValue": 300
+    },
+    {
+      "planSlug": "super-monthly",
+      "countryCode": "US",
+      "priceText": "$100",
+      "priceValue": 100
+    },
+    {
+      "planSlug": "super-annual",
+      "countryCode": "US",
+      "priceText": "$1,000",
+      "priceValue": 1000
+    },
+    {
+      "planSlug": "ultra-monthly",
+      "countryCode": "US",
+      "priceText": "$200",
+      "priceValue": 200
+    },
+    {
+      "planSlug": "ultra-annual",
+      "countryCode": "US",
+      "priceText": "$2,000",
+      "priceValue": 2000
+    }
+  ]
+}

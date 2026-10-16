@@ -1,0 +1,30 @@
+[
+  {
+    "id": "youjianma",
+    "name": "邮件码",
+    "url": "https://www.youjianma.com/",
+    "region": "CN",
+    "note": "公开标价：Gmail ¥0.7/次，其他域名 ¥0.5/次；指定目标站收激活码。"
+  },
+  {
+    "id": "smsbulk",
+    "name": "SMSBulk",
+    "url": "https://smsbulk.net/zh/email-verification",
+    "region": "INTL",
+    "note": "公开价目：Gmail from $0.08，Outlook/Hotmail ≈ $0.02，GMX/Mail.com from $0.02。"
+  },
+  {
+    "id": "anymessage",
+    "name": "AnyMessage",
+    "url": "https://anymessage.shop/",
+    "region": "INTL",
+    "note": "公开 API/论坛价：Gmail ≈ $0.008–0.015，Outlook/Hotmail $0.0024，GMX 等 $0.0015。"
+  },
+  {
+    "id": "otpgmail",
+    "name": "OTPGmail",
+    "url": "https://otpgmail.net/zh/app/services",
+    "region": "INTL",
+    "note": "按目标站实时标价；种子取 OpenAI 行作 AI 场景参考（Gmail / iCloud）。"
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "slug": "chatgpt",
+    "displayName": "ChatGPT",
+    "provider": "OpenAI",
+    "appStoreId": "6448311069",
+    "appStoreSlug": "chatgpt",
+    "catalogPlatform": "chatgpt",
+    "enabled": true,
+    "sortOrder": 10
+  },
+  {
+    "slug": "claude",
+    "displayName": "Claude",
+    "provider": "Anthropic",
+    "appStoreId": "6473753684",
+    "appStoreSlug": "claude-by-anthropic",
+    "catalogPlatform": "claude",
+    "enabled": true,
+    "sortOrder": 20
+  },
+  {
+    "slug": "cursor",
+    "displayName": "Cursor",
+    "provider": "Anysphere / X Subscription",
+    "appStoreId": "6767085653",
+    "appStoreSlug": "cursor",
+    "catalogPlatform": "cursor",
+    "enabled": true,
+    "sortOrder": 30
+  },
+  {
+    "slug": "grok",
+    "displayName": "Grok",
+    "provider": "xAI / X Subscription",
+    "appStoreId": "6670324846",
+    "appStoreSlug": "grok-ai",
+    "catalogPlatform": "grok",
+    "enabled": true,
+    "sortOrder": 40
+  },
+  {
+    "slug": "x",
+    "displayName": "X",
+    "provider": "X Corp.",
+    "appStoreId": "333903271",
+    "appStoreSlug": "x",
+    "catalogPlatform": "grok",
+    "enabled": true,
+    "sortOrder": 45
+  },
+  {
+    "slug": "kiro",
+    "displayName": "Kiro",
+    "provider": "AWS / Kiro",
+    "appStoreId": null,
+    "appStoreSlug": null,
+    "catalogPlatform": "kiro",
+    "enabled": true,
+    "sortOrder": 50
+  },
+  {
+    "slug": "gemini",
+    "displayName": "Gemini",
+    "provider": "Google",
+    "appStoreId": "6477489729",
+    "appStoreSlug": "google-gemini",
+    "catalogPlatform": "gemini",
+    "enabled": true,
+    "sortOrder": 60
+  }
+]
