@@ -87,7 +87,8 @@ pnpm collect:official    # 官网地区价（建议）
 pnpm dev:all             # 网站 + 采集 worker
 ```
 
-打开 [http://localhost:3000](http://localhost:3000)。
+打开 [http://localhost:3000](http://localhost:3000)。  
+官方展示地址：https://radar.ftuashcahs.xyz/
 
 | 步骤 | 作用 |
 |------|------|
