@@ -1,0 +1,272 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Theme tokens aligned with pdx desktop/site shadcn base-nova (neutral) */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  --apr-content-max: 90rem;
+  --apr-ink: #14532d;
+  --apr-ink-soft: color-mix(in oklab, #14532d 10%, white);
+  --apr-amber: #b45309;
+  --apr-amber-soft: color-mix(in oklab, #b45309 12%, white);
+  --apr-price: var(--apr-ink);
+  --apr-price-warranty: var(--apr-amber);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --apr-ink: #6ee7b7;
+  --apr-ink-soft: color-mix(in oklab, #14532d 35%, black);
+  --apr-amber: #fbbf24;
+  --apr-amber-soft: color-mix(in oklab, #b45309 28%, black);
+  --apr-price: var(--apr-ink);
+  --apr-price-warranty: var(--apr-amber);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-muted/40 text-foreground antialiased min-h-screen;
+  }
+}
+
+/* apr-header-tab-fuse — stuck 时与 .site-header 合成一块，无接缝 */
+.apr-tab-stick {
+  --apr-fuse-duration: 200ms;
+  --apr-fuse-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.apr-tab-stick-inner {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.apr-tab-stick[data-wide="true"] {
+  width: 100%;
+}
+
+.apr-tab-stick[data-wide="true"] .apr-tab-stick-inner {
+  width: 100%;
+}
+
+.site-header {
+  transition-property: border-color, box-shadow, background-color;
+  transition-duration: var(--apr-fuse-duration, 200ms);
+  transition-timing-function: var(--apr-fuse-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.apr-tab-stick[data-stuck="false"] {
+  background: transparent;
+  padding: 0.15rem 0;
+}
+
+/*
+ * Stuck: break out of page padding → full-bleed bar under header.
+ * Same opaque/glass fill as header; no top edge, no card chrome.
+ */
+.apr-tab-stick[data-stuck="true"] {
+  /* 上沿上移 1px 盖住顶栏底边，避免亚像素缝 */
+  top: calc(3rem - 1px);
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: 0;
+  padding: 1px 0 0;
+  border: 0;
+  border-radius: 0;
+  background-color: color-mix(in oklab, var(--background) 95%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+@supports (background: color-mix(in oklab, white 80%, transparent)) {
+  .apr-tab-stick[data-stuck="true"] {
+    background-color: color-mix(in oklab, var(--background) 80%, transparent);
+  }
+}
+
+.apr-tab-stick[data-stuck="true"] .apr-tab-stick-inner {
+  width: 100%;
+  max-width: var(--apr-content-max);
+  margin-inline: auto;
+  padding: 0.5rem 1rem;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (min-width: 1024px) {
+  .apr-tab-stick[data-stuck="true"] .apr-tab-stick-inner {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* Children: no glass / border / shadow / radius on row wrappers */
+.apr-tab-stick [data-slot="platform-tabs"],
+.apr-tab-stick [data-slot="catalog-toolbar"],
+.apr-tab-stick [data-slot="product-offer-filter"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  margin: 0 !important;
+}
+
+.apr-tab-stick [data-slot="platform-tabs"] + [data-slot="catalog-toolbar"],
+.apr-tab-stick [data-slot="catalog-toolbar"] {
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+/* Header drops its bottom edge; sticky bar owns the single fused bottom hairline */
+html[data-apr-tabs-stuck="1"] .site-header {
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  background-color: color-mix(in oklab, var(--background) 95%, transparent);
+}
+
+@supports ((-webkit-backdrop-filter: blur(0)) or (backdrop-filter: blur(0))) {
+  html[data-apr-tabs-stuck="1"] .site-header {
+    background-color: color-mix(in oklab, var(--background) 80%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apr-tab-stick,
+  .apr-tab-stick-inner,
+  .site-header {
+    transition: none !important;
+  }
+}
+
+/* —— Catalog loading：项目配色居中加载 —— */
+.apr-load-mark__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklab, var(--apr-ink) 35%, transparent);
+  animation: apr-load-pulse 1.8s ease-out infinite;
+}
+
+.apr-load-mark__ring--delay {
+  animation-delay: 0.9s;
+}
+
+.apr-load-bar {
+  animation: apr-load-slide 1.25s ease-in-out infinite;
+}
+
+@keyframes apr-load-pulse {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes apr-load-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apr-load-mark__ring,
+  .apr-load-bar {
+    animation: none !important;
+  }
+}
