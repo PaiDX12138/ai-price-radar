@@ -175,17 +175,15 @@ function BillingBlock({
   );
 }
 
-/** 含税 / 不含税：跟最低区官网标价的 taxMode。 */
+/** 官网定价统一标「不含税」。 */
 function TaxBand({ plan }: { plan: OfficialPlanSummary }) {
-  const kind = taxBandLabel(plan.lowest);
-  if (!kind) return null;
   return (
     <TextBand
       tone="amber"
       className="text-[10px] font-semibold tracking-[0.04em] text-foreground"
       title={taxNote(plan.lowest)}
     >
-      {kind}
+      {taxBandLabel(plan.lowest)}
     </TextBand>
   );
 }

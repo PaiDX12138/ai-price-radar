@@ -20,7 +20,7 @@ export function clearOfficialCache() {
   clearOfficialSnapshotCache();
 }
 
-/** 地区行按官网标价原样（折算 CNY 排序），不做拆税。 */
+/** 地区行统一折成不含税后按 CNY 排序。 */
 function regionRowsForPlan(planId: string): OfficialRegionPrice[] {
   const rows = loadOfficialSnapshot()?.regionPricesByPlanId[planId] ?? [];
   return [...rows].map(toDisplayRegionPrice).sort(sortByDisplayCny);
@@ -54,7 +54,7 @@ function rowToLowest(row: OfficialRegionPrice): OfficialLowestRow {
   };
 }
 
-/** 套餐汇总：最低价 / 美区价按官网标价原样（与开通页一致）。 */
+/** 套餐汇总：最低价 / 美区价按不含税展示口径。 */
 function withDisplaySummary(plan: OfficialPlanSummary): OfficialPlanSummary {
   const rows = regionRowsForPlan(plan.id);
   const verified = rows.filter((r) => r.status === "available");

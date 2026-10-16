@@ -20,6 +20,19 @@ const ZERO_DECIMAL = new Set([
   "XPF",
 ]);
 
+function roundMoney(value: number, currencyCode: string, exponent?: number): number {
+  const code = String(currencyCode || "").toUpperCase();
+  const zeroDec = ZERO_DECIMAL.has(code);
+  const places =
+    exponent != null && Number.isInteger(exponent)
+      ? Math.max(0, exponent)
+      : zeroDec
+        ? 0
+        : 2;
+  const f = 10 ** places;
+  return Math.round(value * f) / f;
+}
+
 /**
  * 标准本地币展示：窄符号优先，大额少小数，避免 `TZS 422,881.36` 过长。
  */
@@ -65,16 +78,53 @@ export function formatLocalPrice(
 }
 
 /**
- * 展示口径 = 官网 / App Store 标价原样（用户去该区开通时页面上看到的金额）。
- * 不再做「拆税成不含税」；税口径由 `taxMode` 标签（含税 / 不含税）说明。
- *
- * 历史名 `toExclusiveRegionPrice` 保留为透传，避免旧 import 炸掉。
+ * 官网定价统一按「不含税」展示：
+ * - inclusive + 有税率 → 拆成不含税金额并重算折合 CNY
+ * - exclusive / 无税率 → 原样金额，标签仍标不含税
  */
 export function toDisplayRegionPrice(row: OfficialRegionPrice): OfficialRegionPrice {
-  return row;
+  const list =
+    row.listPriceValue != null && Number.isFinite(row.listPriceValue) && row.listPriceValue > 0
+      ? row.listPriceValue
+      : row.priceValue;
+  const taxPercent =
+    row.taxPercent != null && Number.isFinite(row.taxPercent) && row.taxPercent > 0
+      ? row.taxPercent
+      : null;
+
+  if (
+    row.taxMode === "inclusive" &&
+    taxPercent != null &&
+    list != null &&
+    Number.isFinite(list) &&
+    list > 0
+  ) {
+    const exclusive = roundMoney(list / (1 + taxPercent / 100), row.currencyCode);
+    if (!Number.isFinite(exclusive) || exclusive <= 0) {
+      return { ...row, taxMode: "exclusive" };
+    }
+    const ratio = exclusive / list;
+    const cnyRaw = row.cnyPrice * ratio;
+    const cnyPrice =
+      row.fxRateToCny != null && Number.isFinite(row.fxRateToCny) && row.fxRateToCny > 0
+        ? Math.round(exclusive * row.fxRateToCny * 100) / 100
+        : Math.round(cnyRaw * 100) / 100;
+    return {
+      ...row,
+      priceValue: exclusive,
+      priceText: formatLocalPrice(exclusive, row.currencyCode),
+      cnyPrice,
+      taxMode: "exclusive",
+    };
+  }
+
+  return {
+    ...row,
+    taxMode: "exclusive",
+  };
 }
 
-/** @deprecated 使用 toDisplayRegionPrice；已不再拆税。 */
+/** @deprecated 使用 toDisplayRegionPrice */
 export function toExclusiveRegionPrice(row: OfficialRegionPrice): OfficialRegionPrice {
   return toDisplayRegionPrice(row);
 }
