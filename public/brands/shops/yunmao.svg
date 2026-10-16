@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Yunmao / 云猫寄售 — blue stroke cloud+cat; replaces wrong orange smiley -->
+  <g fill="none" stroke="#1E5A9A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- cloud body -->
+    <path d="M14.5 42c-4.6 0-8.3-3.5-8.3-7.8 0-3.5 2.3-6.5 5.6-7.5.3-5.4 4.8-9.7 10.4-9.7 2.2 0 4.2.7 5.9 1.8C30.2 15.6 33.6 14 37.4 14c5.7 0 10.4 4.4 10.4 9.9 0 .4 0 .8-.1 1.2 3.5 1 6 4.1 6 7.7 0 4.4-3.7 8.1-8.2 8.1H14.5z"/>
+    <!-- cat ears -->
+    <path d="M24.2 25.2 L27.2 19.6 L30.0 24.8"/>
+    <path d="M33.2 24.6 L36.4 18.8 L39.4 24.4"/>
+    <!-- face curve -->
+    <path d="M26.2 30.2c.9 5.2 3.8 7.8 5.8 7.8s4.9-2.6 5.8-7.8"/>
+    <!-- whiskers left/right -->
+    <path d="M20.6 31.2h4.6M20.8 34h4.2"/>
+    <path d="M38.8 31.2h4.6M39 34h4.2"/>
+  </g>
+  <!-- eyes as filled dots -->
+  <circle cx="28.6" cy="30.6" r="1.15" fill="#1E5A9A"/>
+  <circle cx="35.4" cy="30.6" r="1.15" fill="#1E5A9A"/>
+</svg>

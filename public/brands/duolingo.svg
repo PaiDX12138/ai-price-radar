@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Duolingo">
+  <!-- App-icon style Duo face (matches reference owl badge) -->
+  <rect width="128" height="128" rx="28" fill="#58CC02"/>
+  <path fill="#6FDD05" d="M22 54c0-20 18-36 42-36s42 16 42 36c0 4-1 8-2 12H24c-1-4-2-8-2-12z"/>
+  <!-- left eye -->
+  <ellipse cx="44" cy="58" rx="18" ry="28" fill="#1A1A1A"/>
+  <ellipse cx="38" cy="50" rx="5" ry="7" fill="#fff" opacity=".75"/>
+  <path fill="#C8D6B0" d="M36 72c6 8 14 10 18 4 1-2-1-5-4-8-4-4-10-5-14-4z" opacity=".9"/>
+  <!-- right eye -->
+  <ellipse cx="84" cy="58" rx="18" ry="28" fill="#1A1A1A"/>
+  <ellipse cx="78" cy="50" rx="5" ry="7" fill="#fff" opacity=".75"/>
+  <path fill="#C8D6B0" d="M76 72c6 8 14 10 18 4 1-2-1-5-4-8-4-4-10-5-14-4z" opacity=".9"/>
+  <!-- beak -->
+  <path fill="#FF9600" d="M64 62c8 0 14 5 14 10s-6 12-14 12-14-7-14-12 6-10 14-10z"/>
+  <path fill="#FFC800" d="M64 62c6 0 10 3 10 6.5S70 74 64 74s-10-2.5-10-5.5S58 62 64 62z"/>
+</svg>

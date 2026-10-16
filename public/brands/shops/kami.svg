@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Kami">
+  <rect width="128" height="128" rx="28" fill="#FFA4AF"/>
+  <path fill="#fff" d="M24 48h80a8 8 0 0 1 8 8c0 28-20 52-48 52S16 84 16 56a8 8 0 0 1 8-8z"/>
+  <path fill="#fff" d="M84 40l14-18 4 20z"/>
+  <rect x="48" y="64" width="8" height="22" rx="4" fill="#3D3D3D"/>
+  <rect x="72" y="64" width="8" height="22" rx="4" fill="#3D3D3D"/>
+</svg>
