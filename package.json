@@ -1,0 +1,84 @@
+{
+  "name": "ai-price-radar",
+  "version": "0.1.0",
+  "private": false,
+  "description": "AI 卡网/订阅/API 比价雷达",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaiDX12138/ai-price-radar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PaiDX12138/ai-price-radar/issues"
+  },
+  "homepage": "https://github.com/PaiDX12138/ai-price-radar#readme",
+  "scripts": {
+    "bootstrap": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs",
+    "dev": "next dev",
+    "dev:all": "node scripts/run-with-worker.mjs --dev",
+    "build": "next build",
+    "start": "next start",
+    "start:all": "node scripts/run-with-worker.mjs --start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "shops:migrate": "node scripts/migrate-shops-to-sqlite.mjs",
+    "shops:probe": "node scripts/shops-probe.mjs",
+    "shops:upsert": "node scripts/shops-upsert.mjs",
+    "official:migrate": "node scripts/migrate-official-prices.mjs",
+    "official:regions": "node scripts/official-discover-regions.mjs",
+    "official:regions:web": "node scripts/official-discover-web-regions.mjs",
+    "collect:official": "node scripts/collect-official-prices.mjs",
+    "email:snapshot": "node scripts/build-email-platforms-snapshot.mjs",
+    "sms:snapshot": "node scripts/build-sms-platforms-snapshot.mjs",
+    "collect:otp": "node scripts/collect-otp-platforms.mjs",
+    "collect:otp:sms": "node scripts/collect-otp-platforms.mjs --kind=sms",
+    "collect:otp:email": "node scripts/collect-otp-platforms.mjs --kind=email",
+    "collect:shopapi": "node scripts/collect-shopapi.mjs",
+    "collect:shopapi:all": "node scripts/collect-shopapi.mjs --all",
+    "collect:shopapi:fixture": "node scripts/collect-shopapi.mjs --fixture",
+    "collect:16688": "node scripts/collect-16688.mjs",
+    "collect:prices": "node scripts/collect-prices.mjs",
+    "collect:prices:all": "node scripts/collect-prices.mjs --all",
+    "collect:all": "node scripts/collect-shopapi.mjs --all && node scripts/collect-16688.mjs --all && node scripts/collect-prices.mjs --all",
+    "worker": "node scripts/worker.mjs",
+    "sync:favicons": "node scripts/sync-host-favicons.mjs",
+    "prewarm:catalog": "node scripts/prewarm-catalog.mjs",
+    "assert:catalog-cache": "node scripts/assert-catalog-cache-header.mjs",
+    "assert:classify": "node scripts/assert-classify-chatgpt.mjs && node scripts/assert-classify-grok.mjs"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "better-sqlite3": "^13.0.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.55.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwind-merge": "^3.7.0",
+    "undici": "^8.11.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "browserslist": "> 1%",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  }
+}
