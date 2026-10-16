@@ -1,0 +1,100 @@
+---
+description: 卡网比价数据采集约束：按技术栈分采集器，禁止猜接口
+alwaysApply: true
+---
+
+# 卡网采集规范（强制）
+
+本板块只做 **卡网订阅比价**（聚合公开/可匿名读取的商品标题、价格、库存状态、购买链接），不卖货、不存卡密/Token、不绕过登录墙/验证码/WAF。
+
+对照实现以开源参考仓的 `config/collectors.json` + `scripts/collect-prices.mjs` 为技术参考；本仓库自研采集器，**不得**整仓复制其受限协议源码对外运营。改采集逻辑前必须先对目标 host 做一次真实探针，禁止凭想象写 URL。
+
+## 统一报价字段（采集器输出）
+
+每条 raw offer 至少包含：
+
+| 字段 | 含义 |
+|------|------|
+| `sourceTitle` | 原站商品标题 |
+| `price` | 用户可见价（能合并手续费则合并后写入） |
+| `status` | `in_stock` / `low_stock` / `out_of_stock`（仅明确信号） |
+| `url` | 原站详情或购买链接 |
+| `stockCount` | 可选，数值库存 |
+| `tags` | 可选，类目 / 自动发货 / 人工 / 质保关键词等 |
+| `capturedAt` | 采集时间 |
+| `sourceId` + `collectorKind` | 渠道与采集器类型 |
+
+`price` 不要把销量、规格编号、套餐倍数、库存数误解析成价格。  
+**采集失败 ≠ 缺货**：失败只记 `crawl_runs`，不得批量把旧报价改成缺货。
+
+## 已核实的采集器形态（按 kind）
+
+新增 host 时先识别技术栈，再复用对应解析器。登记表维护在仓库 `config/collectors.json`（或等价配置）。
+
+### `kami`（异次元 / 卡密类自动发货）
+
+- 列表：`GET {base}/user/api/index/commodity?limit=100&page={n}`
+- 常用字段：`name`、`user_price`/`price`、`stock`、`status`、`hide`、`delivery_way`、`category.name`、`id`
+- 库存：`stock` 数值；文案「售罄/缺货」→ 缺货；「即将售罄」→ `low_stock`
+- `hide≠0` 或 `status≠1` → 视为不可售（按缺货处理）
+- 本机曾验证：`aisou.pro`、`talkai.cyou` 可拉；部分 host 会超时/522，按健康度降权
+
+### `dujiao`（独角数卡）
+
+- 列表：`GET {base}/api/v1/public/products`
+- 常用字段：`title`（多语言对象取 `zh-CN`）、`price_amount`、`stock_status`、`is_sold_out`、`manual_stock_available` / `auto_stock_available`、`fulfillment_type`、`slug`、`skus[]`、`category`
+- 有 `skus` 时按 SKU 展开标题与价格；详情 URL：`{base}/products/{slug|id}`
+- 本机曾验证：`kapay.shop`、`shop.mfttai.com` 可拉；部分 host 403/404，记健康状态
+
+### `shopApi`（链动小铺 / 云猫寄售 / QXVX Pay 等）
+
+- Base host 示例：`pay.ldxp.cn`、`ldxp.cn`、`www.ldxp.cn`、`catfk.com`、`pay.qxvx.cn`
+- 必须持有有效店铺 `token`（URL 形如 `/shop/<token>`）或 `goods_key`（`/item/<goods_key>`）；**禁止**依赖已失效的示例店
+- 核心接口（均为 POST JSON）：
+  - `/shopApi/Shop/info` — `{ token, category_key }`
+  - `/shopApi/Shop/categoryList` — `{ token, goods_type: "card", … }`
+  - `/shopApi/Shop/goodsList` — `{ token, category_id, goods_type: "card", current, pageSize, … }`
+  - `/shopApi/Shop/goodsInfo` — `{ goods_key, trade_no }`
+  - `/shopApi/Shop/getGoodsPrice` / `getUserChannel` — 实付价与渠道费率（列表价可能不等于买家实付）
+- 列表项常用：`name`、`price`/`real_price`、`goods_key`、`link`
+- 直连易被挡；需要时用限流 + 熔断 +（可选）代理池。连续 403 要冷却，禁止打爆对方
+- 店铺拓展主路径：自有调度采集 + 用户提交（`shops:upsert` / 探针入库）；不依赖外部镜像站补货
+
+### `shop16688`（16688 平台店）
+
+- Base：`https://www.16688.com.cn`；店铺编号 `shop_no`（URL `/shop/{shop_no}`，如 `S687067`）
+- 核心接口（均为 POST JSON，已探针）：
+  - `/shopApi/shop/detail` — `{ shop_no }` → 店名 / logo / 公告
+  - `/shopApi/goods/list` — `{ shop_no }` → `data.list[]`（小店一次返回全量；分页参数实测无效）
+  - `/shopApi/goods/detail` — `{ goods_no }`
+  - `/shopApi/shop/visit` — `{ shop_no, visitor_key }`（可选）
+- 列表项常用：`goods_no`、`name`、`price`、`stock_available_quantity`、`stock_available_status`（`high`/`low`/`in`/`out` 等）、`delivery_method`、`promo_tags`
+- 库存语义：`stock_available_quantity >= 0` 为真实件数；**`-1` = 有货未计件**（代充/现做常见），不得当成缺货或 `0`
+- 详情 URL：`{base}/goods/{goods_no}`；店铺页：`{base}/shop/{shop_no}`
+- 配置：`config/sources.16688.json`；采集 `pnpm collect:16688`
+- **不要**与链动/云猫的 `/shopApi/Shop/*`（大写 Shop + token）混用
+
+### 其它已对照源码的 kind（第二期再扩）
+
+| kind | 入口要点 |
+|------|----------|
+| `publicProductsApi` | `GET {base}/api/products`（如 `catcard.uk` 曾验证） |
+| `getgptApi` | `GET https://gpt.how2cs.cn/api/order/prices`（价目 JSON，无库存则默认有货价目） |
+| `ikunloveApi` | `GET {base}/api/shop/products`（`priceCents/100`） |
+| `xiaoheiwan` | `GET {base}/api/products` |
+| `shopUserProductsApi` | `GET {base}/shop/user/products?page=&size=` |
+| `*Html` / `mooncakeCatalog` / `blackcatWholesale` | HTML 或专用 JS 目录解析；改版即失效，须带探针 |
+
+## 调度与安全边界
+
+- 限流：分页间隔、单店批量上限、同 host 并发限制；参考量级可为「批量 ≤20、间隔约 15s、连续 403 冷却数分钟」，按对方响应再调。
+- 不绕过验证码、登录墙、WAF、平台风控；拿不到就标 `unsupported` / 健康失败，不要硬爬。
+- 不采集需要未授权访问的后台/商户管理接口（例如需 Merchant-Token 的货源管理接口不属于公开比价面）。
+- 用户提交收录的店铺：先探针识别 `collectorKind`，成功再入库；剥掉 URL 里的 `aff` / `ref` / `utm_*` 等跟踪参数。
+
+## 展示层规则（卡网页）
+
+- 列表主价 = **有货最低价**；全缺货单独标注，不得把过期/失败报价当最低价。
+- 质保价 = 带质保信号的有货最低价（标题/标签规则另表维护）；没有则显示 `-`。
+- 渠道数区分有货/缺货；展示原站标题与跳转链接，方便用户回原站核验。
+- 本站不担保交易与售后；文案不得写成「官方推荐购买」。

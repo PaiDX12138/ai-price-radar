@@ -1,0 +1,15 @@
+---
+description: UI 组件强制规范：仅允许使用 shadcn（base-nova / Base UI / Tailwind v4）
+alwaysApply: true
+---
+
+# UI 组件规范（强制，不可违反）
+
+- 本项目所有 UI 一律使用 **shadcn（base-nova 风格）**：`@base-ui/react` + Tailwind CSS v4 + `class-variance-authority` + `lucide-react`。与 PDX desktop / site 同款；基础组件放在 `src/components/ui/`。
+- 技术栈约定：Next.js（App Router）+ Tailwind CSS 4 + shadcn base-nova。主题通过 `globals.css` 中的 CSS 变量（`--background` / `--primary` / `--radius` 等）与 `@theme inline` 定制，禁止另起一套互不兼容的 design token 体系。
+- 需要基础控件时，优先复用 / 扩展 `src/components/ui/`（如 `button`、`card`、`badge`、`tabs`、`separator` 等），样式用 `cn()` + CVA variants。
+- **禁止**引入 daisyUI、antd、MUI、Arco、TDesign、Element、Mantine、Chakra、HeroUI 等其他 UI 库。**禁止 daisyUI 与 shadcn 混用**。
+- **禁止** emoji 当图标；图标一律 `lucide-react`（品牌 logo 可用公开 mono SVG / Simple Icons）。
+- 业务组合组件放在 `src/components/`（如 `catalog/`、`layout/`），内部只能由 shadcn ui + 本项目业务逻辑拼装。
+- 比价页以 **商品卡片网格 + 平台筛选 + 价格/库存色彩** 为主；避免无交互意义的装饰性大卡片堆叠与空洞 padding。
+- 文案与空态要克制：示例数据用轻量 `Badge`，禁止花哨 placeholder 萤销块抢主信息（价格、库存、渠道、更新时间）。
