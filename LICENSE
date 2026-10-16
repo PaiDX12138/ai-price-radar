@@ -1,0 +1,88 @@
+PolyForm Noncommercial License 1.0.0
+
+Copyright (c) 2026 PaiDX / Pax (AI Price Radar) contributors
+
+Acceptance
+In order to get any license under these terms, you must agree to them as both
+strict conditions of your license and irrevocable agreements between you and
+the licensor.
+
+Copyright License
+The licensor grants you a copyright license for the software to do everything
+you might do with the software that would otherwise infringe the licensor's
+copyright in it for any permitted purpose, other than distributing the software
+or making changes or new works based on the software, unless distributing or
+making changes is for a permitted purpose. Permitted purposes are limited to
+noncommercial purposes.
+
+Noncommercial Purposes
+Any noncommercial purpose is a permitted purpose. Noncommercial purposes
+include personal research, private study, personal hobby projects, classroom
+teaching, and noncommercial evaluation. Noncommercial purposes do not include
+providing the software or a hosted service based on it to third parties for a
+fee, or using the software to provide a commercial product or service.
+
+Notices
+You must ensure that anyone who gets a copy of any part of the software from you
+also gets a copy of these terms or the URL for them above, as well as copies of
+any plain-text lines beginning with `Required Notice:` that the licensor has
+put in the software source code.
+
+Required Notice: Copyright PaiDX / Pax (AI Price Radar) — Noncommercial use only.
+See LICENSE in the repository root.
+
+Patent License
+The licensor grants you a patent license for the software that covers patent
+claims the licensor can license, or becomes able to license, that you would
+infringe by using the software for a permitted purpose.
+
+Fair Use
+You may have "fair use" rights for the software under the law. These terms do
+not limit them.
+
+No Other Rights
+These terms do not allow you to sublicense or transfer any of your licenses to
+anyone else, or prevent the licensor from granting licenses to anyone else.
+These terms do not imply any other licenses.
+
+Patent Defense
+If you make any written claim that the software infringes or contributes to
+infringement of any patent, your patent license for the software granted under
+these terms ends immediately.
+
+Violation
+If you violate any of these terms, or for any personal use other than a
+permitted purpose, your licenses end immediately.
+
+No Liability
+As far as the law allows, the software comes as is, without any warranty or
+condition, and the licensor will not be liable to you for any damages arising
+out of these terms or the use or nature of the software, under any kind of
+legal claim.
+
+Definitions
+The licensor is the individual or entity offering these terms.
+
+The software is the software the licensor makes available under these terms,
+including any portion of it.
+
+You refers to the individual or entity agreeing to these terms.
+
+Your licenses are all the licenses granted to you for the software under these
+terms.
+
+Use means anything you do with the software requiring one of your licenses.
+
+---
+
+中文摘要（非正式译本，以英文正文为准）
+
+本软件按 PolyForm Noncommercial License 1.0.0 授权：
+
+- 允许：个人学习、研究、自用、非营利教学与评估、非商业自托管。
+- 禁止：将本软件或其衍生作品用于商业目的，包括但不限于收费托管、
+  SaaS 运营、售卖发行物、嵌入商业产品或服务对外收费。
+- 分发与修改：仅可在非商业目的下进行，并须保留本许可与版权声明。
+- 免责：软件按「现状」提供，作者不对使用后果承担赔偿责任。
+
+如需商业授权，请联系维护者（见 README 交流群）。
