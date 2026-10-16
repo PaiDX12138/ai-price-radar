@@ -232,6 +232,19 @@ export function shopsDbExists(dbPath) {
   return existsSync(resolveShopsDbPath(dbPath));
 }
 
+/** Rows in shops — the indexed shop registry, not the offer snapshot. */
+export function countShops(dbPath) {
+  if (!shopsDbExists(dbPath)) return 0;
+  const db = openShopsDb(dbPath, { readonly: true });
+  try {
+    const row = db.prepare("SELECT COUNT(*) AS n FROM shops").get();
+    const n = Number(row?.n);
+    return Number.isFinite(n) ? n : 0;
+  } finally {
+    db.close();
+  }
+}
+
 /**
  * Fail-fast helper for collect CLIs.
  * @param {string} [dbPath]
