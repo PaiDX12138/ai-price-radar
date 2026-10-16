@@ -189,7 +189,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const shopName = probed.name || upsert.id;
+    // probeShopUrl is .mjs — success branch has name, but TS union doesn't narrow it
+    const shopName =
+      String((probed as { name?: string }).name || "").trim() || upsert.id;
     if (upsert.action === "skipped") {
       return json({
         ok: true,
