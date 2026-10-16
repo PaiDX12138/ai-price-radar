@@ -1,10 +1,16 @@
-# Pax · AI Price Radar
+<p align="center">
+  <img src="./public/brand/logo.png" alt="Quote Board" width="120" />
+</p>
 
-[![License: PolyForm-NC](https://img.shields.io/badge/License-PolyForm%20Noncommercial-orange.svg)](./LICENSE)
-[![Node.js ≥ 20](https://img.shields.io/badge/Node.js-%E2%89%A520-339933.svg)](https://nodejs.org/)
-[![UI: shadcn](https://img.shields.io/badge/UI-shadcn%20base--nova-111111.svg)](https://ui.shadcn.com/)
+<h1 align="center">Quote Board</h1>
 
-**AI 卡网 / 订阅 / API 公开比价雷达** — 开源、可自托管的购买前信息聚合工具。
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-orange.svg" alt="License: PolyForm-NC" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A520-339933.svg" alt="Node.js ≥ 20" /></a>
+  <a href="https://ui.shadcn.com/"><img src="https://img.shields.io/badge/UI-shadcn%20base--nova-111111.svg" alt="UI: shadcn" /></a>
+</p>
+
+<p align="center"><strong>AI 卡网 / 订阅 / API 公开比价雷达</strong> — 开源、可自托管的购买前信息聚合工具。</p>
 
 > 本项目**不卖货、不收款、不担保交易**。展示信息仅供参考，下单前请回原站核验。  
 > 完整边界见 [免责声明](./docs/disclaimer.md)。
@@ -15,7 +21,7 @@
 
 AI 订阅、卡网货源与接码邮箱价格分散在大量公开站点上：标题杂乱、库存跳变、低价常过期。手工打开十几个站比对成本高，也容易被异常低价误导。
 
-**Pax** 把你能核验的公开报价收到同一套界面里，帮助自托管用户：
+**Quote Board**（价格行情台）把你能核验的公开报价收到同一套界面里，帮助自托管用户：
 
 - 少开站点、快速对比**有货最低价 / 质保价 / 渠道数**
 - 对照**官网各地区正价**（含税口径、汇率折算）
