@@ -5,9 +5,9 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
+  Send,
   Link2,
   LoaderCircle,
-  Store,
 } from "lucide-react";
 import { PLATFORM_LABEL, PlatformLogo } from "@/components/catalog/platform-logo";
 import {
@@ -294,7 +294,7 @@ export function ShopSubmitDialog({
           aria-hidden
         />
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--apr-ink-soft)] text-[var(--apr-ink)]">
-          <Store className="size-3.5" aria-hidden strokeWidth={2} />
+          <Send className="size-3.5" aria-hidden strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1 leading-none">
           <span className="block text-[11px] leading-none text-muted-foreground">

@@ -5,10 +5,12 @@ import { CATALOG_PAGE_SIZE, parseCatalogPage } from "@/lib/catalog/pagination";
 import { CatalogNavState } from "@/components/catalog/catalog-nav-state";
 import { CatalogFilterChrome } from "@/components/catalog/catalog-filter-chrome";
 import { ProductCard } from "@/components/catalog/product-card";
+import { ShopIndexedCard } from "@/components/catalog/shop-indexed-card";
 import { ShopSubmitDialog } from "@/components/catalog/shop-submit-dialog";
 import {
   filterProductSummaries,
   getCatalogMeta,
+  getIndexedShopCount,
   getPlatformTabs,
   listDeliveryTypes,
   parsePlatformTab,
@@ -43,6 +45,7 @@ export async function CatalogBoard({
   const q = qParam?.trim() || undefined;
   const meta = getCatalogMeta();
   const demo = meta.isDemo;
+  const shopCount = getIndexedShopCount();
 
   const productPlatforms: PlatformId[] = [
     "chatgpt",
@@ -81,10 +84,13 @@ export async function CatalogBoard({
               {BRAND_NAME_EN}
             </p>
           </div>
-          <ShopSubmitDialog
-            className="shrink-0"
-            deliveryTypesByPlatform={deliveryTypesByPlatform}
-          />
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <ShopIndexedCard count={shopCount} className="shrink-0" />
+            <ShopSubmitDialog
+              className="shrink-0"
+              deliveryTypesByPlatform={deliveryTypesByPlatform}
+            />
+          </div>
         </div>
         <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground sm:hidden">
           {BRAND_NAME_EN}

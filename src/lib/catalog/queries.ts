@@ -147,6 +147,11 @@ export function getCatalogMeta(): {
   };
 }
 
+/** 目录快照中已收录的卡网店铺数（catalog.sources）。 */
+export function getIndexedShopCount(): number {
+  return resolveCatalog().sources.length;
+}
+
 export function getPlatformTabs() {
   return platformTabs;
 }
