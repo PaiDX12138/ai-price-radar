@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { ProductBackLink } from "@/components/catalog/product-back-link";
 import { EmailPlatformTable } from "@/components/email/email-platform-table";
 import { ProductLogo } from "@/components/catalog/product-logo";
 import { OtpPlatformLogo } from "@/components/otp/otp-platform-logo";
@@ -9,6 +10,8 @@ import { formatCny } from "@/lib/catalog/format";
 import { formatUsdPrice } from "@/lib/otp/format";
 import type { SmsPlatformQuote, SmsTypeCard } from "@/lib/sms-platforms/types";
 import { cn } from "@/lib/utils";
+
+const SMS_LIST_FALLBACK = "/official?platform=sms";
 
 type OfficialSmsDetailProps = {
   card: SmsTypeCard;
@@ -31,25 +34,26 @@ export function OfficialSmsDetail({
         aria-label="面包屑"
         className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
       >
-        <Link
-          href="/official?platform=sms"
+        <ProductBackLink
+          fallbackHref={SMS_LIST_FALLBACK}
           className={cn(
             buttonVariants({ variant: "secondary", size: "sm" }),
             "mr-1 shrink-0 gap-1",
           )}
+          aria-label="返回官网定价列表"
         >
           <ArrowLeft className="size-3.5" aria-hidden />
           返回
-        </Link>
-        <Link
-          href="/official"
+        </ProductBackLink>
+        <ProductBackLink
+          fallbackHref={SMS_LIST_FALLBACK}
           className="hover:text-foreground underline-offset-2 hover:underline"
         >
           官网定价
-        </Link>
+        </ProductBackLink>
         <ChevronRight className="size-3 shrink-0 opacity-60" aria-hidden />
         <Link
-          href="/official?platform=sms"
+          href={SMS_LIST_FALLBACK}
           className="hover:text-foreground underline-offset-2 hover:underline"
         >
           接码

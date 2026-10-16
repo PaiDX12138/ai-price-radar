@@ -15,7 +15,8 @@ type ProductBackLinkProps = {
 } & Omit<ComponentProps<typeof Link>, "href" | "onClick" | "className" | "children">;
 
 /**
- * Prefer the catalog URL (platform / type / q / page) the user left from.
+ * Prefer the list URL (platform / type / q / page) the user left from
+ * — 卡网 `/` 或官网定价 `/official`。
  * Scroll Y is restored by CatalogNavState on the list page.
  */
 export function ProductBackLink({

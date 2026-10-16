@@ -8,8 +8,18 @@ import {
   rememberCatalogLeave,
 } from "@/lib/catalog/nav-state";
 
+/** 卡网商品详情 / 官网定价详情（含邮箱、接码） */
+function isListDetailLeaveAnchor(anchor: HTMLAnchorElement): boolean {
+  const href = anchor.getAttribute("href") || "";
+  return (
+    href.startsWith("/products/") ||
+    // /official/{id}，不含 /official 列表本身
+    /^\/official\/[^/?#]+/.test(href)
+  );
+}
+
 /**
- * On catalog list pages: remember scroll when opening a product,
+ * On catalog / official list pages: remember scroll when opening a detail,
  * and restore Tab/筛选 URL + scrollY when coming back.
  */
 export function CatalogNavState() {
@@ -48,8 +58,9 @@ export function CatalogNavState() {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const anchor = target.closest('a[href^="/products/"]');
+      const anchor = target.closest("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (!isListDetailLeaveAnchor(anchor)) return;
       if (event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
@@ -61,8 +72,9 @@ export function CatalogNavState() {
     const onClick = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const anchor = target.closest('a[href^="/products/"]');
+      const anchor = target.closest("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (!isListDetailLeaveAnchor(anchor)) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
       }

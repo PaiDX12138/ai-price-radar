@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ProductBackLink } from "@/components/catalog/product-back-link";
 import { TextBand } from "@/components/catalog/text-band";
 import { PLATFORM_LABEL } from "@/components/catalog/platform-logo";
 import { ProductLogo } from "@/components/catalog/product-logo";
@@ -67,6 +68,8 @@ export function OfficialPlanDetailView({
 
   const billingLabel =
     plan.billingPeriod === "annual" ? "年付" : "月付";
+  const platformKey = plan.catalogPlatform || plan.appSlug;
+  const listFallbackHref = `/official?platform=${encodeURIComponent(platformKey)}`;
 
   return (
     <div
@@ -77,29 +80,29 @@ export function OfficialPlanDetailView({
         aria-label="面包屑"
         className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
       >
-        <Link
-          href="/official"
+        <ProductBackLink
+          fallbackHref={listFallbackHref}
           className={cn(
             buttonVariants({ variant: "secondary", size: "sm" }),
             "mr-1 shrink-0 gap-1",
           )}
+          aria-label="返回官网定价列表"
         >
           <ArrowLeft className="size-3.5" aria-hidden />
           返回
-        </Link>
-        <Link
-          href="/official"
+        </ProductBackLink>
+        <ProductBackLink
+          fallbackHref={listFallbackHref}
           className="hover:text-foreground underline-offset-2 hover:underline"
         >
           官网定价
-        </Link>
+        </ProductBackLink>
         <ChevronRight className="size-3 shrink-0 opacity-60" aria-hidden />
         <Link
-          href={`/official?platform=${encodeURIComponent(plan.catalogPlatform || plan.appSlug)}`}
+          href={listFallbackHref}
           className="hover:text-foreground underline-offset-2 hover:underline"
         >
-          {PLATFORM_LABEL[(plan.catalogPlatform || plan.appSlug) as PlatformTabId] ??
-            plan.appName}
+          {PLATFORM_LABEL[platformKey as PlatformTabId] ?? plan.appName}
         </Link>
         <ChevronRight className="size-3 shrink-0 opacity-60" aria-hidden />
         <span className="min-w-0 max-w-[min(100%,28rem)] truncate font-medium text-foreground">
