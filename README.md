@@ -113,11 +113,6 @@ pnpm dev:all             # 网站 + 采集 worker
 | 店铺 / 官网库 | better-sqlite3 |
 | 包管理 | pnpm |
 
-协作者请遵守：
-
-- [UI 约束](./.cursor/rules/ui-components.mdc)
-- [采集约束](./.cursor/rules/card-shop-collectors.mdc)
-
 ---
 
 ## 交流群 · 派大星研究所
