@@ -1,6 +1,6 @@
+import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
 import Link from "next/link";
 import {
-  ArrowUpRight,
   Minus,
   Tags,
   TrendingDown,
@@ -82,16 +82,7 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
               </div>
             </div>
           </Link>
-          <span
-            className={cn(
-              "pointer-events-none absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-md",
-              "text-muted-foreground ring-1 ring-border/80 bg-background/80",
-              "transition-colors group-hover:text-[var(--apr-ink)] group-hover:ring-[color-mix(in_oklab,var(--apr-ink)_35%,transparent)]",
-            )}
-            aria-hidden
-          >
-            <ArrowUpRight className="size-3.5" strokeWidth={2.25} />
-          </span>
+          <CardCornerArrow className="absolute right-3 top-3" />
         </CardHeader>
 
         <CardContent className="space-y-2">

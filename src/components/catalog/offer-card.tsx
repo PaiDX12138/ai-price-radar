@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -102,7 +103,7 @@ export function OfferCard({ offer }: OfferCardProps) {
                 <CardTitle className="relative inline-block min-w-0 max-w-full truncate text-sm font-semibold tracking-tight text-foreground">
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-[2px] bg-violet-200/75 dark:bg-violet-400/25"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-md bg-violet-200/75 dark:bg-violet-400/25"
                   />
                   <span className="relative">{offer.source.name}</span>
                 </CardTitle>
@@ -151,22 +152,13 @@ export function OfferCard({ offer }: OfferCardProps) {
               >
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-[2px] bg-orange-400/70 dark:bg-orange-500/45"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-md bg-orange-400/70 dark:bg-orange-500/45"
                 />
                 <span className="relative">自建卡网</span>
               </span>
             ) : null}
           </div>
-          <span
-            className={cn(
-              "pointer-events-none absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-md",
-              "bg-background/80 text-muted-foreground ring-1 ring-border/80",
-              "transition-colors group-hover:text-[var(--apr-ink)] group-hover:ring-[color-mix(in_oklab,var(--apr-ink)_35%,transparent)]"
-            )}
-            aria-hidden
-          >
-            <ArrowUpRight className="size-3.5" strokeWidth={2.25} />
-          </span>
+          <CardCornerArrow className="absolute right-3 top-3" />
         </CardHeader>
 
       {/* 标题区可伸缩：多余空白留在标题与标签之间，标签始终贴分割线上方 */}
@@ -212,7 +204,7 @@ export function OfferCard({ offer }: OfferCardProps) {
               >
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-[2px] bg-emerald-200/80 dark:bg-emerald-400/30"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-md bg-emerald-200/80 dark:bg-emerald-400/30"
                 />
                 <span className="relative">收录于{listedAgo}</span>
               </span>

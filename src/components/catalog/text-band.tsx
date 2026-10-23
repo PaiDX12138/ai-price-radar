@@ -33,7 +33,7 @@ export function TextBand({
       <span
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-[2px]",
+          "pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-md",
           BAND[tone],
           bandClassName,
         )}

@@ -81,7 +81,7 @@ export function OfficialBillingPeriodSwitch({
           <Link
             key={item.period}
             href={planHref(item.planId, channel, q)}
-            scroll
+            scroll={false}
             role="tab"
             aria-selected={selected}
             className={classNameBtn}

@@ -1,5 +1,5 @@
+import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -62,7 +62,7 @@ export function ProductCard({ product, q }: ProductCardProps) {
               <CardTitle className="relative inline-block max-w-full truncate text-[15px] font-semibold leading-snug tracking-tight text-neutral-900">
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-[2px] bg-violet-200/75 dark:bg-violet-400/25"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[50%] rounded-md bg-violet-200/75 dark:bg-violet-400/25"
                 />
                 <span className="relative">{product.name}</span>
               </CardTitle>
@@ -101,16 +101,7 @@ export function ProductCard({ product, q }: ProductCardProps) {
               </div>
             </div>
           </Link>
-          <span
-            className={cn(
-              "pointer-events-none absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-md",
-              "text-muted-foreground ring-1 ring-border/80 bg-background/80",
-              "transition-colors group-hover:text-[var(--apr-ink)] group-hover:ring-[color-mix(in_oklab,var(--apr-ink)_35%,transparent)]"
-            )}
-            aria-hidden
-          >
-            <ArrowUpRight className="size-3.5" strokeWidth={2.25} />
-          </span>
+          <CardCornerArrow className="absolute right-3 top-3" />
         </CardHeader>
 
         <CardContent className="space-y-3">

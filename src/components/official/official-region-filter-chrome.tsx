@@ -105,6 +105,7 @@ export function OfficialRegionFilterChrome({
               <Link
                 key={tab.id ?? "all"}
                 href={channelHref(planId, tab.id, q)}
+                scroll={false}
                 role="tab"
                 aria-selected={selected}
                 className={cn(

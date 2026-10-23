@@ -40,6 +40,7 @@ export function PlatformTabs({
           <Link
             key={tab.id}
             href={tabHref(basePath, tab.id)}
+            scroll={false}
             role="tab"
             aria-selected={selected}
             className={cn(
