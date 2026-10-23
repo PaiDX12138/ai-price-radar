@@ -1,8 +1,8 @@
+import { isOfferLive, isOfferVisible } from "@/lib/catalog/format";
 import { demoOffers, demoProducts, demoSources, platformTabs } from "@/data/demo/catalog";
 import { loadPersistedCatalogEntry } from "@/lib/catalog/store";
 import type {
   Offer,
-  OfferStatus,
   OfferWithSource,
   PlatformTabId,
   Product,
@@ -102,7 +102,7 @@ function resolveCatalog(): CatalogBundle {
     return {
       sources: entry.snapshot.sources,
       products: entry.snapshot.products.map(normalizeProduct),
-      offers: entry.snapshot.offers.map((offer) => {
+      offers: entry.snapshot.offers.filter((offer) => isOfferVisible(offer)).map((offer) => {
         const productSlug = normalizeOfferSlug(offer.productSlug);
         return productSlug === offer.productSlug ? offer : { ...offer, productSlug };
       }),
@@ -510,7 +510,7 @@ export function filterProductSummaries(
 export function getOffersForProduct(slug: string): OfferWithSource[] {
   const catalog = resolveCatalog();
   return catalog.offers
-    .filter((offer) => offer.productSlug === slug)
+    .filter((offer) => offer.productSlug === slug && offer.lifecycle !== "delisted")
     .map((offer) => {
       const source = sourceById(catalog.sources, offer.sourceId);
       if (!source) return null;
@@ -518,8 +518,8 @@ export function getOffersForProduct(slug: string): OfferWithSource[] {
     })
     .filter((offer): offer is OfferWithSource => Boolean(offer))
     .sort((a, b) => {
-      const rank = (status: OfferStatus) => (status === "out_of_stock" ? 1 : 0);
-      const byStock = rank(a.status) - rank(b.status);
+      const rank = (offer: Offer) => !isOfferLive(offer) ? 2 : offer.status === "out_of_stock" ? 1 : 0;
+      const byStock = rank(a) - rank(b);
       if (byStock !== 0) return byStock;
       return a.price - b.price;
     });
@@ -556,7 +556,7 @@ export function summarizeProduct(
   const offers =
     offersOverride ??
     catalog.offers.filter((offer) => offer.productSlug === product.slug);
-  const inStock = offers.filter((offer) => offer.status !== "out_of_stock");
+  const inStock = offers.filter((offer) => offer.status !== "out_of_stock" && (catalog.isDemo || isOfferLive(offer)));
   const outStock = offers.filter((offer) => offer.status === "out_of_stock");
   const priced = inStock.filter((offer) => Number.isFinite(offer.price));
   const warrantyPriced = priced.filter((offer) => offer.warranty);

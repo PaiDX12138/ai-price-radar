@@ -13,6 +13,7 @@
  * Proxy (optional, 链动 only):
  *   PROXY_API_URL=...   or   PROXY_URL=http://user:pass@host:port
  */
+import { verifyMissingShopApiOffers } from "../collectors/offer-lifecycle.mjs";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -460,6 +461,10 @@ async function runTick(db, pool, opts = {}) {
    * @param {{ fetchImpl?: typeof fetch, channelIndex?: number }} [ctx]
    */
   async function finishShop(source, result, ctx = {}) {
+    if (result.collectionComplete === true && (source.collectorKind || source.kind) === "shopApi") {
+      const old = loadCatalogSnapshot()?.offers?.filter((offer) => offer.sourceId === source.id) || [];
+      await verifyMissingShopApiOffers(old, result, { fetchImpl: ctx.fetchImpl });
+    }
     const finishedAt = new Date().toISOString();
     const waf = !result.ok && isWafError(result.error);
     const withdraw = Boolean(result.withdrawDisplay);
@@ -516,10 +521,11 @@ async function runTick(db, pool, opts = {}) {
 
     if (result.ok) {
       success += 1;
-      if ((result.offers?.length || 0) > 0 && !withdraw) {
+      if (((result.offers?.length || 0) > 0 || result.collectionComplete === true) && !withdraw) {
         batchSuccess.push({
           sourceId: source.id,
           sourceMeta: buildSourceMeta(source, result),
+          collectionComplete: result.collectionComplete === true,
           offers: result.offers,
         });
       }

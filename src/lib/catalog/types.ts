@@ -73,6 +73,11 @@ export type Offer = {
   collectorKind?: string;
   /** 最后一次在成功采集里看到这条报价的时间；采集失败时保持旧值 */
   lastSeenAt?: string | null;
+  lifecycle?: "active" | "pending" | "delisted";
+  lifecycleReason?: string | null;
+  missingSince?: string | null;
+  lastVerifiedAt?: string | null;
+  delistedAt?: string | null;
   warranty: boolean;
 };
 

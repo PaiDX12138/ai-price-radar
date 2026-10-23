@@ -1,3 +1,4 @@
+import { reconcileOffers } from "./offer-lifecycle.mjs";
 /**
  * Persist catalog snapshot + crawl runs under data/ (gitignored).
  * Explorer public snapshot: data/catalog/public.json (+ latest.json alias).
@@ -340,8 +341,9 @@ export function mergeCatalogBySourceId(input) {
   // 3) overlay this batch successes (non-empty only)
   for (const item of batchSuccess) {
     if (!item?.sourceId || withdrawSet.has(item.sourceId)) continue;
-    if (!Array.isArray(item.offers) || item.offers.length === 0) continue;
-    offersBy.set(item.sourceId, item.offers);
+    if (!Array.isArray(item.offers)) continue;
+    if (!item.offers.length && item.collectionComplete !== true) continue;
+    offersBy.set(item.sourceId, reconcileOffers(offersBy.get(item.sourceId) || [], item.offers, { complete: item.collectionComplete === true }));
     if (item.sourceMeta) metaBy.set(item.sourceId, item.sourceMeta);
     overlaySourceIds.push(item.sourceId);
   }

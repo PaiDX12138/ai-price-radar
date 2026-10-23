@@ -345,6 +345,7 @@ export async function collectShopApi(source, options = {}) {
       { token, goods_type: "card", category_key: "" },
       { referer: sourceUrl, origin: base, fetchImpl },
     );
+    if (categoriesPayload?.code !== 1 || !Array.isArray(categoriesPayload.data)) throw new Error("Category list incomplete");
     const categories = Array.isArray(categoriesPayload?.data) ? categoriesPayload.data : [];
     const selected = categories.filter((c) => Number(c.goods_count || 0) > 0 && Number(c.id) !== 0);
     const categoryIds = selected.length
@@ -357,7 +358,9 @@ export async function collectShopApi(source, options = {}) {
     const offers = [];
     const seen = new Set();
 
+    let collectionComplete = true;
     for (const categoryId of categoryIds) {
+      let ended = false;
       for (let page = 1; page <= maxPages; page += 1) {
         await delay(pageDelayMs);
         const listPayload = await postJson(
@@ -373,10 +376,11 @@ export async function collectShopApi(source, options = {}) {
           { referer: sourceUrl, origin: base, fetchImpl },
         );
         if (listPayload?.code !== 1 || !Array.isArray(listPayload?.data?.list)) {
+          collectionComplete = false;
           break;
         }
         const items = listPayload.data.list;
-        if (!items.length) break;
+        if (!items.length) { ended = true; break; }
 
         for (const item of items) {
           const title = cleanText(item.name);
@@ -403,6 +407,9 @@ export async function collectShopApi(source, options = {}) {
             price: listedPrice,
             listedPrice,
             status,
+            lifecycle: disabled ? "delisted" : "active",
+            lifecycleReason: disabled ? "explicit_listing_status" : null,
+            lastVerifiedAt: capturedAt,
             stockCount: disabled ? 0 : stockCount,
             url: itemUrl,
             tags: [categoryName, item.goods_type === "card" ? "card" : null, "shopApi"].filter(Boolean),
@@ -413,12 +420,14 @@ export async function collectShopApi(source, options = {}) {
           });
         }
 
-        if (items.length < pageSize) break;
+        if (items.length < pageSize) { ended = true; break; }
       }
+      if (!ended) collectionComplete = false;
     }
 
     return {
       ok: true,
+      collectionComplete,
       sourceId: source.id,
       error: null,
       offers,

@@ -306,8 +306,9 @@ async function main() {
       console.log(
         `  ok offers=${result.offers.length} shop=${result.shopInfo?.name || "?"} base=${result.resolvedBase || source.baseUrl || "?"}${tag}`,
       );
-      if (result.offers.length > 0 && !withdraw) {
+      if ((result.offers.length > 0 || result.collectionComplete === true) && !withdraw) {
         batchSuccess.push({
+          collectionComplete: result.collectionComplete === true,
           sourceId: source.id,
           sourceMeta: {
             id: source.id,

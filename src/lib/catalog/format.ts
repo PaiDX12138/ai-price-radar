@@ -130,3 +130,17 @@ export function isOfferStale(
   const seen = Date.parse(offer.lastSeenAt || offer.capturedAt);
   return Number.isFinite(seen) && nowMs - seen > OFFER_STALE_MS;
 }
+
+/** Missing/unconfirmed offers are historical evidence, not live-stock candidates. */
+export function isOfferLive(offer: { lifecycle?: string; lastSeenAt?: string | null; lastVerifiedAt?: string | null; capturedAt: string }, nowMs = Date.now()): boolean {
+  if (offer.lifecycle === "pending" || offer.lifecycle === "delisted") return false;
+  const seen = Date.parse(offer.lastSeenAt || offer.capturedAt);
+  return Number.isFinite(seen) && nowMs - seen <= 2 * 60 * 60 * 1000;
+}
+
+/** Default public list omits delisted and >24h unconfirmed quotes; persistence retains history. */
+export function isOfferVisible(offer: { lifecycle?: string; lastSeenAt?: string | null; capturedAt: string }, nowMs = Date.now()): boolean {
+  if (offer.lifecycle === "delisted") return false;
+  const seen = Date.parse(offer.lastSeenAt || offer.capturedAt);
+  return Number.isFinite(seen) && nowMs - seen <= 24 * 60 * 60 * 1000;
+}

@@ -15,6 +15,7 @@ import {
   formatListedAgo,
   formatRelativeTime,
   isOfferStale,
+  isOfferLive,
   resolveOfferStockLabel,
   statusBadge,
 } from "@/lib/catalog/format";
@@ -48,8 +49,9 @@ function visibleProductTags(tags: string[]): string[] {
 
 /** Shared channel offer card — all platforms. */
 export function OfferCard({ offer }: OfferCardProps) {
-  const badge = statusBadge(offer.status);
-  const inStock = offer.status !== "out_of_stock";
+  const live = isOfferLive(offer);
+  const badge = live ? statusBadge(offer.status) : { label: "待核验", className: "" };
+  const inStock = live && offer.status !== "out_of_stock";
   const passedKyc = offerPassedKyc(offer);
   const selfBuilt = isSelfBuiltCardShop({
     platform: offer.source.platform,
@@ -130,17 +132,17 @@ export function OfferCard({ offer }: OfferCardProps) {
                     过Kyc
                   </Badge>
                 ) : null}
-                {isOfferStale(offer) ? (
+                {!live || isOfferStale(offer) ? (
                   <Badge
                     variant="outline"
                     title={
                       offer.source.collectStatus === "failed"
                         ? "最近一次采集失败，显示的是上次成功采到的数据"
-                        : "超过 24 小时没有采到新数据"
+                        : offer.lifecycle === "pending" ? "商品待复核，旧报价不代表实时有货" : "超过 2 小时未确认，不参与实时最低价"
                     }
                     className="h-5 shrink-0 px-1.5 text-[11px] font-medium text-muted-foreground"
                   >
-                    数据较旧
+                    {offer.lifecycle === "pending" ? "待核验" : "待更新"}
                   </Badge>
                 ) : null}
               </div>
@@ -271,12 +273,12 @@ export function OfferCard({ offer }: OfferCardProps) {
                     : "text-emerald-800 dark:text-emerald-400"
               )}
             >
-              {offer.stockCount !== null && offer.stockCount !== undefined ? (
+              {live && offer.stockCount !== null && offer.stockCount !== undefined ? (
                 <>
                   <span>{offer.stockCount}</span>
                   <span className="ml-1.5 text-sm font-medium">{badge.label}</span>
                 </>
-              ) : qual ? (
+              ) : live && qual ? (
                 // 无计件：库存一般 / 库存非常多；16688 人工发货 → 琥珀色「人工发货」
                 <span className="text-sm font-medium">{qual}</span>
               ) : (
