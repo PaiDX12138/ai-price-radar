@@ -199,3 +199,32 @@ pnpm collect:otp:email
 Worker（`pnpm worker`）默认约每 **6 小时**跑一次 `collect:otp`（`OTP_COLLECT_INTERVAL_MS` 可调）。前台优先读 `data/*/latest.json`，无快照则回退 config 种子。汇率对齐官网日更（`getOfficialUsdToCny`）。
 
 前台：`OfficialOtpTypeCard` — 淡蓝最低价卡（平台 logo + USD ≈ CNY）。
+
+
+## 历史价国家每小时补录
+
+`pnpm worker` 会自动检查 `stale` 记录，距上次补录完成一小时后，在下一个 Worker 轮询触发定向补录；无需另设 cron。仅查询历史价对应的国家、套餐和渠道，当前支持 ChatGPT 官网国别价及已有 App Store 适配器，成功恢复 available 后自动退出重试集合。
+
+- 使用已有汇率，不重置每日06:00汇率和每周全量计划。
+- 相同 app+国家+渠道的多个套餐合并成一次请求，沿用现有低并发、间隔与限流熔断。
+- 失败保留旧金额及最后成功确认时间，单独更新 `last_attempt_at`。熔断后尚未请求的国家不更新尝试时间。
+- 没匹配到套餐/缺汇率时，补录不会贸然删旧价格；来源明确地区不可售则沿用不可售处理。
+- SQLite `official_stale_retry_schedule` 记录下一轮时间和执行租约；任务运行期间续租，Worker重启不会重置每小时节奏。
+- 历史价卡片的更新时间优先显示 `lastSuccessAt`，不再把新一轮失败或汇率更新时间当作价格确认时间。
+
+手动触发（仍遵守一小时防重复限制）：
+
+```bash
+pnpm collect:official -- --mode=stale
+# 仅官网渠道：
+pnpm collect:official -- --mode=stale --channels=web
+```
+
+验证：
+
+```bash
+node scripts/test-official-stale-retry.mjs
+node scripts/test-official-stale-integration.mjs
+```
+
+集成测试使用临时SQLite、独立快照和模拟fetch，不写线上库、不访问真实报价接口。

@@ -10,6 +10,7 @@
  *   pnpm collect:official -- --mode=full --channels=ios   # ios | web
  *   pnpm collect:official -- --mode=full --write-seed
  */
+import { claimStaleRetry, finishStaleRetry, listStaleRetryTargets, retryTargetKey } from "../collectors/official-stale-retry.mjs";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,6 +75,12 @@ const WEB_CONCURRENCY = 3;
 const WEB_GAP_MS = 250;
 const WEB_BLOCKED_LIMIT = 3;
 const FX_TIMEOUT_MS = 20_000;
+let retryTargets = null;
+const selectRetryPlans = (plans, regionId, channel) => retryTargets === null ? plans : plans.filter((plan) => retryTargets.has(retryTargetKey(plan.id, regionId, channel)));
+function markAttempt(db, plans, regionId, channel, at) {
+  const update = db.prepare("UPDATE official_prices SET last_attempt_at=? WHERE plan_id=? AND region_id=? AND channel=?");
+  for (const plan of plans) update.run(at, plan.id, regionId, channel);
+}
 
 function parseArgs(argv) {
   const out = {
@@ -103,7 +110,7 @@ function parseArgs(argv) {
     else if (arg === "--channels") setChannels(argv[++i]);
     else if (arg?.startsWith("--channels=")) setChannels(arg.slice(11));
   }
-  if (out.mode !== "fx_only" && out.mode !== "full") out.mode = "fx_only";
+  if (!["fx_only", "full", "stale"].includes(out.mode)) out.mode = "fx_only";
   return out;
 }
 
@@ -270,7 +277,7 @@ async function collectIos(db, fx, now) {
     `DELETE FROM official_prices WHERE plan_id = ? AND region_id = ? AND channel = 'ios_store'`,
   );
   const markStale = db.prepare(
-    `UPDATE official_prices SET status = 'stale', updated_at = ?
+    `UPDATE official_prices SET status = 'stale', last_attempt_at = ?
      WHERE plan_id = ? AND region_id = ? AND channel = 'ios_store' AND status = 'available'`,
   );
 
@@ -282,20 +289,22 @@ async function collectIos(db, fx, now) {
   const unmatchedOffers = new Set();
 
   for (const app of listEnabledApps(db)) {
-    const plans = listPlansForApp(db, app.id)
+    const appPlans = listPlansForApp(db, app.id)
       .map((p) => ({ ...p, pattern: compilePattern(p.offer_pattern) }))
       .filter((p) => p.pattern);
     let blockedStreak = 0;
 
     await mapWithConcurrency(
-      regions,
+      regions.filter((region) => selectRetryPlans(appPlans, region.id, "ios_store").length > 0),
       FETCH_CONCURRENCY,
       async (region) => {
+        const plans = selectRetryPlans(appPlans, region.id, "ios_store");
+        if (!plans.length) return;
         if (aborted) {
           failedRegions += 1;
-          for (const plan of plans) markStale.run(now, plan.id, region.id);
           return;
         }
+        markAttempt(db, plans, region.id, "ios_store", now);
         const page = await fetchAppStoreOffers({
           appStoreId: app.app_store_id,
           appStoreSlug: app.app_store_slug,
@@ -340,7 +349,8 @@ async function collectIos(db, fx, now) {
           const cny = item ? convertToCny(item.priceValue, region.currency_code, fx.rates) : null;
           if (!item || cny == null || fxRate == null) {
             // Not sold in this storefront (or no FX) → drop instead of keeping a guessed price
-            deleteRow.run(plan.id, region.id);
+            if (retryTargets !== null) markStale.run(now, plan.id, region.id);
+            else deleteRow.run(plan.id, region.id);
             continue;
           }
           upsertPrice(db, {
@@ -400,7 +410,7 @@ async function collectWeb(db, fx, now) {
     `DELETE FROM official_prices WHERE plan_id = ? AND region_id = ? AND channel = 'web_direct'`,
   );
   const markStale = db.prepare(
-    `UPDATE official_prices SET status = 'stale', updated_at = ?
+    `UPDATE official_prices SET status = 'stale', last_attempt_at = ?
      WHERE plan_id = ? AND region_id = ? AND channel = 'web_direct' AND status = 'available'`,
   );
 
@@ -411,6 +421,7 @@ async function collectWeb(db, fx, now) {
   let aborted = false;
 
   // Claude / Cursor / Grok / X / Kiro / Gemini：无公开国别 API → USD 标价 × FX 本地币
+  if (retryTargets === null) {
   matched += collectClaudeWebFx(db, fx, now);
   matched += collectUsdListAppWebFx(db, fx, now, {
     appSlug: "cursor",
@@ -430,23 +441,27 @@ async function collectWeb(db, fx, now) {
     sourceUrl: "https://one.google.com/about/google-ai-plans/",
   });
 
+  }
+
   for (const app of listEnabledApps(db)) {
     if (app.slug !== "chatgpt") continue;
-    const plans = listPlansForApp(db, app.id).filter((p) => CHATGPT_WEB_PLAN_MAP[p.slug]);
+    const appPlans = listPlansForApp(db, app.id).filter((p) => CHATGPT_WEB_PLAN_MAP[p.slug]);
 
     await mapWithConcurrency(
-      regions,
+      regions.filter((region) => selectRetryPlans(appPlans, region.id, "web_direct").length > 0),
       WEB_CONCURRENCY,
       async (region) => {
+        const plans = selectRetryPlans(appPlans, region.id, "web_direct");
+        if (!plans.length) return;
         const stale = () => {
           for (const plan of plans) markStale.run(now, plan.id, region.id);
         };
         if (aborted) {
           failedRegions += 1;
-          stale();
           return;
         }
 
+        markAttempt(db, plans, region.id, "web_direct", now);
         const page = await fetchChatgptWebPricing(region.country_code);
         if (page.blocked) {
           blockedStreak += 1;
@@ -487,7 +502,8 @@ async function collectWeb(db, fx, now) {
               : null;
           const fxRate = offer ? rateToCny(offer.currencyCode, fx.rates) : null;
           if (!offer || displayValue == null || cny == null || fxRate == null) {
-            deleteRow.run(plan.id, region.id);
+            if (retryTargets !== null) markStale.run(now, plan.id, region.id);
+            else deleteRow.run(plan.id, region.id);
             continue;
           }
           upsertPrice(db, {
@@ -768,6 +784,37 @@ async function runFull(db, channels) {
   return { ok: matched > 0 };
 }
 
+/** Hourly targeted retry: does not reset FX/weekly schedule or refresh unrelated rows. */
+async function runStale(db, channels) {
+  if (!claimStaleRetry(db)) return { ok: true };
+  const startedAt = new Date().toISOString();
+  const heartbeat = setInterval(() => {
+    db.prepare("UPDATE official_stale_retry_schedule SET lease_until=? WHERE id=1").run(new Date(Date.now() + 60 * 60 * 1000).toISOString());
+  }, 60_000);
+  heartbeat.unref();
+  try {
+    retryTargets = new Set(listStaleRetryTargets(db).filter((row) => channels.has(row.channel === "ios_store" ? "ios" : "web")).map((row) => retryTargetKey(row.plan_id, row.region_id, row.channel)));
+    const fx = getFx(db) || await refreshFx(db);
+    if (!fx) throw new Error("No stored FX for stale-price retry");
+    const now = new Date().toISOString();
+    const ios = channels.has("ios") ? await collectIos(db, fx, now) : null;
+    const web = channels.has("web") ? await collectWeb(db, fx, now) : null;
+    const matched = (ios?.matched || 0) + (web?.matched || 0);
+    const failed = (ios?.failed || 0) + (web?.failed || 0);
+    insertCollectRun(db, { mode: "stale", status: failed ? "partial" : "success", successCount: matched, failureCount: failed, message: `targeted=${retryTargets.size} recovered=${matched}`, startedAt, finishedAt: new Date().toISOString() });
+    writeOfficialPricesSnapshot(db);
+    console.log(`[collect:official] stale targets=${retryTargets.size} recovered=${matched} failed=${failed}`);
+    return { ok: true };
+  } catch (error) {
+    insertCollectRun(db, { mode: "stale", status: "failed", message: String(error?.message || error), startedAt, finishedAt: new Date().toISOString() });
+    throw error;
+  } finally {
+    clearInterval(heartbeat);
+    retryTargets = null;
+    finishStaleRetry(db);
+  }
+}
+
 /** Rewrite the offline seed from real collected rows (bootstrap without network). */
 function writeSeedFromDb(db) {
   const fx = getFx(db);
@@ -798,7 +845,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
     console.log(
-      "Usage: pnpm collect:official -- --mode=fx_only|full [--channels=ios,web] [--write-seed] [--db path]",
+      "Usage: pnpm collect:official -- --mode=fx_only|full|stale [--channels=ios,web] [--write-seed] [--db path]",
     );
     process.exit(0);
   }
@@ -807,7 +854,7 @@ async function main() {
   try {
     migrateOfficialPrices(db);
     const result =
-      args.mode === "fx_only" ? await runFxOnly(db) : await runFull(db, args.channels);
+      args.mode === "fx_only" ? await runFxOnly(db) : args.mode === "stale" ? await runStale(db, args.channels) : await runFull(db, args.channels);
     if (result.ok && args.writeSeed) writeSeedFromDb(db);
     process.exitCode = result.ok ? 0 : 1;
   } finally {

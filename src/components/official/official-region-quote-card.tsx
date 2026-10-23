@@ -205,7 +205,7 @@ export function OfficialRegionQuoteCard({
           </TonePanel>
 
           <CardMeta>
-            <CardUpdatedRow updatedAt={row.updatedAt} />
+            <CardUpdatedRow updatedAt={row.status === "stale" ? row.lastSuccessAt ?? row.updatedAt : row.updatedAt} />
           </CardMeta>
         </CardContent>
       </Card>

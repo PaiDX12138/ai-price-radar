@@ -1,3 +1,4 @@
+import { staleRetryDue } from "./official-stale-retry.mjs";
 /**
  * Official subscription regional prices (SQLite).
  * GPT-first; Worker writes, Next reads.
@@ -267,6 +268,7 @@ function ensureOfficialPriceColumns(db) {
   const cols = new Set(
     db.prepare(`PRAGMA table_info(official_prices)`).all().map((c) => c.name),
   );
+  if (!cols.has("last_attempt_at")) db.exec(`ALTER TABLE official_prices ADD COLUMN last_attempt_at TEXT`);
   if (!cols.has("list_price_value")) {
     db.exec(`ALTER TABLE official_prices ADD COLUMN list_price_value REAL`);
   }
@@ -884,7 +886,7 @@ export function markScheduleDone(db, mode) {
  * - fx_only：每天 06:00（Asia/Shanghai）后，若「今日尚未 FX 更新」则到期（含漏跑兜底）
  *
  * @param {import('better-sqlite3').Database} db
- * @returns {'fx_only' | 'full' | null}
+ * @returns {'fx_only' | 'full' | 'stale' | null}
  */
 export function dueOfficialMode(db) {
   const s = getSchedule(db);
@@ -910,7 +912,7 @@ export function dueOfficialMode(db) {
     return "fx_only";
   }
 
-  return null;
+  return staleRetryDue(db) ? "stale" : null;
 }
 
 export function insertCollectRun(db, run) {
