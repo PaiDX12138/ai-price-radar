@@ -43,6 +43,10 @@ const cases = [
 
   // Plus account stays Plus (not peripheral)
   ["ChatGPT Plus 成品号 独享账号", "chatgpt-plus"],
+  ["云自营👑Plus·质保25天·支持反代/逆向/破甲·越南实卡·一切封禁必赔·Codex", "chatgpt-plus"],
+  ["顶自营👑Plus·质保25天·支持反代/逆向/破甲·越南实卡--一切封禁必赔·Codex", "chatgpt-plus"],
+  ["ChatGPT Plus 独享账号 支持破甲工具", "chatgpt-plus"],
+  ["Codex破甲工具 支持Plus账号", "chatgpt-codex-service"],
   ["ChatGPT Plus 成品号 独享账号 自动充值", "chatgpt-plus"],
   ["ChatGPT Plus 成品号 独享账号 自助开通", "chatgpt-plus"],
   ["PLUS-成品-已接码rt-微软邮箱-支持登录网页端，支持直接登录codex-质保首登", "chatgpt-plus"],

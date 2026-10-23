@@ -1651,6 +1651,16 @@ function isApiCredit(value) {
  * Codex+Cursor 合卡：有 Codex/GPT 信号时归本站 GPT 辅助（避免只被 Cursor 兜底吸走）。
  */
 function isChatGptPoJiaTool(value) {
+  // 「Plus 账号支持反代/逆向/破甲」卖的是订阅账号，能力说明不能抢占辅助分类。
+  // 仅在明确订阅交付信号下排除；真正的破甲工具/兑换卡仍走原规则。
+  const supportIndex = value.indexOf("支持");
+  if (
+    supportIndex >= 0 &&
+    /(?:plus|pro)/i.test(value) &&
+    /成品|账号|帐号|账密|独享|首登|质保\s*\d+\s*天|封禁必赔/.test(value) &&
+    /支持[^。；;]*(?:破甲|破盾)/.test(value) &&
+    !/破甲工具|破盾工具|破甲兑换|破甲合卡/.test(value.slice(0, supportIndex))
+  ) return false;
   if (
     !matches(value, [
       "破甲",
@@ -2220,7 +2230,7 @@ function isChatGptTeam(value) {
 }
 
 function isChatGptPlus(value) {
-  const hasChatGpt = matches(value, ["chatgpt", "gpt", "openai"]);
+  const hasChatGpt = matches(value, ["chatgpt", "gpt", "openai"]) || (matches(value, ["codex"]) && matches(value, ["plus"]));
   const hasPlus = matches(value, ["plus"]);
   if (!hasChatGpt && !hasPlus) return false;
   if (matches(value, ["pro"]) && !matches(value, ["plus"])) return false;
