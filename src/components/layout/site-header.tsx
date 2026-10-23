@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { GitHubIcon } from "@/components/icons/github-icon";
+import { GithubStarMascot } from "@/components/layout/github-star-mascot";
 import { QqGroupMenu } from "@/components/layout/qq-group-menu";
 import { SitePrimaryNav } from "@/components/layout/site-primary-nav";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -32,7 +33,8 @@ export function SiteHeader() {
             priority
             aria-hidden
           />
-          <span className="truncate">{BRAND_NAME_EN}</span>
+          <span className="hidden truncate sm:inline">{BRAND_NAME_EN}</span>
+          <span className="sr-only sm:hidden">{BRAND_NAME_EN}</span>
         </Link>
 
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -44,7 +46,7 @@ export function SiteHeader() {
         </div>
 
         <div className="relative z-10 ml-auto flex shrink-0 items-center gap-0.5">
-          <QqGroupMenu />
+          <GithubStarMascot />
           <a
             href="https://github.com/PaiDX12138/ai-price-radar"
             target="_blank"
@@ -58,6 +60,7 @@ export function SiteHeader() {
           >
             <GitHubIcon className="size-4" />
           </a>
+          <QqGroupMenu />
         </div>
       </div>
     </header>
