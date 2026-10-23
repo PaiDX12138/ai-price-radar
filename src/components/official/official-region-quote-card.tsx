@@ -110,7 +110,7 @@ export function OfficialRegionQuoteCard({
                   </TextBand>
                 ) : null}
               </div>
-              <div className="mt-1.5 flex flex-nowrap items-center gap-1 overflow-hidden">
+              <div className="mt-1.5 flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-1.5">
                 <ToneChip tone="violet" className="shrink-0">
                   {row.countryCode}
                 </ToneChip>
