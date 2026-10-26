@@ -39,6 +39,9 @@ const cases = [
   ["gro 长效微软邮箱注册 无会员普通号 附赠微软邮箱", 1.85, "grok-account"],
   ["普号 gro AI 长效 微软邮箱 账密 SSO 支持 web/build/con ole", 0.43, "grok-account"],
   ["G_rok稳定普号(botFlag：0) 长效微软邮箱注册 无会员普通号 附赠微软邮箱，没有被人机标记", 1.55, "grok-account"],
+  // 卡网中文别名：不能因为裸写 plus/会员就落入 GPT；「马斯克 8 美金」和「超级格洛克」均是 Grok Plus
+  ["【官方代充】马斯克 8美金 plus 会员 一个月", 65, "grok-plus"],
+  ["【官方充值】美区 超级格洛克 Plus CDK", 71.5, "grok-plus"],
   // 不是 Grok → 其他板 Muse
   ["Muse AI成品号 带10亿token（对标SuperGro-k）bot", 13.2, "muse-ai-account"],
 ];

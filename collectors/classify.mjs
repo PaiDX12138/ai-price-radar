@@ -584,6 +584,13 @@ function normalizeTitle(title) {
     .replace(/supergro\b/g, "super grok")
     .replace(/\bgro\s+super\s+heavy\b/g, "grok ultra")
     .replace(/\bgro\s+heavy\b/g, "grok heavy")
+    // 卡网中文别名：格洛克/超级格洛克就是 Grok；只把带会员语义的「马斯克」别名归一化，
+    // 避免商品描述里随口提到马斯克时把无关商品误归到 Grok。
+    .replace(/格洛克/g, "grok")
+    .replace(
+      /马斯克(?=\s*(?:\d+(?:\.\d+)?\s*(?:美金|美元|刀|\$)\s*)?(?:plus|会员|订阅|充值|代充|cdk|卡密))/g,
+      "grok",
+    )
     .replace(/接[🐎🐴🦆鸭马]/g, "接码")
     .replace(/\s+/g, " ")
     .trim();
