@@ -118,9 +118,9 @@ function BillingBlock({
 }) {
   return (
     <TonePanel tone={tone}>
-      <div className="flex items-center justify-between gap-1">
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <span className="text-[10px] font-semibold tracking-[0.04em] text-muted-foreground">
+      <div className="flex min-w-0 flex-nowrap items-center justify-between gap-0.5">
+        <span className="inline-flex min-w-0 flex-nowrap items-center gap-1">
+          <span className="shrink-0 whitespace-nowrap text-[10px] font-semibold tracking-[0.04em] text-muted-foreground">
             {label}
           </span>
           {plan ? <TaxBand plan={plan} /> : null}
@@ -173,7 +173,7 @@ function TaxBand({ plan }: { plan: OfficialPlanSummary }) {
   return (
     <TextBand
       tone="amber"
-      className="text-[10px] font-semibold tracking-[0.04em] text-foreground"
+      className="shrink-0 whitespace-nowrap text-[10px] font-semibold tracking-[0.04em] text-foreground"
       title={taxNote(plan.lowest)}
     >
       {taxBandLabel(plan.lowest)}
@@ -184,7 +184,13 @@ function TaxBand({ plan }: { plan: OfficialPlanSummary }) {
 /** Lowest regional price vs US list: stock-style arrow + percent. */
 function TrendChip({ plan }: { plan: OfficialPlanSummary }) {
   if (plan.usCny == null || !Number.isFinite(plan.usCny) || plan.usCny <= 0) return null;
-  return <VsUsTrend cnyPrice={plan.lowest.cnyPrice} usCny={plan.usCny} />;
+  return (
+    <VsUsTrend
+      cnyPrice={plan.lowest.cnyPrice}
+      usCny={plan.usCny}
+      className="shrink-0 whitespace-nowrap"
+    />
+  );
 }
 
 /**
