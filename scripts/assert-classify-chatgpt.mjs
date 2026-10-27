@@ -156,6 +156,8 @@ const cases = [
   ["美国实卡 codex 20～30天接🐎【质保不来🐎】PLUS 长效接🐎 最多能绑定3个账号", "sms-openai"],
   ["Plus 长期接码 30天 实卡渠道 可绑定三个账号", "sms-openai"],
   ["Plus 长效接码 RT渠道 自助卡密", "sms-openai"],
+  ["Plus codex接码 高质量", "sms-openai"],
+  ["（一次性版）codex plus全球接码 高成功率 cdk发货 1分钟重置100%成功 强烈推荐【自主换号】", "sms-openai"],
   ["Codex Plus 20-30天接码 美国号码", "sms-openai"],
   ["Plus 美国实卡 专用接码 渠道直供", "sms-openai"],
   ["Plus 无限接码 可绑定三个账号", "sms-openai"],

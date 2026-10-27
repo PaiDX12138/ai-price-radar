@@ -1080,7 +1080,7 @@ function isStandaloneVerificationService(value) {
   }
   if (
     matches(value, ["长效接码", "长期接码", "长效接马", "长期接马"]) &&
-    !hasAccountBundleSignal(value) &&
+    !hasConcretePhoneAccountBundle(value) &&
     !matches(value, ["成品号", "成品账号", "账密"])
   ) {
     return true;
@@ -1103,11 +1103,23 @@ function isStandaloneVerificationService(value) {
       "专用gmail接码",
       "专用 gmail 接码",
     ]) &&
-    !hasAccountBundleSignal(value) &&
+    !hasConcretePhoneAccountBundle(value) &&
     !/不保\s*codex\s*接码|不保\s*接码|不管\s*codex\s*接码|不质保\s*接码/.test(value)
   ) {
     return true;
   }
+
+  // 裸「Plus/Codex + 接码」标题也表示短信能力；只有明确账号交付或
+  // 「已/未接码」状态时才回到 Plus 成品分类。
+  if (
+    isChatGptProduct(value) &&
+    matches(value, ["接码", "接马", "收码", "来码"]) &&
+    !hasConcretePhoneAccountBundle(value) &&
+    !matches(value, ["已接码", "已经接码", "未接码", "没接码", "不保接码", "不含接码", "不质保接码"])
+  ) {
+    return true;
+  }
+
   // 「PLUS接码/接马」：卖的是接码能力，不是 Plus 成品（标题常带 Plus/GPT 关键词）
   if (
     matches(value, ["plus接码", "plus 接码", "plus接马", "plus 接马"]) &&
@@ -1165,7 +1177,7 @@ function isExplicitVerificationServiceDelivery(value) {
 function isCodexPhoneVerification(value) {
   if (!matches(value, ["codex"])) return false;
   if (isAiSubscriptionOrAccountTitle(value)) return false;
-  if (hasAccountBundleSignal(value)) return false;
+  if (hasConcretePhoneAccountBundle(value)) return false;
   return matches(value, ["接码", "验证码", "短信", "手机号", "手机", "号码", "2fa", "二验", "验证"]);
 }
 
