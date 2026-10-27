@@ -70,7 +70,7 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
                 ) : null}
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <ToneChip tone="sky">月付/年付</ToneChip>
+                <ToneChip tone="sky">{product.annual ? "月付/年付" : "月付"}</ToneChip>
                 <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                   <PlatformLogo platform={platform} size={12} />
                   {PLATFORM_LABEL[platform] ?? product.appName}
@@ -82,9 +82,9 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
         </CardHeader>
 
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn("grid gap-2", product.annual ? "grid-cols-2" : "grid-cols-1")}>
             <BillingBlock label="Month" plan={product.monthly} tone="ink" />
-            <BillingBlock label="Year" plan={product.annual} tone="amber" />
+            {product.annual ? <BillingBlock label="Year" plan={product.annual} tone="amber" /> : null}
           </div>
           <UsReference monthly={product.monthly} annual={product.annual} />
           <CardMeta>
@@ -200,7 +200,7 @@ function UsReference({
 }) {
   const lines = [
     { key: "m", unit: "/month", plan: monthly },
-    { key: "y", unit: "/year", plan: annual },
+    ...(annual ? [{ key: "y", unit: "/year", plan: annual }] : []),
   ];
 
   return (
