@@ -124,12 +124,6 @@ function BillingBlock({
             {label}
           </span>
           {plan ? <TaxBand plan={plan} /> : null}
-          {plan?.lowest.priceBasis === "usd_reference" ? <ToneChip tone="muted" className="h-4 text-[10px]">参考</ToneChip> : null}
-          {plan?.lowest.status === "stale" ? (
-            <ToneChip tone="rose" className="h-4 shrink-0 text-[10px]" title="历史实采标价按最新汇率折算，尚未重新确认原币价格">
-              历史价
-            </ToneChip>
-          ) : null}
         </span>
         {plan ? <TrendChip plan={plan} /> : null}
       </div>
