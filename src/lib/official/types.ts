@@ -4,6 +4,8 @@ export type OfficialBillingPeriod = "monthly" | "annual";
 export type OfficialTaxMode = "inclusive" | "exclusive";
 
 export type OfficialLowestRow = {
+  priceBasis?: "observed" | "usd_reference";
+  sourceOfferId?: string | null;
   countryCode: string;
   countryLabel: string;
   currencyCode: string;
@@ -94,6 +96,8 @@ export type CurrencyMeta = {
 
 /** One regional quote row on plan detail. */
 export type OfficialRegionPrice = {
+  priceBasis?: "observed" | "usd_reference";
+  sourceOfferId?: string | null;
   id: string;
   countryCode: string;
   countryLabel: string;

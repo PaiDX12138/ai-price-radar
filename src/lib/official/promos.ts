@@ -21,6 +21,8 @@ export function resolveUsLiveUsd(
     (r) =>
       r.countryCode === "US" &&
       r.currencyCode === "USD" &&
+      r.status === "available" &&
+      r.priceBasis !== "usd_reference" &&
       typeof r.priceValue === "number" &&
       Number.isFinite(r.priceValue) &&
       r.priceValue > 0,
@@ -73,14 +75,11 @@ export function resolvePlanPromo(
   regionRows?: OfficialRegionPrice[],
 ): OfficialPromo | null {
   const baseline = resolvePromoBaselineUsd(plan);
-  const live =
-    resolveUsLiveUsd(regionRows) ??
+  const live = regionRows !== undefined
+    ? resolveUsLiveUsd(regionRows)
+    :
     (typeof plan.usLiveUsd === "number" && plan.usLiveUsd > 0
       ? plan.usLiveUsd
-      : null) ??
-    // FX 类：美区行即 usListUsd；配了 regularUsd 且 list 更低时也能亮角标
-    (typeof plan.usListUsd === "number" && plan.usListUsd > 0
-      ? plan.usListUsd
       : null);
   return detectOfficialPromo({ baselineUsd: baseline, liveUsd: live });
 }

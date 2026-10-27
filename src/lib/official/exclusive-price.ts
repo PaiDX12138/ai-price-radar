@@ -26,11 +26,16 @@ function roundMoney(value: number, currencyCode: string, exponent?: number): num
   const places =
     exponent != null && Number.isInteger(exponent)
       ? Math.max(0, exponent)
-      : zeroDec
-        ? 0
-        : 2;
+      : currencyDecimals(code, zeroDec ? 0 : 2);
   const f = 10 ** places;
   return Math.round(value * f) / f;
+}
+
+function currencyDecimals(code: string, fallback = 2): number {
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: code })
+      .resolvedOptions().maximumFractionDigits ?? fallback;
+  } catch { return fallback; }
 }
 
 /**
@@ -44,18 +49,8 @@ export function formatLocalPrice(
   const code = String(currencyCode || "").toUpperCase();
   if (!code || !Number.isFinite(value)) return "—";
 
-  const zeroDec = ZERO_DECIMAL.has(code);
-  let maxFrac =
-    exponent != null
-      ? exponent
-      : zeroDec
-        ? 0
-        : Math.abs(value) >= 10_000
-          ? 0
-          : Math.abs(value) >= 100
-            ? 2
-            : 2;
-  const minFrac = zeroDec || maxFrac === 0 ? 0 : Math.min(2, maxFrac);
+  const maxFrac = exponent != null ? exponent : currencyDecimals(code, ZERO_DECIMAL.has(code) ? 0 : 2);
+  const minFrac = maxFrac;
 
   try {
     return new Intl.NumberFormat("en-US", {
@@ -120,7 +115,8 @@ export function toDisplayRegionPrice(row: OfficialRegionPrice): OfficialRegionPr
 
   return {
     ...row,
-    taxMode: "exclusive",
+    // Missing iOS tax metadata is unknown, not proof that its price excludes tax.
+    taxMode: row.taxMode,
   };
 }
 
@@ -129,19 +125,29 @@ export function toExclusiveRegionPrice(row: OfficialRegionPrice): OfficialRegion
   return toDisplayRegionPrice(row);
 }
 
-/** 按折算 CNY 升序（有货优先），用于最低价排序。 */
+/** 实采当前价和历史价共同参与比价；仅无实采报价时回退估算价。 */
+export function officialComparisonPool(rows: OfficialRegionPrice[]): OfficialRegionPrice[] {
+  const valid = rows.filter((r) => Number.isFinite(r.cnyPrice) && r.cnyPrice > 0);
+  const observed = valid.filter((r) => r.status === "available" || r.status === "stale");
+  return observed.length ? observed : valid.filter((r) => r.status === "estimated");
+}
+
+/** 实采当前价/历史价按 CNY 升序；估算价置后，同价时当前价优先。 */
 export function sortByDisplayCny(
   a: OfficialRegionPrice,
   b: OfficialRegionPrice,
 ): number {
-  const statusRank = (s: string) =>
-    s === "available" ? 0 : s === "estimated" ? 1 : 2;
-  const ds = statusRank(a.status) - statusRank(b.status);
+  const priceClass = (s: string) =>
+    s === "available" || s === "stale" ? 0 : s === "estimated" ? 1 : 2;
+  const ds = priceClass(a.status) - priceClass(b.status);
   if (ds) return ds;
   if (a.cnyPrice !== b.cnyPrice) return a.cnyPrice - b.cnyPrice;
+  const current = (a.status === "available" ? 0 : 1) - (b.status === "available" ? 0 : 1);
+  if (current) return current;
   const ch =
     (a.channel === "web_direct" ? 0 : 1) - (b.channel === "web_direct" ? 0 : 1);
-  return ch;
+  if (ch) return ch;
+  return (a.countryCode === "US" ? 0 : 1) - (b.countryCode === "US" ? 0 : 1);
 }
 
 /** @deprecated 使用 sortByDisplayCny */

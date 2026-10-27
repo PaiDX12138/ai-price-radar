@@ -76,6 +76,19 @@ HERO_SMS_API_KEY=
 
 ## 前台缓存
 
+### 修改分类规则后离线刷新存量报价
+
+```bash
+node scripts/reclassify-catalog-snapshot.mjs          # 只预览分类迁移数量，不写文件
+node scripts/reclassify-catalog-snapshot.mjs --apply  # 自动备份并原子替换 public/latest
+```
+
+此命令只重分类当前快照，保留报价数量、商品 ID、价格、库存、原始采价时间、最后看到时间及下架状态；不请求店铺，也不从旧 raw 复活下架商品。无法确定分类的报价保留为 `other-unclassified`，不参与订阅卡统计。默认处理 `data/catalog/public.json` 和 `latest.json`；可用 `--snapshot <路径>` 处理单份快照。备份为原路径追加 `.before-reclassify-<时间戳>-<进程号>.json`。
+
+接码分类按交付内容判断：`Plus / Pro / 渠道 / 20–30天 / 卡密` 本身不是账号证据。实卡、长效/长期接码、多账号绑定容量属于接码服务；`成品号 / 账密 / JSON交付 / 首登` 等才是账号交付证据。账号的已/未接码、附带接码链接、不保接码等说明不独立拆成接码商品。
+
+回归：`pnpm assert:classify` + `node scripts/test-classification-sms-integration.mjs`。
+
 进程 TTL：`CATALOG_CACHE_TTL_SECONDS`（默认 60，夹紧 30–300）。  
 公开 API：`Cache-Control: public, max-age=0, s-maxage=<60-300>, stale-while-revalidate=60`。
 

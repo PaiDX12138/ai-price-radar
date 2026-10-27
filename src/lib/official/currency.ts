@@ -41,26 +41,28 @@ export function channelLabel(channel: string): string {
   return channel || "—";
 }
 
-export type TaxBandKind = "含税" | "不含税";
+export type TaxBandKind = "含税" | "不含税" | "税况未知";
 
 /**
  * 税口径说明。官网定价 AI 套餐统一按不含税展示（含税源价已在展示层拆税）。
  */
-export function taxNote(_row?: {
+export function taxNote(row?: {
   taxMode?: OfficialTaxMode | null;
   taxPercent?: number | null;
 }): string {
-  return "展示为不含税价；结账时部分地区可能另计销售税 / GST";
+  if (row?.taxMode === "exclusive") return "不含税；结账可能另计销售税 / GST";
+  if (row?.taxMode === "inclusive") return "原始标价含税；缺少可靠税率时不擅自拆税";
+  return "来源未明确税口径，按原始标价展示；与美区税前价的差额并非保证优惠";
 }
 
 /**
  * 卡片/色带短税标。官网定价 AI 套餐统一标「不含税」。
  */
-export function taxBandLabel(_row?: {
+export function taxBandLabel(row?: {
   taxMode?: OfficialTaxMode | null;
   taxPercent?: number | null;
   channel?: string | null;
   countryCode?: string | null;
 }): TaxBandKind {
-  return "不含税";
+  return row?.taxMode === "exclusive" ? "不含税" : row?.taxMode === "inclusive" ? "含税" : "税况未知";
 }

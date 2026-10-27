@@ -1,4 +1,6 @@
 import { staleRetryDue } from "./official-stale-retry.mjs";
+import { explicitPriceCurrency } from "./official-price-currency.mjs";
+import { usdReferenceQuote, usdReferenceStatus, USD_REFERENCE_APPS } from "./official-usd-reference.mjs";
 /**
  * Official subscription regional prices (SQLite).
  * GPT-first; Worker writes, Next reads.
@@ -269,6 +271,8 @@ function ensureOfficialPriceColumns(db) {
     db.prepare(`PRAGMA table_info(official_prices)`).all().map((c) => c.name),
   );
   if (!cols.has("last_attempt_at")) db.exec(`ALTER TABLE official_prices ADD COLUMN last_attempt_at TEXT`);
+  if (!cols.has("price_basis")) db.exec(`ALTER TABLE official_prices ADD COLUMN price_basis TEXT`);
+  if (!cols.has("source_offer_id")) db.exec(`ALTER TABLE official_prices ADD COLUMN source_offer_id TEXT`);
   if (!cols.has("list_price_value")) {
     db.exec(`ALTER TABLE official_prices ADD COLUMN list_price_value REAL`);
   }
@@ -338,7 +342,7 @@ function loadJson(name) {
  */
 export function convertToCny(value, currencyCode, rates) {
   const cnyPerUsd = rates.CNY;
-  if (!Number.isFinite(cnyPerUsd)) return null;
+  if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(cnyPerUsd) || cnyPerUsd <= 0) return null;
   if (currencyCode === "CNY") return round2(value);
   if (currencyCode === "USD") return round2(value * cnyPerUsd);
   const perUsd = rates[currencyCode];
@@ -348,7 +352,7 @@ export function convertToCny(value, currencyCode, rates) {
 
 export function rateToCny(currencyCode, rates) {
   const cnyPerUsd = rates.CNY;
-  if (!Number.isFinite(cnyPerUsd)) return null;
+  if (!Number.isFinite(cnyPerUsd) || cnyPerUsd <= 0) return null;
   if (currencyCode === "CNY") return 1;
   if (currencyCode === "USD") return cnyPerUsd;
   const perUsd = rates[currencyCode];
@@ -520,7 +524,12 @@ export function migrateOfficialPrices(db, opts = {}) {
     }
   }
 
+  const currencyRepairs = repairIosPriceCurrencies(db);
+  const referenceRepairs = repairUsdReferencePrices(db);
+  if (currencyRepairs) console.log(`[official:migrate] repaired ${currencyRepairs} iOS currency mismatches`);
   const stats = {
+    currencyRepairs,
+    referenceRepairs,
     apps: apps.length,
     plans: plans.length,
     regions: regions.length,
@@ -590,6 +599,8 @@ function listRegionPricesForPlan(db, appSlug, planSlug) {
       pr.tax_percent,
       pr.updated_at,
       pr.last_success_at,
+      pr.price_basis,
+      pr.source_offer_id,
       r.country_code,
       r.country_label,
       r.currency_code AS region_currency,
@@ -603,14 +614,12 @@ function listRegionPricesForPlan(db, appSlug, planSlug) {
       AND pr.status IN ('available', 'estimated', 'stale')
       AND pr.cny_price IS NOT NULL
     ORDER BY
-      CASE pr.status
-        WHEN 'available' THEN 0
-        WHEN 'estimated' THEN 1
-        ELSE 2
-      END,
+      CASE WHEN pr.status IN ('available', 'stale') THEN 0 ELSE 1 END,
       pr.cny_price ASC,
+      CASE pr.status WHEN 'available' THEN 0 ELSE 1 END,
       (pr.price_value * pr.fx_rate_to_cny) ASC,
       CASE pr.channel WHEN 'web_direct' THEN 0 ELSE 1 END,
+      CASE r.country_code WHEN 'US' THEN 0 ELSE 1 END,
       r.priority ASC
   `,
     )
@@ -629,6 +638,8 @@ function listRegionPricesForPlan(db, appSlug, planSlug) {
     sourceUrl: row.source_url,
     status: row.status,
     channel: row.channel,
+    priceBasis: row.price_basis || "observed",
+    sourceOfferId: row.source_offer_id || null,
     listPriceValue: row.list_price_value ?? null,
     taxMode: row.tax_mode ?? null,
     taxPercent: row.tax_percent ?? null,
@@ -651,12 +662,13 @@ export function seedAppPrices(db, appSlug, opts = {}) {
   if (!existsSync(seedPath)) return 0;
 
   const seed = loadJson(seedFile);
-  const rates = seed.rates || getFx(db)?.rates || {};
-  const fxDate = seed.fxDate || now.slice(0, 10);
+  const existingFx = getFx(db);
+  const rates = existingFx?.rates || seed.rates || {};
+  const fxDate = existingFx?.date || seed.fxDate || now.slice(0, 10);
   const channel = seed.channel || "ios_store";
   const seedSourceUrl = seed.sourceUrl || null;
 
-  if (Object.keys(rates).length) {
+  if (!existingFx && Object.keys(rates).length) {
     upsertFx(db, {
       date: fxDate,
       rates,
@@ -722,7 +734,9 @@ export function seedAppPrices(db, appSlug, opts = {}) {
       const planId = planBySlug.get(row.planSlug);
       const region = regionByCode.get(row.countryCode);
       if (!planId || !region) continue;
-      const currency = region.currency_code;
+      const currency = channel === "ios_store"
+        ? explicitPriceCurrency(row.priceText) || row.currencyCode || region.currency_code
+        : row.currencyCode || region.currency_code;
       const cny = convertToCny(row.priceValue, currency, rates);
       const fxRate = rateToCny(currency, rates);
       if (cny == null || fxRate == null) continue;
@@ -806,6 +820,65 @@ export function getFx(db) {
     sourceUrl: row.source_url,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * Repair legacy iOS rows only when the stored Apple text proves another ISO currency.
+ * Preserve status/amount/price-confirmation timestamps. Never rewrite web-direct currency.
+ * Persistent DBs get a consistent SQLite backup before the first change.
+ */
+export function repairIosPriceCurrencies(db) {
+  const fx = getFx(db);
+  if (!fx) return 0;
+  const changes = db.prepare("SELECT id, price_text, price_value, currency_code FROM official_prices WHERE channel='ios_store'")
+    .all().flatMap((row) => {
+      const currency = explicitPriceCurrency(row.price_text);
+      if (!currency || currency === row.currency_code) return [];
+      const cny = convertToCny(row.price_value, currency, fx.rates);
+      const fxRate = rateToCny(currency, fx.rates);
+      return cny == null || fxRate == null ? [] : [{ id: row.id, currency, cny, fxRate, fxDate: fx.date }];
+    });
+  if (!changes.length) return 0;
+  if (db.name && db.name !== ":memory:") {
+    const backup = `${db.name}.before-ios-currency-${Date.now()}.sqlite`;
+    db.prepare("VACUUM INTO ?").run(backup);
+    console.log(`[official:migrate] currency repair backup: ${backup}`);
+  }
+  const update = db.prepare(`UPDATE official_prices SET currency_code=@currency,
+    cny_price=@cny, fx_rate_to_cny=@fxRate, fx_date=@fxDate WHERE id=@id`);
+  db.transaction(() => { for (const change of changes) update.run(change); })();
+  return changes.length;
+}
+
+/** Undo fabricated local-currency prices generated from a global USD list. */
+export function repairUsdReferencePrices(db) {
+  const fx = getFx(db);
+  if (!fx) return 0;
+  const rows = db.prepare(`SELECT q.*, p.us_list_usd, p.billing_period, a.slug AS app_slug FROM official_prices q
+    JOIN official_plans p ON p.id=q.plan_id JOIN official_apps a ON a.id=p.app_id
+    WHERE q.channel='web_direct' AND COALESCE(q.price_basis,'') != 'observed'`).all();
+  const changes = rows.flatMap((row) => {
+    if (!USD_REFERENCE_APPS.includes(row.app_slug)) return [];
+    const quote = usdReferenceQuote(row.us_list_usd, fx);
+    if (!quote) return [];
+    const status = usdReferenceStatus(row.app_slug, row.billing_period);
+    if (row.price_basis === quote.priceBasis && row.currency_code === "USD" && row.price_value === quote.priceValue &&
+      row.list_price_value === quote.listPriceValue && row.tax_mode === "exclusive" && row.status === status) return [];
+    return [{ ...quote, status, id: row.id }];
+  });
+  if (!changes.length) return 0;
+  if (db.name && db.name !== ":memory:") {
+    const backup = `${db.name}.before-usd-reference-${Date.now()}.sqlite`;
+    db.prepare("VACUUM INTO ?").run(backup);
+    console.log(`[official:migrate] USD reference repair backup: ${backup}`);
+  }
+  const update = db.prepare(`UPDATE official_prices SET price_text=@priceText, price_value=@priceValue,
+    list_price_value=@listPriceValue, currency_code=@currencyCode, cny_price=@cnyPrice,
+    fx_rate_to_cny=@fxRateToCny, fx_date=@fxDate, tax_mode=@taxMode, tax_percent=NULL,
+    price_basis=@priceBasis, status=@status WHERE id=@id`);
+  db.transaction(() => { for (const change of changes) update.run(change); })();
+  console.log(`[official:migrate] repaired ${changes.length} USD-reference rows (no independent local price claimed)`);
+  return changes.length;
 }
 
 /**
@@ -941,11 +1014,11 @@ export function upsertPrice(db, row) {
     INSERT INTO official_prices (
       plan_id, region_id, channel, price_text, price_value, currency_code,
       cny_price, fx_rate_to_cny, fx_date, source_url, status, last_success_at, updated_at,
-      list_price_value, tax_mode, tax_percent
+      list_price_value, tax_mode, tax_percent, price_basis, source_offer_id
     ) VALUES (
       @planId, @regionId, @channel, @priceText, @priceValue, @currencyCode,
       @cnyPrice, @fxRateToCny, @fxDate, @sourceUrl, @status, @lastSuccessAt, @now,
-      @listPriceValue, @taxMode, @taxPercent
+      @listPriceValue, @taxMode, @taxPercent, @priceBasis, @sourceOfferId
     )
     ON CONFLICT(plan_id, region_id, channel) DO UPDATE SET
       price_text = excluded.price_text,
@@ -958,6 +1031,8 @@ export function upsertPrice(db, row) {
       list_price_value = excluded.list_price_value,
       tax_mode = excluded.tax_mode,
       tax_percent = excluded.tax_percent,
+      price_basis = excluded.price_basis,
+      source_offer_id = excluded.source_offer_id,
       status = excluded.status,
       last_success_at = CASE
         WHEN excluded.status IN ('available', 'estimated') THEN excluded.last_success_at
@@ -976,7 +1051,9 @@ export function upsertPrice(db, row) {
     fxDate: row.fxDate,
     sourceUrl: row.sourceUrl || null,
     status: row.status || "available",
-    lastSuccessAt: row.lastSuccessAt || now,
+    lastSuccessAt: Object.hasOwn(row, "lastSuccessAt") ? row.lastSuccessAt : now,
+    priceBasis: row.priceBasis || "observed",
+    sourceOfferId: row.sourceOfferId || null,
     listPriceValue: row.listPriceValue ?? null,
     taxMode: row.taxMode ?? null,
     taxPercent: row.taxPercent ?? null,
@@ -1055,14 +1132,12 @@ export function listPlanSummaries(db, opts = {}) {
       AND pr.status IN ('available', 'estimated', 'stale')
       AND pr.cny_price IS NOT NULL
     ORDER BY
-      CASE pr.status
-        WHEN 'available' THEN 0
-        WHEN 'estimated' THEN 1
-        ELSE 2
-      END,
+      CASE WHEN pr.status IN ('available', 'stale') THEN 0 ELSE 1 END,
       pr.cny_price ASC,
+      CASE pr.status WHEN 'available' THEN 0 ELSE 1 END,
       (pr.price_value * pr.fx_rate_to_cny) ASC,
       CASE pr.channel WHEN 'web_direct' THEN 0 ELSE 1 END,
+      CASE r.country_code WHEN 'US' THEN 0 ELSE 1 END,
       r.priority ASC
   `);
 
@@ -1071,19 +1146,15 @@ export function listPlanSummaries(db, opts = {}) {
   for (const plan of plans) {
     const prices = priceStmt.all(plan.plan_id);
     if (!prices.length) continue;
-    // 列表最低价只认实测 available；estimated 不抢最低价位
-    const verified = prices.filter((p) => p.status === "available");
-    const estimated = prices.filter((p) => p.status === "estimated");
-    const pool = verified.length
-      ? verified
-      : estimated.length
-        ? estimated
-        : prices;
+    // 实采当前价与历史价共同参与最低价比较（均使用最新汇率）；估算价仅作兜底。
+    const observed = prices.filter((p) => p.status === "available" || p.status === "stale");
+    const pool = observed.length ? observed : prices;
     // 跨渠道取最低：官网直购 + iOS 等所有渠道一起比，不能只看单一渠道
     const lowest = pool[0];
     // 美区基准优先取官网标价（官方 list price），没有再退到其它渠道
     const usRows = [...pool, ...prices].filter((p) => p.country_code === "US");
-    const us = usRows.find((p) => p.channel === "web_direct") || usRows[0] || null;
+    const verifiedUs = usRows.filter((p) => p.status === "available" || p.status === "stale");
+    const us = verifiedUs.find((p) => p.channel === "web_direct") || verifiedUs[0] || usRows[0] || null;
     const usLiveUsd =
       us &&
       String(us.currency_code || us.region_currency || "").toUpperCase() === "USD" &&
@@ -1093,17 +1164,17 @@ export function listPlanSummaries(db, opts = {}) {
         : null;
     /** @type {Record<string, number>} */
     const channelCounts = {};
-    for (const p of [...verified, ...estimated]) {
+    for (const p of prices) {
       channelCounts[p.channel] = (channelCounts[p.channel] || 0) + 1;
     }
-    const usCny =
+    const usCny = us?.status === "estimated" ? null :
       us?.cny_price ??
       (plan.us_list_usd != null
         ? convertToCny(plan.us_list_usd, "USD", getFx(db)?.rates || { CNY: 6.7 })
         : null);
 
-    const savePct =
-      usCny && lowest.cny_price < usCny
+    const savePct = usCny == null || usCny <= 0 ? null :
+      lowest.cny_price < usCny
         ? Math.round(((usCny - lowest.cny_price) / usCny) * 10000) / 100
         : lowest.country_code === "US"
           ? 0
@@ -1120,10 +1191,9 @@ export function listPlanSummaries(db, opts = {}) {
       appName: plan.app_name,
       provider: plan.provider,
       catalogPlatform: plan.catalog_platform,
-      // 地区数按国家去重；报价数含各渠道 available 行（同一国家多渠道各算一条）
-      sampleCount: new Set([...verified, ...estimated].map((p) => p.country_code)).size ||
-        new Set(pool.map((p) => p.country_code)).size,
-      quoteCount: verified.length + estimated.length || pool.length,
+      // 所有可展示报价均计入覆盖数，包括历史价（同一国家多渠道各算一条报价）。
+      sampleCount: new Set(prices.map((p) => p.country_code)).size,
+      quoteCount: prices.length,
       channelCounts,
       usListUsd: plan.us_list_usd,
       regularUsd: plan.regular_usd ?? null,
@@ -1143,6 +1213,8 @@ export function listPlanSummaries(db, opts = {}) {
         sourceUrl: lowest.source_url,
         status: lowest.status,
         channel: lowest.channel,
+        priceBasis: lowest.price_basis || "observed",
+        sourceOfferId: lowest.source_offer_id || null,
         listPriceValue: lowest.list_price_value ?? null,
         taxMode: lowest.tax_mode ?? null,
         taxPercent: lowest.tax_percent ?? null,

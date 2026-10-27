@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChartColumn, CircleDollarSign } from "lucide-react";
+import { ChartColumn, CircleDollarSign, Waypoints } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,12 @@ const NAV = [
     href: "/official",
     icon: CircleDollarSign,
   },
+  {
+    id: "transit",
+    label: "中转站点",
+    href: "/api-transit",
+    icon: Waypoints,
+  },
 ] as const;
 
 type NavId = (typeof NAV)[number]["id"];
@@ -26,6 +32,7 @@ type NavId = (typeof NAV)[number]["id"];
 const NAV_NONE = "none" as const;
 
 function resolveNavValue(pathname: string): NavId | typeof NAV_NONE {
+  if (pathname.startsWith("/api-transit")) return "transit";
   if (pathname.startsWith("/official")) return "official";
   if (
     pathname === "/" ||
@@ -71,19 +78,21 @@ export function SitePrimaryNav({ className }: { className?: string }) {
               key={item.id}
               value={item.id}
               className={cn(
-                "h-12 gap-1.5 rounded-none px-3",
+                "h-12 gap-1.5 rounded-none border-0 px-2 sm:px-3",
                 "text-[13px] leading-none tracking-tight",
                 "font-medium text-muted-foreground",
                 "hover:text-foreground",
+                "focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-accent/60",
                 "data-active:bg-transparent data-active:font-semibold data-active:text-foreground data-active:shadow-none",
                 "dark:data-active:bg-transparent dark:data-active:text-foreground",
-                "after:bottom-0 after:h-[2px] after:rounded-none after:bg-foreground after:opacity-0",
+                "group-data-horizontal/tabs:after:inset-x-3 group-data-horizontal/tabs:after:bottom-0 group-data-horizontal/tabs:after:h-0.5",
+                "after:rounded-full after:bg-foreground after:opacity-0",
                 "group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
                 "[&_svg]:size-3.5 [&_svg]:opacity-70",
                 "data-active:[&_svg]:opacity-100",
               )}
             >
-              <Icon aria-hidden strokeWidth={2} />
+              <Icon aria-hidden strokeWidth={2} className="hidden sm:block" />
               {item.label}
             </TabsTrigger>
           );

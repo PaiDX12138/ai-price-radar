@@ -1,11 +1,7 @@
 import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
 import Link from "next/link";
-import {
-  Minus,
-  Tags,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { Tags } from "lucide-react";
+import { VsUsTrend } from "@/components/official/vs-us-trend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CardMeta,
@@ -128,6 +124,12 @@ function BillingBlock({
             {label}
           </span>
           {plan ? <TaxBand plan={plan} /> : null}
+          {plan?.lowest.priceBasis === "usd_reference" ? <ToneChip tone="muted" className="h-4 text-[10px]">参考</ToneChip> : null}
+          {plan?.lowest.status === "stale" ? (
+            <ToneChip tone="rose" className="h-4 shrink-0 text-[10px]" title="历史实采标价按最新汇率折算，尚未重新确认原币价格">
+              历史价
+            </ToneChip>
+          ) : null}
         </span>
         {plan ? <TrendChip plan={plan} /> : null}
       </div>
@@ -182,24 +184,7 @@ function TaxBand({ plan }: { plan: OfficialPlanSummary }) {
 /** Lowest regional price vs US list: stock-style arrow + percent. */
 function TrendChip({ plan }: { plan: OfficialPlanSummary }) {
   if (plan.usCny == null || !Number.isFinite(plan.usCny) || plan.usCny <= 0) return null;
-  const pct = ((plan.lowest.cnyPrice - plan.usCny) / plan.usCny) * 100;
-  const Icon = pct < 0 ? TrendingDown : pct > 0 ? TrendingUp : Minus;
-  return (
-    <span
-      title="相对美区"
-      className={cn(
-        "inline-flex items-center gap-0.5 text-[10px] font-semibold tabular-nums",
-        pct < 0
-          ? "text-emerald-600 dark:text-emerald-400"
-          : pct > 0
-            ? "text-rose-600 dark:text-rose-400"
-            : "text-muted-foreground",
-      )}
-    >
-      <Icon className="size-3" strokeWidth={2.5} aria-hidden />
-      {Math.abs(pct).toFixed(2)}%
-    </span>
-  );
+  return <VsUsTrend cnyPrice={plan.lowest.cnyPrice} usCny={plan.usCny} />;
 }
 
 /**

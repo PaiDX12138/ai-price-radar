@@ -9,10 +9,10 @@ type VsUsTrendProps = {
 
 /** 相对美区折算价的涨跌百分比（绿跌红涨）。 */
 export function VsUsTrend({ cnyPrice, usCny = null, className }: VsUsTrendProps) {
-  if (usCny == null || !Number.isFinite(usCny) || usCny <= 0) {
+  if (usCny == null || !Number.isFinite(usCny) || usCny <= 0 || !Number.isFinite(cnyPrice) || cnyPrice <= 0) {
     return <span className={cn("block h-[12px]", className)} aria-hidden />;
   }
-  const pct = ((cnyPrice - usCny) / usCny) * 100;
+  const pct = Math.round(((cnyPrice - usCny) / usCny) * 10000) / 100;
   const Icon = pct < 0 ? TrendingDown : pct > 0 ? TrendingUp : Minus;
   return (
     <span

@@ -26,6 +26,7 @@
 .cursor/
 
 # local scratch / one-off dumps (never commit)
+/work/
 _*/
 _*.js
 _*.mjs

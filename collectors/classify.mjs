@@ -591,7 +591,7 @@ function normalizeTitle(title) {
       /马斯克(?=\s*(?:\d+(?:\.\d+)?\s*(?:美金|美元|刀|\$)\s*)?(?:plus|会员|订阅|充值|代充|cdk|卡密))/g,
       "grok",
     )
-    .replace(/接[🐎🐴🦆鸭马]/g, "接码")
+    .replace(/(接|收|来)\s*[🐎🐴🦆鸭马]/g, "$1码")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -763,6 +763,33 @@ function isChatGptMirrorTransit(value) {
 }
 
 /* ---------- verification / SMS ---------- */
+
+/** Ignore account status, bundled links and negative promises when identifying what is sold. */
+function standalonePhoneDeliveryText(value) {
+  return value
+    .replace(/(?:已完成|已经|已|尚未|未|没|需要\s*自己|需要\s*自行|自己|自行|无需|无须|不需要|需)\s*(?:手机\s*)?接码/g, " ")
+    .replace(/(?:不质保|不保|不管|不支持|不含|无需|无须)\s*(?:(?:codex|chatgpt|openai|gpt|plus)\s*)?(?:短信\s*)?接码(?:服务)?/g, " ")
+    .replace(/(?:包含|包括|附赠|自带|带|附)\s*(?:电话\s*)?(?:长效\s*|长期\s*)?接码(?:地址|链接)/g, " ");
+}
+
+/** Concrete account delivery evidence. Plus/Pro/channel/validity alone is not an account. */
+function hasConcretePhoneAccountBundle(value) {
+  const accountText = value
+    // "最多绑定三个账号" describes phone capacity, not delivery of three accounts.
+    .replace(/(?:最多(?:能)?\s*)?(?:可|能)?\s*(?:绑定|接|接收)\s*[\d一二两三四五六七八九十]+(?:\s*[~～至到-]\s*[\d一二两三四五六七八九十]+)?\s*(?:个)?\s*(?:账号|账户|号)/g, " ")
+    .replace(/(?:可接|能接)\s*[\d一二两三四五六七八九十]+\s*次\s*(?:同一|不同)?\s*(?:账号|账户)/g, " ")
+    .replace(/\b(?:rt|json)\s*渠道/g, " ")
+    .replace(/(?:不是|非|不含|不提供|不卖)\s*(?:成品(?:账号|号)?|账号|账户|账密)/g, " ");
+  return /成品|账号|账户|账密|张密|密码|首登|直登|网页号|日抛|车位|席位|代充|充值|(?:带|发|交付)\s*(?:rt|json)|(?:rt|json)\s*(?:格式|交付|发货)/.test(accountText);
+}
+
+/** Standalone phone rental / SMS delivery: duration and target plan must not imply subscription. */
+function hasStandalonePhoneDeliverySignal(value) {
+  const delivery = standalonePhoneDeliveryText(value);
+  if (hasConcretePhoneAccountBundle(value)) return false;
+  return /(?:长效|长期|短效|短信|实卡|实体卡|独立|自助|无限)\s*接码|\d+\s*天\s*(?:无限\s*)?接码|接码\s*(?:服务|手机号|号码)|质保不来码|(?:接码|收码).{0,24}(?:绑定|可接)\s*[\d一二两三四五六七八九十]/.test(delivery) ||
+    (matches(delivery, ["实卡", "实体卡", "手机号", "电话号码"]) && matches(delivery, ["接码", "收码"]));
+}
 
 function isBundledVerificationAccount(value) {
   if (isExplicitVerificationServiceDelivery(value)) return false;
@@ -979,6 +1006,7 @@ function isGooglePhoneVerification(value) {
 /** OpenAI / ChatGPT / Codex / Plus 接码（对照参考站 openai-phone-verification） */
 function isOpenaiPhoneVerification(value) {
   if (isPaypalPhoneVerification(value) || isGooglePhoneVerification(value)) return false;
+  if (matches(value, ["cursor", "claude", "kiro", "grok"]) && !matches(value, ["openai", "chatgpt", "codex", "gpt"])) return false;
   if (isCodexPhoneVerification(value)) return true;
   if (
     matches(value, [
@@ -1002,9 +1030,8 @@ function isOpenaiPhoneVerification(value) {
     return true;
   }
   return (
-    matches(value, ["openai", "chatgpt", "codex", "gpt plus", "gpt"]) &&
-    matches(value, ["接码", "接马", "验证码", "收码", "来码", "手机号", "实卡"]) &&
-    !matches(value, ["成品号", "成品账号", "质保首登", "独享账号"])
+    (matches(value, ["openai", "chatgpt", "codex", "gpt"]) || /(^|[^a-z])plus([^a-z]|$)/.test(value)) &&
+    matches(value, ["接码", "接马", "验证码", "收码", "来码", "手机号", "实卡"])
   );
 }
 
@@ -1028,6 +1055,13 @@ function classifyVerificationService(value) {
 function isStandaloneVerificationService(value) {
   // 对齐 参考站 isStandaloneVerificationService：禁止「实卡渠道 + 未接码」误伤 Plus 成品
   if (isIdentityVerificationService(value)) return true;
+  if (hasStandalonePhoneDeliverySignal(value)) return true;
+  // Do not let "已/未接码、支持收码、不保接码" override actual account delivery.
+  const delivery = standalonePhoneDeliveryText(value);
+  if (hasConcretePhoneAccountBundle(value) && !/单次接码|一次性接码|一次性验证/.test(delivery)) {
+    return false;
+  }
+  value = delivery;
   if (matches(value, ["接码自助", "接码 自助", "接码自助卡密", "手机接码自助", "手机接码 自助"])) {
     return true;
   }
@@ -4346,6 +4380,11 @@ export function classifyTitle(title, opts = {}) {
       return { productSlug: "chatgpt-codex-service", warranty };
     }
     return { productSlug: null, warranty };
+  }
+
+  // 明确卖手机号/SMS时，"Plus / 非成品号"只是服务对象/说明，不能先判成资格号。
+  if (hasStandalonePhoneDeliverySignal(text)) {
+    return { productSlug: classifyVerificationService(text), warranty };
   }
 
   // Plus 半价资格 / 非成品 Plus → 普号（必须先于 Plus 订阅匹配）

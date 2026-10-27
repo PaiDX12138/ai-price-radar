@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  officialComparisonPool,
   sortByDisplayCny,
   toDisplayRegionPrice,
 } from "@/lib/official/exclusive-price";
@@ -46,6 +47,8 @@ function rowToLowest(row: OfficialRegionPrice): OfficialLowestRow {
     sourceUrl: row.sourceUrl,
     status: row.status,
     channel: row.channel,
+    priceBasis: row.priceBasis,
+    sourceOfferId: row.sourceOfferId,
     listPriceValue: row.listPriceValue,
     taxMode: row.taxMode ?? null,
     taxPercent: row.taxPercent ?? null,
@@ -57,16 +60,14 @@ function rowToLowest(row: OfficialRegionPrice): OfficialLowestRow {
 /** 套餐汇总：最低价 / 美区价按不含税展示口径。 */
 function withDisplaySummary(plan: OfficialPlanSummary): OfficialPlanSummary {
   const rows = regionRowsForPlan(plan.id);
-  const verified = rows.filter((r) => r.status === "available");
-  const pool = verified.length ? verified : rows;
+  const pool = officialComparisonPool(rows);
   const lowestRow = pool[0] ?? toDisplayRegionPrice(lowestToRow(plan.lowest));
-  const us =
-    pool.find((r) => r.countryCode === "US" && r.channel === "web_direct") ??
-    pool.find((r) => r.countryCode === "US") ??
-    null;
-  const usCny = us?.cnyPrice ?? plan.usCny;
-  const savePct =
-    usCny != null && lowestRow.cnyPrice < usCny
+  const usRows = rows.filter((r) => r.countryCode === "US");
+  const verifiedUs = usRows.filter((r) => r.status === "available" || r.status === "stale");
+  const us = verifiedUs.find((r) => r.channel === "web_direct") ?? verifiedUs[0] ?? usRows[0] ?? null;
+  const usCny = us?.status === "estimated" ? null : us?.cnyPrice ?? plan.usCny;
+  const savePct = usCny == null || usCny <= 0 ? null :
+    lowestRow.cnyPrice < usCny
       ? Math.round(((usCny - lowestRow.cnyPrice) / usCny) * 10000) / 100
       : lowestRow.countryCode === "US"
         ? 0
@@ -82,6 +83,15 @@ function withDisplaySummary(plan: OfficialPlanSummary): OfficialPlanSummary {
 
   return {
     ...plan,
+    // 直接从完整地区行重算，旧快照的汇总也不能漏掉历史报价。
+    sampleCount: rows.length ? new Set(rows.map((r) => r.countryCode)).size : plan.sampleCount,
+    quoteCount: rows.length || plan.quoteCount,
+    channelCounts: rows.length
+      ? rows.reduce<Record<string, number>>((counts, row) => {
+          counts[row.channel] = (counts[row.channel] ?? 0) + 1;
+          return counts;
+        }, {})
+      : plan.channelCounts,
     usCny,
     usLiveUsd,
     usPriceText: us?.priceText ?? plan.usPriceText,
@@ -215,7 +225,7 @@ export function listOfficialFamilyPlans(id: string): OfficialPlanSummary[] {
 }
 
 /**
- * 某套餐全部地区报价（折算人民币从低到高，当前价优先）。
+ * 某套餐全部地区报价（实采当前价和历史价共同按人民币升序，估算价置后）。
  * 同一国家官网 + iOS 各一条；`channel` 可只看某一渠道。
  */
 export function listOfficialRegionPrices(

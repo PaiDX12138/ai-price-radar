@@ -28,10 +28,12 @@ function typeLabel(value: string): string {
 type CatalogToolbarProps = {
   deliveryTypes: string[];
   className?: string;
+  searchPlaceholder?: string;
+  searchLabel?: string;
 };
 
 /** Type select + narrow search; URL-driven (type, q). Resets page on change. */
-export function CatalogToolbar({ deliveryTypes, className }: CatalogToolbarProps) {
+export function CatalogToolbar({ deliveryTypes, className, searchPlaceholder = "搜索商品 / 类型 / 标题", searchLabel = "搜索商品" }: CatalogToolbarProps) {
   const router = useRouter();
   const pathname = usePathname() || "/";
   const searchParams = useSearchParams();
@@ -107,8 +109,8 @@ export function CatalogToolbar({ deliveryTypes, className }: CatalogToolbarProps
           onChange={query.onChange}
           onCompositionStart={query.onCompositionStart}
           onCompositionEnd={query.onCompositionEnd}
-          placeholder="搜索商品 / 类型 / 标题"
-          aria-label="搜索商品"
+          placeholder={searchPlaceholder}
+          aria-label={searchLabel}
           autoComplete="off"
           spellCheck={false}
           className="h-7 w-full bg-background/40 pr-2 pl-7 text-xs"

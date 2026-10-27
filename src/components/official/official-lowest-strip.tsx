@@ -1,8 +1,9 @@
 import { TextBand } from "@/components/catalog/text-band";
+import { ToneChip } from "@/components/catalog/tone-chip";
 import { CountryFlag } from "@/components/official/country-flag";
 import { PayChannel } from "@/components/official/pay-channel";
 import { VsUsTrend } from "@/components/official/vs-us-trend";
-import { formatCny } from "@/lib/catalog/format";
+import { formatCny, formatCnyRate } from "@/lib/catalog/format";
 import { displayCountryLabel } from "@/lib/official/country-display";
 import {
   taxBandLabel,
@@ -38,7 +39,7 @@ export function OfficialLowestStrip({
         "ml-auto inline-flex h-[3.75rem] w-max max-w-none shrink-0 items-stretch rounded-md border border-sky-200/90 bg-sky-50 dark:border-sky-400/25 dark:bg-sky-400/10",
         className,
       )}
-      aria-label="当前最低地区价"
+      aria-label="最低地区参考价"
     >
       {/* 左：国旗+地区名 / 渠道+税标 */}
       <div className="flex shrink-0 flex-col justify-center gap-1 px-2.5 py-1.5">
@@ -58,6 +59,12 @@ export function OfficialLowestStrip({
             className="text-[11px] text-sky-800/80 [&_span]:text-sky-800/80 dark:text-sky-300/80 dark:[&_span]:text-sky-300/80"
           />
           {taxKind ? <TaxBandLabel kind={taxKind} row={row} /> : null}
+          {row.priceBasis === "usd_reference" ? <ToneChip tone="muted" className="h-4 text-[10px]">USD 参考</ToneChip> : null}
+          {row.status === "stale" ? (
+            <ToneChip tone="rose" className="h-4 text-[10px]" title="历史实采标价按最新汇率折算，尚未重新确认原币价格">
+              历史价
+            </ToneChip>
+          ) : null}
         </div>
       </div>
 
@@ -68,7 +75,7 @@ export function OfficialLowestStrip({
         </p>
         <p className="whitespace-nowrap font-mono text-[11px] font-medium leading-none tabular-nums tracking-wide text-sky-700/85 dark:text-sky-300/80">
           {row.fxRateToCny != null
-            ? `1 ${row.currencyCode} ≈ ${formatCny(row.fxRateToCny)}`
+            ? `1 ${row.currencyCode} ≈ ${formatCnyRate(row.fxRateToCny)}`
             : row.currencyCode}
         </p>
       </div>

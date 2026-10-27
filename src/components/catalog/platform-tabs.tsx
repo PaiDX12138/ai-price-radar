@@ -1,29 +1,30 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import type { PlatformTabId } from "@/lib/catalog";
 import { PLATFORM_LABEL, PlatformLogo } from "@/components/catalog/platform-logo";
 import { cn } from "@/lib/utils";
 
-type PlatformTabsProps = {
-  tabs: Array<{ id: PlatformTabId; label: string }>;
-  active: PlatformTabId;
+type PlatformTabsProps<T extends string = PlatformTabId> = {
+  tabs: Array<{ id: T; label: string; icon?: ReactNode }>;
+  active: T;
   basePath?: string;
   className?: string;
 };
 
 /** Platform switch resets to page 1 (no page= in href). */
-function tabHref(basePath: string, id: PlatformTabId): string {
+function tabHref(basePath: string, id: string): string {
   const pathOnly = basePath.split("?")[0] || "/";
   if (id === "all") return pathOnly;
   return `${pathOnly}?platform=${id}`;
 }
 
 /** URL-driven platform filter chips (not page pagination). */
-export function PlatformTabs({
+export function PlatformTabs<T extends string = PlatformTabId>({
   tabs,
   active,
   basePath = "/channels",
   className,
-}: PlatformTabsProps) {
+}: PlatformTabsProps<T>) {
   return (
     <div
       role="tablist"
@@ -50,8 +51,8 @@ export function PlatformTabs({
                 : "hover:bg-background/50 hover:text-foreground"
             )}
           >
-            <PlatformLogo platform={tab.id} size={14} />
-            <span>{PLATFORM_LABEL[tab.id] ?? tab.label}</span>
+            {tab.icon ?? <PlatformLogo platform={tab.id as PlatformTabId} size={14} />}
+            <span>{tab.label || PLATFORM_LABEL[tab.id as PlatformTabId]}</span>
           </Link>
         );
       })}

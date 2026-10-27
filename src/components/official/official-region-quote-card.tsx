@@ -35,8 +35,8 @@ export type OfficialRegionQuoteCardProps = {
 function StatusChip({ status }: { status: string }) {
   if (status === "estimated") {
     return (
-      <ToneChip tone="amber" title="公开页无 SKU，按同区 App Store 价推测">
-        推测
+      <ToneChip tone="amber" title="仅有参考基准，未确认该地区/周期的实际结账报价">
+        参考
       </ToneChip>
     );
   }
@@ -138,6 +138,11 @@ export function OfficialRegionQuoteCard({
                   </ToneChip>
                 ) : null}
                 <StatusChip status={row.status} />
+                {row.priceBasis === "usd_reference" ? (
+                  <ToneChip tone="muted" title="官网仅发布 USD 基准，非该地区独立结账报价；未按地区法币伪造价格">
+                    USD 参考
+                  </ToneChip>
+                ) : null}
               </div>
             </div>
           </div>

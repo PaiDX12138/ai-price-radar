@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** 半高度色带：标题 / 关键文案下半截映衬（列表卡、详情卡共用）。 */
-export type TextBandTone = "violet" | "emerald" | "amber" | "sky" | "ink" | "rose";
+export type TextBandTone = "muted" | "violet" | "emerald" | "amber" | "sky" | "ink" | "rose";
 
 const BAND: Record<TextBandTone, string> = {
+  muted: "bg-neutral-200/80 dark:bg-neutral-400/25",
   violet: "bg-violet-200/75 dark:bg-violet-400/25",
   emerald: "bg-emerald-200/80 dark:bg-emerald-400/30",
   amber: "bg-amber-200/80 dark:bg-amber-400/30",

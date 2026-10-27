@@ -15,6 +15,7 @@ import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnvLocal } from "./load-env-local.mjs";
+import { hasOppositeBillingEvidence, pickAppStoreItem } from "../collectors/official-appstore-match.mjs";
 import {
   fetchAppStoreOffers,
   mapWithConcurrency,
@@ -27,23 +28,18 @@ import {
 } from "../collectors/official-chatgpt-web.mjs";
 import {
   CLAUDE_WEB_SOURCE_URL,
-  claudeUsdToLocal,
-  formatClaudeWebPrice,
   isClaudeWebCountry,
 } from "../collectors/official-claude-web.mjs";
 import {
   CURSOR_WEB_SOURCE_URL,
   GROK_WEB_SOURCE_URL,
   X_PREMIUM_WEB_SOURCE_URL,
-  formatCursorWebPrice,
 } from "../collectors/official-cursor-web.mjs";
 import {
   KIRO_WEB_SOURCE_URL,
-  formatKiroWebPrice,
   isKiroWebCountry,
-  kiroUsdToLocal,
 } from "../collectors/official-kiro-web.mjs";
-import { usdListToLocal } from "../collectors/official-usd-fx-web.mjs";
+import { usdReferenceQuote, usdReferenceStatus } from "../collectors/official-usd-reference.mjs";
 import {
   closeOfficialDb,
   convertToCny,
@@ -216,55 +212,6 @@ function compilePattern(raw) {
  * @param {Array<{ name: string, offerName: string, priceValue: number, priceText: string }>} items
  * @param {{ pattern: RegExp, us_list_usd?: number | null, billing_period?: string }} plan
  */
-function pickAppStoreItem(items, plan) {
-  const byOffer = items.filter((it) => plan.pattern.test(it.offerName));
-  const pickedOffer = pickFromCandidates(byOffer, plan);
-  if (pickedOffer) return pickedOffer;
-
-  const byName = items.filter((it) => plan.pattern.test(it.name));
-  return pickFromCandidates(byName, plan);
-}
-
-/**
- * @param {Array<{ priceValue: number }>} candidates
- * @param {{ us_list_usd?: number | null, billing_period?: string }} plan
- */
-function pickFromCandidates(candidates, plan) {
-  if (!candidates.length) return null;
-  if (candidates.length > 1) return closestByUsList(candidates, plan);
-  const only = candidates[0];
-  return fitsBillingPeriod(only.priceValue, plan) ? only : null;
-}
-
-/**
- * @param {Array<{ priceValue: number }>} items
- * @param {{ us_list_usd?: number | null, billing_period?: string }} plan
- */
-function closestByUsList(items, plan) {
-  const target = Number(plan.us_list_usd);
-  if (!Number.isFinite(target) || target <= 0) return items[0];
-  const ranked = [...items].sort(
-    (a, b) => Math.abs(a.priceValue - target) - Math.abs(b.priceValue - target),
-  );
-  return ranked.find((it) => fitsBillingPeriod(it.priceValue, plan)) ?? null;
-}
-
-/**
- * @param {number} priceValue
- * @param {{ us_list_usd?: number | null, billing_period?: string }} plan
- */
-function fitsBillingPeriod(priceValue, plan) {
-  const target = Number(plan.us_list_usd);
-  if (!Number.isFinite(target) || target <= 0 || !Number.isFinite(priceValue)) return true;
-  const period = String(plan.billing_period || "");
-  // 年付标价通常 ≫ 月付；单名命中时避免把 $30 月付当成 $300 年付
-  if (period === "annual" && priceValue < target * 0.45) return false;
-  if (period === "monthly" && priceValue > target * 4) return false;
-  // 无 billing_period 时：偏离目标超过 55% 则视为不匹配（多候选排序后过滤）
-  if (!period && Math.abs(priceValue - target) / target > 0.55) return false;
-  return true;
-}
-
 /**
  * iOS App Store pass (one request per storefront).
  * @param {import('better-sqlite3').Database} db
@@ -280,6 +227,8 @@ async function collectIos(db, fx, now) {
     `UPDATE official_prices SET status = 'stale', last_attempt_at = ?
      WHERE plan_id = ? AND region_id = ? AND channel = 'ios_store' AND status = 'available'`,
   );
+  const previousPrice = db.prepare("SELECT * FROM official_prices WHERE plan_id=? AND region_id=? AND channel='ios_store'");
+  const quarantine = db.prepare("UPDATE official_prices SET status='invalid',last_attempt_at=? WHERE id=?");
 
   let matched = 0;
   let failedRegions = 0;
@@ -317,7 +266,7 @@ async function collectIos(db, fx, now) {
           for (const plan of plans) deleteRow.run(plan.id, region.id);
           return;
         }
-        if (!page.ok || page.storefront?.cc !== region.country_code) {
+        if (!page.ok || page.storefront?.cc !== region.country_code || !page.currencyCode) {
           failedRegions += 1;
           const is403 = /HTTP 403/.test(String(page.error || ""));
           if (is403) {
@@ -334,7 +283,7 @@ async function collectIos(db, fx, now) {
           for (const plan of plans) markStale.run(now, plan.id, region.id);
           console.warn(
             `[collect:official] ${app.slug}/${region.country_code} failed: ${
-              page.ok ? `storefront mismatch ${page.storefront?.cc}` : page.error
+              page.ok ? `storefront/currency invalid ${page.storefront?.cc}/${page.currencyCode}` : page.error
             }`,
           );
           return;
@@ -343,14 +292,15 @@ async function collectIos(db, fx, now) {
 
         const items = page.items || [];
         const sourceUrl = `https://apps.apple.com/${region.country_code.toLowerCase()}/app/${app.app_store_slug}/id${app.app_store_id}`;
-        const fxRate = rateToCny(region.currency_code, fx.rates);
+        const currencyCode = page.currencyCode;
+        const fxRate = rateToCny(currencyCode, fx.rates);
         for (const plan of plans) {
-          const item = pickAppStoreItem(items, plan);
-          const cny = item ? convertToCny(item.priceValue, region.currency_code, fx.rates) : null;
+          const item = pickAppStoreItem(items, plan, currencyCode, fx.rates);
+          const cny = item ? convertToCny(item.priceValue, currencyCode, fx.rates) : null;
           if (!item || cny == null || fxRate == null) {
-            // Not sold in this storefront (or no FX) → drop instead of keeping a guessed price
-            if (retryTargets !== null) markStale.run(now, plan.id, region.id);
-            else deleteRow.run(plan.id, region.id);
+            const previous = previousPrice.get(plan.id, region.id);
+            if (previous && hasOppositeBillingEvidence(previous, items, plan)) quarantine.run(now, previous.id);
+            else markStale.run(now, plan.id, region.id);
             continue;
           }
           upsertPrice(db, {
@@ -359,7 +309,8 @@ async function collectIos(db, fx, now) {
             channel: "ios_store",
             priceText: item.priceText,
             priceValue: item.priceValue,
-            currencyCode: region.currency_code,
+            sourceOfferId: item.offerName,
+            currencyCode,
             cnyPrice: cny,
             fxRateToCny: fxRate,
             fxDate: fx.date,
@@ -570,13 +521,8 @@ function collectClaudeWebFx(db, fx, now) {
           deleteRow.run(plan.id, region.id);
           continue;
         }
-        const local = claudeUsdToLocal(plan.us_list_usd, region.currency_code, fx.rates);
-        const fxRate = rateToCny(region.currency_code, fx.rates);
-        const cny =
-          local != null && fxRate != null
-            ? convertToCny(local, region.currency_code, fx.rates)
-            : null;
-        if (local == null || cny == null || fxRate == null) {
+        const quote = usdReferenceQuote(plan.us_list_usd, fx);
+        if (!quote) {
           deleteRow.run(plan.id, region.id);
           continue;
         }
@@ -584,18 +530,10 @@ function collectClaudeWebFx(db, fx, now) {
           planId: plan.id,
           regionId: region.id,
           channel: "web_direct",
-          priceText: formatClaudeWebPrice(local, region.currency_code),
-          priceValue: local,
-          listPriceValue: plan.us_list_usd,
-          taxMode: "exclusive",
-          taxPercent: null,
-          currencyCode: region.currency_code,
-          cnyPrice: cny,
-          fxRateToCny: fxRate,
-          fxDate: fx.date,
+          ...quote,
           sourceUrl: CLAUDE_WEB_SOURCE_URL,
           status: "available",
-          lastSuccessAt: now,
+          lastSuccessAt: null,
           updatedAt: now,
         });
         matched += 1;
@@ -633,13 +571,8 @@ function collectKiroWebFx(db, fx, now) {
           deleteRow.run(plan.id, region.id);
           continue;
         }
-        const local = kiroUsdToLocal(plan.us_list_usd, region.currency_code, fx.rates);
-        const fxRate = rateToCny(region.currency_code, fx.rates);
-        const cny =
-          local != null && fxRate != null
-            ? convertToCny(local, region.currency_code, fx.rates)
-            : null;
-        if (local == null || cny == null || fxRate == null) {
+        const quote = usdReferenceQuote(plan.us_list_usd, fx);
+        if (!quote) {
           deleteRow.run(plan.id, region.id);
           continue;
         }
@@ -647,18 +580,10 @@ function collectKiroWebFx(db, fx, now) {
           planId: plan.id,
           regionId: region.id,
           channel: "web_direct",
-          priceText: formatKiroWebPrice(local, region.currency_code),
-          priceValue: local,
-          listPriceValue: plan.us_list_usd,
-          taxMode: "exclusive",
-          taxPercent: null,
-          currencyCode: region.currency_code,
-          cnyPrice: cny,
-          fxRateToCny: fxRate,
-          fxDate: fx.date,
+          ...quote,
           sourceUrl: KIRO_WEB_SOURCE_URL,
           status: "available",
-          lastSuccessAt: now,
+          lastSuccessAt: null,
           updatedAt: now,
         });
         matched += 1;
@@ -695,13 +620,8 @@ function collectUsdListAppWebFx(db, fx, now, opts) {
   const tx = db.transaction(() => {
     for (const region of regions) {
       for (const plan of plans) {
-        const local = usdListToLocal(plan.us_list_usd, region.currency_code, fx.rates);
-        const fxRate = rateToCny(region.currency_code, fx.rates);
-        const cny =
-          local != null && fxRate != null
-            ? convertToCny(local, region.currency_code, fx.rates)
-            : null;
-        if (local == null || cny == null || fxRate == null) {
+        const quote = usdReferenceQuote(plan.us_list_usd, fx);
+        if (!quote) {
           deleteRow.run(plan.id, region.id);
           continue;
         }
@@ -709,18 +629,10 @@ function collectUsdListAppWebFx(db, fx, now, opts) {
           planId: plan.id,
           regionId: region.id,
           channel: "web_direct",
-          priceText: formatCursorWebPrice(local, region.currency_code),
-          priceValue: local,
-          listPriceValue: plan.us_list_usd,
-          taxMode: "exclusive",
-          taxPercent: null,
-          currencyCode: region.currency_code,
-          cnyPrice: cny,
-          fxRateToCny: fxRate,
-          fxDate: fx.date,
+          ...quote,
           sourceUrl: opts.sourceUrl,
-          status: "available",
-          lastSuccessAt: now,
+          status: usdReferenceStatus(opts.appSlug, plan.billing_period),
+          lastSuccessAt: null,
           updatedAt: now,
         });
         matched += 1;
@@ -820,7 +732,7 @@ function writeSeedFromDb(db) {
   const fx = getFx(db);
   const prices = db
     .prepare(
-      `SELECT p.slug AS planSlug, r.country_code AS countryCode, pr.price_text AS priceText, pr.price_value AS priceValue
+      `SELECT p.slug AS planSlug, r.country_code AS countryCode, pr.price_text AS priceText, pr.price_value AS priceValue, pr.currency_code AS currencyCode
        FROM official_prices pr
        JOIN official_plans p ON p.id = pr.plan_id
        JOIN official_apps a ON a.id = p.app_id

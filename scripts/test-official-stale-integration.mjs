@@ -12,7 +12,7 @@ const api = await import("../collectors/official-prices-db.mjs");
 const path = join(dir,"prices.sqlite");
 const db = api.openOfficialDb(path);
 api.migrateOfficialPrices(db);
-db.exec("UPDATE official_prices SET status='available'");
+db.exec("UPDATE official_prices SET status='available' WHERE COALESCE(price_basis,'observed')!='usd_reference'");
 const plan = db.prepare("SELECT p.id FROM official_plans p JOIN official_apps a ON a.id=p.app_id WHERE a.slug='chatgpt' AND p.slug='plus-monthly'").get();
 const region = db.prepare("SELECT id FROM official_regions WHERE country_code='PH'").get();
 assert.ok(plan && region);

@@ -5,8 +5,10 @@
  * Apple echoes the served storefront in storePlatformData["product-dv"].meta and
  * falls back to US for unknown ids. Apps not sold in a storefront answer a plist.
  * IAP list lives in pageData.addOns: buyParams carries offerName and price in
- * 1/1000 of the local currency.
+ * 1/1000 of the store's billing currency (not necessarily the country's currency).
  */
+
+import { explicitPriceCurrency } from "./official-price-currency.mjs";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -24,7 +26,8 @@ function sleep(ms) {
  *   unavailable?: boolean,
  *   status: number,
  *   storefront?: { cc: string, id: string } | null,
- *   items?: Array<{ name: string, offerName: string, priceText: string, priceValue: number }>,
+ *   currencyCode?: string | null,
+ *   items?: Array<{ name: string, offerName: string, priceText: string, priceValue: number, currencyCode: string | null }>,
  *   error?: string,
  *   url: string,
  * }>}
@@ -42,7 +45,10 @@ export async function fetchAppStoreOffers({ appStoreId, appStoreSlug = "app", st
         },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      if (res.status === 429 || res.status >= 500) {
+      if (res.status === 403 || res.status === 429) {
+        return { ok: false, status: res.status, error: `HTTP ${res.status}`, url };
+      }
+      if (res.status >= 500) {
         lastError = `HTTP ${res.status}`;
         await sleep(1000 * attempt);
         continue;
@@ -63,13 +69,26 @@ export async function fetchAppStoreOffers({ appStoreId, appStoreSlug = "app", st
       }
       const storefront = data?.storePlatformData?.["product-dv"]?.meta?.storefront ?? null;
       const addOns = Array.isArray(data?.pageData?.addOns) ? data.pageData.addOns : [];
+      const items = parseAddOns(addOns);
+      const currencies = [...new Set(items.map((item) => item.currencyCode).filter(Boolean))];
+      // Country's local currency is NOT necessarily Apple's billing currency (MO: USD).
+      // For ambiguous symbols ($/¥/kr), ask Apple's lookup API for the served storefront.
+      const currencyCode = currencies.length === 1 && items.every((item) => item.currencyCode)
+        ? currencies[0]
+        : storefront?.cc
+          ? await fetchStorefrontCurrency(appStoreId, String(storefront.cc))
+          : null;
+      if (currencies.length > 1 || currencies.some((code) => code !== currencyCode)) {
+        return { ok: false, status: res.status, error: "conflicting App Store currencies", url };
+      }
       return {
         ok: true,
         status: res.status,
         storefront: storefront
           ? { cc: String(storefront.cc || "").toUpperCase(), id: String(storefront.id || "") }
           : null,
-        items: parseAddOns(addOns),
+        currencyCode,
+        items: items.map((item) => ({ ...item, currencyCode: item.currencyCode || currencyCode })),
         url,
       };
     } catch (err) {
@@ -82,7 +101,7 @@ export async function fetchAppStoreOffers({ appStoreId, appStoreSlug = "app", st
 
 /** @param {any[]} addOns */
 export function parseAddOns(addOns) {
-  /** @type {Array<{ name: string, offerName: string, priceText: string, priceValue: number }>} */
+  /** @type {Array<{ name: string, offerName: string, priceText: string, priceValue: number, currencyCode: string | null }>} */
   const out = [];
   for (const a of addOns) {
     const q = new URLSearchParams(String(a?.buyParams || ""));
@@ -94,6 +113,7 @@ export function parseAddOns(addOns) {
       offerName,
       priceText: String(a?.price || "").replace(/\s+/g, " ").trim(),
       priceValue: milli / 1000,
+      currencyCode: explicitPriceCurrency(a?.price),
     });
   }
   return out;
