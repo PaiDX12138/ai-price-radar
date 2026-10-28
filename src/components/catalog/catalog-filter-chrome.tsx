@@ -18,6 +18,7 @@ type CatalogFilterChromeProps<T extends string = PlatformTabId> = {
   wide?: boolean;
   searchPlaceholder?: string;
   searchLabel?: string;
+  clientNavigation?: boolean;
 };
 
 /**
@@ -33,10 +34,11 @@ export function CatalogFilterChrome<T extends string = PlatformTabId>({
   wide = false,
   searchPlaceholder,
   searchLabel,
+  clientNavigation = false,
 }: CatalogFilterChromeProps<T>) {
   return (
     <StickyPlatformFilter wide={wide} className={cn("mb-5 w-full", className)}>
-      <PlatformTabs tabs={tabs} active={active} basePath={basePath} />
+      <PlatformTabs tabs={tabs} active={active} basePath={basePath} clientNavigation={clientNavigation} />
       <CatalogToolbar deliveryTypes={deliveryTypes} searchPlaceholder={searchPlaceholder} searchLabel={searchLabel} />
     </StickyPlatformFilter>
   );

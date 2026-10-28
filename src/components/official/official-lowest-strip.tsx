@@ -61,7 +61,7 @@ export function OfficialLowestStrip({
           {taxKind ? <TaxBandLabel kind={taxKind} row={row} /> : null}
           {row.priceBasis === "usd_reference" ? <ToneChip tone="muted" className="h-4 text-[10px]">USD 参考</ToneChip> : null}
           {row.status === "stale" ? (
-            <ToneChip tone="rose" className="h-4 text-[10px]" title="历史实采标价按最新汇率折算，尚未重新确认原币价格">
+            <ToneChip tone="rose" className="h-4 text-[10px]" tooltip="历史实采标价按最新汇率折算，尚未重新确认原币价格">
               历史价
             </ToneChip>
           ) : null}
@@ -112,7 +112,7 @@ function TaxBandLabel({
     <TextBand
       tone="amber"
       className="text-[10px] font-semibold tracking-[0.04em] text-foreground"
-      title={taxNote(row)}
+      tooltip={taxNote(row)}
     >
       {kind}
     </TextBand>

@@ -99,6 +99,22 @@ let otpCollectRunning = false;
 let otpCollectLastAt = 0;
 const workerBootAt = Date.now();
 
+/** Transit is deliberately independent of slow shop batches. SQLite leases also
+ * protect against another worker/CLI; --due catches up overdue failures/restarts. */
+let transitChild = null;
+function maybeRunTransitCollect() {
+  if (FORCE_SHOP_ID || transitChild) return;
+  transitChild=spawn(process.execPath,[join(root,"scripts/collect-transit.mjs"),"--due"],{
+    cwd:root,env:process.env,windowsHide:true,stdio:["ignore","pipe","pipe"],
+  });
+  const child=transitChild;
+  const timeout=setTimeout(()=>child.kill(),4*60*1000);
+  child.stdout?.on("data",data=>console.log("[worker] transit",String(data).trim()));
+  child.stderr?.on("data",data=>console.warn("[worker] transit",String(data).trim().slice(-800)));
+  const done=()=>{clearTimeout(timeout);transitChild=null;};
+  child.on("error",done);child.on("exit",done);
+}
+
 /**
  * Low-frequency OTP platform prices (5SIM guest / Grizzly / page probes + optional API keys).
  * First run after a short startup grace (avoid racing official FX collect).
@@ -667,12 +683,13 @@ async function runTick(db, pool, opts = {}) {
 }
 
 async function main() {
+  maybeRunTransitCollect();
+  const transitTimer=ONCE||FORCE_SHOP_ID?null:setInterval(maybeRunTransitCollect,60000);
   if (!shopsDbExists()) {
-    console.error("[worker] Missing shops DB. Run: pnpm shops:migrate");
-    process.exit(1);
+    console.warn("[worker] Missing shops DB; skipping shop jobs. Transit jobs remain enabled. Run: pnpm shops:migrate");
   }
 
-  const db = requireShopsDb();
+  const db = shopsDbExists() ? requireShopsDb() : null;
   const pool = getSharedProxyPool({ channelCount: getLiandongChannelCount() });
 
   const once = ONCE || Boolean(FORCE_SHOP_ID);
@@ -688,6 +705,8 @@ async function main() {
     if (stopping) return;
     stopping = true;
     console.log("\n[worker] shutting down…");
+    if(transitTimer)clearInterval(transitTimer);
+    transitChild?.kill();
     closeShopsDb();
     process.exit(0);
   };
@@ -698,7 +717,7 @@ async function main() {
     try {
       maybeRunOfficialCollect();
       maybeRunOtpCollect();
-      await runTick(db, pool, { shopId: FORCE_SHOP_ID });
+      if(db) await runTick(db, pool, { shopId: FORCE_SHOP_ID });
     } catch (error) {
       console.error("[worker] tick error:", error instanceof Error ? error.message : error);
     }

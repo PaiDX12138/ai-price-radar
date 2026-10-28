@@ -3,12 +3,15 @@ import Link from "next/link";
 import type { PlatformTabId } from "@/lib/catalog";
 import { PLATFORM_LABEL, PlatformLogo } from "@/components/catalog/platform-logo";
 import { cn } from "@/lib/utils";
+import { navigateTransitFilter } from "@/lib/transit/use-page-search";
 
 type PlatformTabsProps<T extends string = PlatformTabId> = {
   tabs: Array<{ id: T; label: string; icon?: ReactNode }>;
   active: T;
   basePath?: string;
   className?: string;
+  /** Use the already-loaded detail dataset instead of starting an RSC navigation. */
+  clientNavigation?: boolean;
 };
 
 /** Platform switch resets to page 1 (no page= in href). */
@@ -24,6 +27,7 @@ export function PlatformTabs<T extends string = PlatformTabId>({
   active,
   basePath = "/channels",
   className,
+  clientNavigation = false,
 }: PlatformTabsProps<T>) {
   return (
     <div
@@ -42,6 +46,11 @@ export function PlatformTabs<T extends string = PlatformTabId>({
             key={tab.id}
             href={tabHref(basePath, tab.id)}
             scroll={false}
+            onClick={clientNavigation ? (event) => {
+              if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              navigateTransitFilter(tabHref(basePath, tab.id));
+            } : undefined}
             role="tab"
             aria-selected={selected}
             className={cn(

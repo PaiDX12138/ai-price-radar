@@ -73,6 +73,7 @@ export function OfferCard({ offer }: OfferCardProps) {
     <div className="group relative flex h-full w-full min-w-0 flex-1">
       <a
         href={offer.url}
+        data-tooltip-surface
         target="_blank"
         rel="noopener noreferrer"
         className={cn(
@@ -135,7 +136,7 @@ export function OfferCard({ offer }: OfferCardProps) {
                 {!live || isOfferStale(offer) ? (
                   <Badge
                     variant="outline"
-                    title={
+                    data-tooltip={
                       offer.source.collectStatus === "failed"
                         ? "最近一次采集失败，显示的是上次成功采到的数据"
                         : offer.lifecycle === "pending" ? "商品待复核，旧报价不代表实时有货" : "超过 2 小时未确认，不参与实时最低价"
@@ -149,7 +150,7 @@ export function OfferCard({ offer }: OfferCardProps) {
             </div>
             {selfBuilt ? (
               <span
-                title="商家自建卡网（非联动/云猫/QXVX 平台店）"
+                data-tooltip="商家自建卡网（非联动/云猫/QXVX 平台店）"
                 className="relative inline-block shrink-0 text-[11px] font-medium tracking-tight text-foreground"
               >
                 <span
@@ -174,7 +175,7 @@ export function OfferCard({ offer }: OfferCardProps) {
               WebkitBoxOrient: "vertical",
               WebkitLineClamp: 3,
             }}
-            title={offer.sourceTitle}
+            data-tooltip={offer.sourceTitle}
           >
             {offer.sourceTitle}
           </p>
@@ -183,7 +184,7 @@ export function OfferCard({ offer }: OfferCardProps) {
         <div className="mt-auto flex flex-wrap items-center gap-2 border-b border-border/80 px-(--card-spacing) pt-1 pb-1.5">
           <span
             className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground"
-            title="卡网平台"
+            data-tooltip="卡网平台"
           >
             <SourcePlatformLogo
               platform={offer.source.platform}
@@ -198,7 +199,7 @@ export function OfferCard({ offer }: OfferCardProps) {
               <span className="h-3 w-px shrink-0 bg-border" aria-hidden />
               <span
                 className="relative inline-block shrink-0 tracking-tight text-neutral-900"
-                title={
+                data-tooltip={
                   offer.source.listedAt
                     ? `收录于 ${formatRelativeTime(offer.source.listedAt)}`
                     : undefined
@@ -218,7 +219,7 @@ export function OfferCard({ offer }: OfferCardProps) {
           {productTags.map((tag) => (
             <span
               key={tag}
-              title={`商品类型：${tag}`}
+              data-tooltip={`商品类型：${tag}`}
               className={cn(
                 "inline-flex h-5 max-w-[10rem] items-center truncate rounded-md px-1.5",
                 "bg-[var(--apr-ink-soft)] text-[11px] font-medium tracking-tight text-[var(--apr-ink)]",

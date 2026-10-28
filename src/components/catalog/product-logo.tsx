@@ -161,7 +161,7 @@ export function ProductLogo({ slug, name, className = "", size = 22 }: ProductLo
         className
       )}
       style={{ width: size + pad, height: size + pad }}
-      title={name ?? slug}
+      data-tooltip={name ?? slug}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" width={size} height={size} className="block object-contain" draggable={false} />

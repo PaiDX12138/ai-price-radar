@@ -10,7 +10,7 @@ type AutoFitPriceProps = {
   maxPx?: number;
   /** 最小字号 px */
   minPx?: number;
-  title?: string;
+  tooltip?: string;
 };
 
 /**
@@ -21,7 +21,7 @@ export function AutoFitPrice({
   className,
   maxPx = 15,
   minPx = 9,
-  title,
+  tooltip,
 }: AutoFitPriceProps) {
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -48,7 +48,7 @@ export function AutoFitPrice({
   return (
     <span
       ref={ref}
-      title={title ?? text}
+      data-tooltip={tooltip ?? text}
       className={cn(
         "block w-full overflow-hidden whitespace-nowrap leading-none",
         className,

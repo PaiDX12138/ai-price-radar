@@ -34,7 +34,7 @@ export function PayChannel({
   };
   return (
     <span
-      title={meta.title}
+      data-tooltip={meta.title}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground",
         className,

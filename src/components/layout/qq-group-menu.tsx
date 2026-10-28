@@ -37,7 +37,7 @@ export function QqGroupMenu() {
         type="button"
         aria-label="QQ 交流群"
         aria-expanded={open}
-        title="QQ 交流群"
+        data-tooltip="QQ 交流群"
         onClick={() => setOpen((v) => !v)}
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon-sm" }),

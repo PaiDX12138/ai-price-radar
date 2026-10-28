@@ -142,10 +142,10 @@
 .apr-tab-stick[data-stuck="true"] {
   /* 上沿上移 1px 盖住顶栏底边，避免亚像素缝 */
   top: calc(3rem - 1px);
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: var(--apr-viewport-width, 100vw);
+  max-width: var(--apr-viewport-width, 100vw);
+  margin-left: calc(50% - var(--apr-viewport-width, 100vw) / 2);
+  margin-right: calc(50% - var(--apr-viewport-width, 100vw) / 2);
   margin-top: 0;
   padding: 1px 0 0;
   border: 0;

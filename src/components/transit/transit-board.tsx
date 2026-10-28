@@ -6,24 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CatalogFilterChrome } from "@/components/catalog/catalog-filter-chrome";
-import { transitDemos, type TransitDemo } from "@/data/demo/transit";
+import type { TransitSiteView as TransitDemo } from "@/lib/transit/view";
+import { getTransitMonitor } from "@/lib/transit/view";
 import Image from "next/image";
-import { CardMeta, CardMetaRow, CardUpdatedRow } from "@/components/catalog/card-meta";
+import { CardMeta, CardUpdatedRow } from "@/components/catalog/card-meta";
 import { ToneChip } from "@/components/catalog/tone-chip";
-import { TextBand } from "@/components/catalog/text-band";
+import { TransitHomepageLink } from "@/components/transit/transit-homepage-link";
 import { TransitModelPrices } from "@/components/transit/transit-model-prices";
 import { transitTabs, platformNames, matchesTransitTab } from "@/components/transit/transit-tabs";
 import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
-import { TransitMonitor } from "@/components/transit/transit-monitor";
+import { TransitMonitor, TransitMonitorSource } from "@/components/transit/transit-monitor";
+import { transitModelModality } from "@/lib/transit/model-order";
 
 
 function supports(site: TransitDemo, id: string) {
-  return site.prices.some((price) => matchesTransitTab(price, id));
+  return site.prices.some((price) => matchesTransitTab(price, id) && (id === "image" || id === "video" || transitModelModality(price, site.modelCatalog) === "text"));
 }
 
 const systemTypes = ["New API", "Sub2API", "自研"];
 
-export function TransitBoard() {
+export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) {
   const router = useRouter();
   const params = useSearchParams();
   const query = params.get("q") ?? "";
@@ -31,8 +33,8 @@ export function TransitBoard() {
   const system = params.get("type");
   const filtered = transitDemos.filter((site) =>
     (!system || !systemTypes.includes(system) || site.system === system) &&
-    (active === "all" || supports(site, active)) &&
-    [site.name, site.system, ...site.models, ...site.channels, ...Object.entries(platformNames).filter(([id]) => supports(site, id)).flatMap(([, names]) => names)].join(" ").toLowerCase().includes(query.trim().toLowerCase()),
+    supports(site, active) &&
+    [site.name, site.system, ...site.prices.filter(price => matchesTransitTab(price, active) && (active === "image" || active === "video" || transitModelModality(price, site.modelCatalog) === "text")).map(price => price.modelName), ...site.channels, ...Object.entries(platformNames).filter(([id]) => supports(site, id)).flatMap(([, names]) => names)].join(" ").toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   return (
@@ -49,20 +51,19 @@ export function TransitBoard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {filtered.map((site) => <div key={site.id} className="group h-full rounded-xl outline-none"><Card size="sm" className="relative h-full gap-2 bg-card shadow-sm ring-1 ring-foreground/10 transition-[box-shadow,transform,ring-color] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-foreground/20">
-          <Link href={`/api-transit/${site.id}`} aria-label={`查看 ${site.name} 详情`} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" />
+          <Link href={`/api-transit/${site.id}`} data-tooltip-surface aria-label={`查看 ${site.name} 详情`} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" />
           <CardHeader className="h-12 shrink-0 pb-1">
             <div className="flex items-start gap-3">
-              <Image src={`/brand/transit/${site.id}.svg`} alt={`${site.name} 示例 Logo`} width={32} height={32} className="size-8 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TextBand tone="ink">{site.name}</TextBand></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><ToneChip tone="sky" className="h-5 gap-1.5 px-2 text-xs" title="站内额度兑换比例，美元符号表示站内记账额度；示例数据"><CircleDollarSign className="size-3.5 shrink-0" aria-hidden /><span>倍率</span><span className="font-mono font-medium tabular-nums">{site.rechargeMultiplier === null ? "未披露" : `¥1 = $${new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 4 }).format(1 / site.rechargeMultiplier)}`}</span></ToneChip></div></div>
+              <Image src={site.logoPath} alt={`${site.name} Logo`} width={32} height={32} className="size-8 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TransitHomepageLink site={site} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><ToneChip tone="sky" className="h-5 gap-1.5 px-2 text-xs" tooltip={site.rechargeInfo?`官网文档与公开接口核实的基础充值比例；$为站内记账额度，不是美元现金。核实于 ${site.rechargeInfo.observedAt}；来源 ${site.rechargeInfo.sourceUrl}`:"尚无核实的站点基础充值比例"}><CircleDollarSign className="size-3.5 shrink-0" aria-hidden /><span>倍率</span><span className="font-mono font-medium tabular-nums">{site.rechargeMultiplier === null ? "未披露" : `¥1 = $${new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 4 }).format(1 / site.rechargeMultiplier)}`}</span></ToneChip><TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
               <CardCornerArrow />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-rows-[128px_88px_62px] gap-2">
-            <TransitModelPrices prices={site.prices.filter((price) => matchesTransitTab(price, active))} media={active === "image" || active === "video"} />
-            <TransitMonitor site={site} />
-            <CardMeta className="h-[62px] gap-1.5 py-2">
-              <CardMetaRow label="渠道"><span className="block truncate" title={`站方声明示例：${site.channels.join("、")}`}>{site.channels.join(" · ")}</span></CardMetaRow>
-              <CardUpdatedRow updatedAt={site.updatedAt} />
+          <CardContent className="grid grid-rows-[128px_88px_auto] gap-2">
+            <TransitModelPrices prices={site.prices.filter((price) => matchesTransitTab(price, active))} media={active === "image" || active === "video"} query={query} platform={active} catalog={site.modelCatalog} />
+            <TransitMonitor name={site.name} stats={getTransitMonitor(site)} showSource={false} />
+            <CardMeta className="gap-0 py-2">
+              <CardUpdatedRow updatedAt={site.updatedAt} nowMs={site.renderedAt} />
             </CardMeta>
           </CardContent>
         </Card></div>)}

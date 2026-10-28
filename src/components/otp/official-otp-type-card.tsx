@@ -106,7 +106,7 @@ export function OfficialOtpTypeCard({
             <CardMetaRow label="平台">
               <span
                 className="block truncate tabular-nums"
-                title={`${product.platformCount} 个平台 · ${product.quoteCount} 条报价`}
+                data-tooltip={`${product.platformCount} 个平台 · ${product.quoteCount} 条报价`}
               >
                 <span className="font-semibold text-[var(--apr-ink)]">
                   {product.platformCount} 平台

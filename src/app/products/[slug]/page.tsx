@@ -164,7 +164,7 @@ async function ProductDetail({ params, searchParams }: PageProps) {
               <Link
                 href={`/official/${encodeURIComponent(officialQuote.planId)}`}
                 className="flex shrink-0 flex-wrap items-stretch gap-1.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2"
-                title="查看官网各地区报价"
+                data-tooltip="查看官网各地区报价"
               >
                 {officialQuote.usCny != null ? (
                   <OfficialUsPriceStrip

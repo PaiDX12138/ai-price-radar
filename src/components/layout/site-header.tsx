@@ -52,7 +52,7 @@ export function SiteHeader() {
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub"
-            title="GitHub"
+            data-tooltip="GitHub"
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon-sm" }),
               "text-muted-foreground",

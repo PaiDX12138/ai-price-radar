@@ -41,7 +41,7 @@ export function channelLabel(channel: string): string {
   return channel || "—";
 }
 
-export type TaxBandKind = "含税" | "不含税" | "税况未知";
+export type TaxBandKind = "含税" | "不含税";
 
 /**
  * 税口径说明。官网定价 AI 套餐统一按不含税展示（含税源价已在展示层拆税）。
@@ -56,13 +56,14 @@ export function taxNote(row?: {
 }
 
 /**
- * 卡片/色带短税标。官网定价 AI 套餐统一标「不含税」。
+ * 仅展示已确认的官网税口径；App Store 和未知税口径不显示标签。
  */
 export function taxBandLabel(row?: {
   taxMode?: OfficialTaxMode | null;
   taxPercent?: number | null;
   channel?: string | null;
   countryCode?: string | null;
-}): TaxBandKind {
-  return row?.taxMode === "exclusive" ? "不含税" : row?.taxMode === "inclusive" ? "含税" : "税况未知";
+}): TaxBandKind | null {
+  if (row?.channel === "ios_store") return null;
+  return row?.taxMode === "exclusive" ? "不含税" : row?.taxMode === "inclusive" ? "含税" : null;
 }

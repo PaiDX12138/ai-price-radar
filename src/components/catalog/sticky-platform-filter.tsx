@@ -27,12 +27,27 @@ export function StickyPlatformFilter({
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+    const shell = sentinel.parentElement;
+    const syncViewportWidth = () => {
+      // 100vw includes the classic scrollbar; full-bleed chrome must use usable width.
+      const width = `${document.documentElement.clientWidth}px`;
+      if (shell && shell.style.getPropertyValue("--apr-viewport-width") !== width) {
+        shell.style.setProperty("--apr-viewport-width", width);
+      }
+    };
+    syncViewportWidth();
+    const viewportObserver = new ResizeObserver(syncViewportWidth);
+    viewportObserver.observe(document.documentElement);
     const observer = new IntersectionObserver(
       ([entry]) => setStuck(!entry.isIntersecting),
       { rootMargin: `-${HEADER_OFFSET_PX}px 0px 0px 0px`, threshold: 0 }
     );
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      viewportObserver.disconnect();
+      shell?.style.removeProperty("--apr-viewport-width");
+    };
   }, []);
 
   useEffect(() => {

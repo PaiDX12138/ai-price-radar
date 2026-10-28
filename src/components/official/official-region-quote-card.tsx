@@ -35,7 +35,7 @@ export type OfficialRegionQuoteCardProps = {
 function StatusChip({ status }: { status: string }) {
   if (status === "estimated") {
     return (
-      <ToneChip tone="amber" title="仅有参考基准，未确认该地区/周期的实际结账报价">
+      <ToneChip tone="amber" tooltip="仅有参考基准，未确认该地区/周期的实际结账报价">
         参考
       </ToneChip>
     );
@@ -104,7 +104,7 @@ export function OfficialRegionQuoteCard({
                   <TextBand
                     tone="amber"
                     className="shrink-0 text-[10px] font-semibold tracking-[0.04em] text-foreground"
-                    title={taxNote(row)}
+                    tooltip={taxNote(row)}
                   >
                     {taxKind}
                   </TextBand>
@@ -115,7 +115,7 @@ export function OfficialRegionQuoteCard({
                   {row.countryCode}
                 </ToneChip>
                 {storefrontId ? (
-                  <ToneChip tone="muted" title="Storefront ID" className="shrink-0">
+                  <ToneChip tone="muted" tooltip="Storefront ID" className="shrink-0">
                     {storefrontId}
                   </ToneChip>
                 ) : null}
@@ -131,7 +131,7 @@ export function OfficialRegionQuoteCard({
                 {billingLabel ? (
                   <ToneChip
                     tone={billingPeriod === "annual" ? "ink" : "emerald"}
-                    title={billingLabel}
+                    tooltip={billingLabel}
                     className="shrink-0"
                   >
                     {billingLabel}
@@ -139,7 +139,7 @@ export function OfficialRegionQuoteCard({
                 ) : null}
                 <StatusChip status={row.status} />
                 {row.priceBasis === "usd_reference" ? (
-                  <ToneChip tone="muted" title="官网仅发布 USD 基准，非该地区独立结账报价；未按地区法币伪造价格">
+                  <ToneChip tone="muted" tooltip="官网仅发布 USD 基准，非该地区独立结账报价；未按地区法币伪造价格">
                     USD 参考
                   </ToneChip>
                 ) : null}
@@ -150,7 +150,7 @@ export function OfficialRegionQuoteCard({
           {isLowest ? (
             <ToneChip
               tone="emerald"
-              title="当前最低"
+              tooltip="当前最低"
               aria-label="当前最低"
               className="absolute right-3 top-3 size-7 shrink-0 justify-center px-0"
             >

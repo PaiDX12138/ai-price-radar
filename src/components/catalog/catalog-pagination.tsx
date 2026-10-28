@@ -61,6 +61,7 @@ export function ListPagination({
       ? {
           href: hrefForPage(p),
           onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
             onPageClick(p, event);
           },

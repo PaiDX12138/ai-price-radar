@@ -16,7 +16,7 @@ export function VsUsTrend({ cnyPrice, usCny = null, className }: VsUsTrendProps)
   const Icon = pct < 0 ? TrendingDown : pct > 0 ? TrendingUp : Minus;
   return (
     <span
-      title="相对美区"
+      data-tooltip="相对美区"
       className={cn(
         "inline-flex items-center gap-0.5 text-[10px] font-semibold leading-none tabular-nums",
         pct < 0

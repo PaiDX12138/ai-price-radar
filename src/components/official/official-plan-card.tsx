@@ -39,11 +39,11 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
         size="sm"
         className={cn(
           "relative h-full bg-card shadow-sm ring-1 ring-foreground/10",
-          "transition-[box-shadow,transform,ring-color] duration-200",
-          "group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-foreground/20",
+          "transition-[box-shadow,ring-color] duration-200",
+          "group-hover:shadow-md group-hover:ring-foreground/20",
         )}
       >
-        <CardHeader className="gap-2 border-b border-border/80 pb-(--card-spacing)">
+        <CardHeader className="h-[60px] shrink-0 gap-2 border-b border-border/80 pb-(--card-spacing)">
           <Link
             href={href}
             aria-label={`查看地区价：${product.label}`}
@@ -58,20 +58,20 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
               size={22}
             />
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-1.5 pr-1">
+              <div className="flex h-5 min-w-0 items-center gap-1.5 pr-1">
                 <CardTitle className="min-w-0 truncate text-[15px] font-semibold leading-snug tracking-tight text-neutral-900">
                   <TextBand>{product.label}</TextBand>
                 </CardTitle>
                 {product.promo ? (
-                  <ToneChip tone="emerald" title={product.promo.label} className="shrink-0 font-semibold tabular-nums">
+                  <ToneChip tone="emerald" tooltip={product.promo.label} className="shrink-0 font-semibold tabular-nums">
                     <Tags className="size-3" strokeWidth={2.25} aria-hidden />
                     {formatPromoPercent(product.promo.percent)}
                   </ToneChip>
                 ) : null}
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <ToneChip tone="sky">{product.annual ? "月付/年付" : "月付"}</ToneChip>
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <div className="mt-1.5 flex h-5 min-w-0 items-center gap-2">
+                <ToneChip tone="sky" className="shrink-0">{product.annual ? "月付/年付" : "月付"}</ToneChip>
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground">
                   <PlatformLogo platform={platform} size={12} />
                   {PLATFORM_LABEL[platform] ?? product.appName}
                 </span>
@@ -81,17 +81,17 @@ export function OfficialPlanCard({ product }: OfficialPlanCardProps) {
           <CardCornerArrow className="absolute right-3 top-3" />
         </CardHeader>
 
-        <CardContent className="space-y-2">
-          <div className={cn("grid gap-2", product.annual ? "grid-cols-2" : "grid-cols-1")}>
+        <CardContent className="flex flex-1 flex-col gap-2">
+          <div className="grid shrink-0 grid-cols-2 gap-2">
             <BillingBlock label="Month" plan={product.monthly} tone="ink" />
-            {product.annual ? <BillingBlock label="Year" plan={product.annual} tone="amber" /> : null}
+            <BillingBlock label="Year" plan={product.annual} tone="amber" />
           </div>
           <UsReference monthly={product.monthly} annual={product.annual} />
-          <CardMeta>
+          <CardMeta className="mt-auto">
             <CardMetaRow label="覆盖">
               <span
                 className="block truncate tabular-nums"
-                title={`${product.sampleCount} 个地区 · ${product.quoteCount} 条数据`}
+                data-tooltip={`${product.sampleCount} 个地区 · ${product.quoteCount} 条数据`}
               >
                 <span className="font-semibold text-[var(--apr-ink)]">
                   {product.sampleCount} 地区
@@ -118,7 +118,7 @@ function BillingBlock({
 }) {
   return (
     <TonePanel tone={tone}>
-      <div className="flex min-w-0 flex-nowrap items-center justify-between gap-0.5">
+      <div className="flex h-4 min-w-0 flex-nowrap items-center justify-between gap-0.5">
         <span className="inline-flex min-w-0 flex-nowrap items-center gap-1">
           <span className="shrink-0 whitespace-nowrap text-[10px] font-semibold tracking-[0.04em] text-muted-foreground">
             {label}
@@ -129,7 +129,7 @@ function BillingBlock({
       </div>
       <div
         className={cn(
-          "mt-1 truncate font-mono text-[17px] font-semibold leading-none tabular-nums",
+          "mt-1 h-5 truncate font-mono text-[17px] font-semibold leading-5 tabular-nums",
           plan ? tonePanelPriceClass(tone) : "text-muted-foreground/50",
         )}
       >
@@ -162,15 +162,18 @@ function BillingBlock({
   );
 }
 
-/** 官网定价统一标「不含税」。 */
+/** App Store 和未知税口径不占用税标签位置。 */
 function TaxBand({ plan }: { plan: OfficialPlanSummary }) {
+  const label = taxBandLabel(plan.lowest);
+  if (!label) return null;
+
   return (
     <TextBand
       tone="amber"
       className="shrink-0 whitespace-nowrap text-[10px] font-semibold tracking-[0.04em] text-foreground"
-      title={taxNote(plan.lowest)}
+      tooltip={taxNote(plan.lowest)}
     >
-      {taxBandLabel(plan.lowest)}
+      {label}
     </TextBand>
   );
 }
@@ -200,11 +203,11 @@ function UsReference({
 }) {
   const lines = [
     { key: "m", unit: "/month", plan: monthly },
-    ...(annual ? [{ key: "y", unit: "/year", plan: annual }] : []),
+    { key: "y", unit: "/year", plan: annual },
   ];
 
   return (
-    <TonePanel tone="sky" className="flex items-center justify-between gap-2">
+    <TonePanel tone="sky" className="flex h-[54px] shrink-0 items-center justify-between gap-2">
       <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-sky-800 dark:text-sky-300">
         <CountryFlag countryCode="US" countryLabel="美国" size={12} />
         美区参考

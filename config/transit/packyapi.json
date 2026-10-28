@@ -1,0 +1,30 @@
+{
+  "id": "packyapi",
+  "name": "PackyAPI",
+  "siteUrl": "https://www.packyapi.ai",
+  "host": "www.packyapi.ai",
+  "system": "new_api",
+  "collectorKind": "packyapi_v1",
+  "docsUrl": "https://docs.packyapi.ai/docs/token/2-group.html",
+  "pricingUrl": "https://www.packyapi.ai/api/pricing",
+  "metadataUrl": "https://www.packyapi.ai/api/status",
+  "performanceSummaryUrl": "https://www.packyapi.ai/api/perf-metrics/summary?hours=360",
+  "performanceUrl": "https://www.packyapi.ai/api/perf-metrics?model={model}&hours=360",
+  "logoUrl": "https://www.packyapi.ai/logo.svg",
+  "logoLocalPath": "/brand/transit/packyapi.svg",
+  "enabled": true,
+  "status": "published",
+  "minimumModels": 5,
+  "timeoutMs": 20000,
+  "maxBytes": 2097152,
+  "priceBasis": "new_api_display_credit",
+  "recharge": {
+    "kind": "packy_public_base_v1",
+    "documentationUrl": "https://docs.packyapi.ai/docs/register/"
+  },
+  "discount": {
+    "kind": "packy_public_formula_v1",
+    "rechargeDocumentationUrl": "https://docs.packyapi.ai/docs/register/"
+  },
+  "notes": "单站专用映射；价格为站内美元记账额度，充值换算未核实时不推算实付人民币。"
+}

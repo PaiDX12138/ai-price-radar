@@ -19,7 +19,7 @@ type TextBandProps = {
   tone?: TextBandTone;
   className?: string;
   bandClassName?: string;
-  title?: string;
+  tooltip?: string;
 };
 
 export function TextBand({
@@ -27,10 +27,10 @@ export function TextBand({
   tone = "violet",
   className,
   bandClassName,
-  title,
+  tooltip,
 }: TextBandProps) {
   return (
-    <span className={cn("relative inline-block max-w-full", className)} title={title}>
+    <span className={cn("relative inline-block max-w-full", className)} data-tooltip={tooltip}>
       <span
         aria-hidden
         className={cn(

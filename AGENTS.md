@@ -11,6 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Project rules (AI Price Radar)
 
 - UI: only shadcn (base-nova) + lucide + Tailwind — `.cursor/rules/ui-components.mdc`
+- Hover hints: plain text uses `data-tooltip` (`tooltip` on ToneChip/TextBand/AutoFitPrice); rich content uses `src/components/ui/tooltip.tsx`. Never add native HTML/SVG title tooltips or bypass the shared popup styles. See `docs/ui-tooltips.md`.
 - Collectors: evidence-based ShopApi / kami / dujiao — `.cursor/rules/card-shop-collectors.mdc`
 - Phase 1 plan: `docs/phase1-liandong-shopapi.md`
 - Collect schedule / worker: `docs/collect-schedule.md` (`pnpm start` + `pnpm worker`)

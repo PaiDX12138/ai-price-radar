@@ -29,7 +29,7 @@ type ToneChipProps = {
   children: ReactNode;
   tone?: ToneChipTone;
   className?: string;
-  title?: string;
+  tooltip?: string;
   "aria-label"?: string;
 };
 
@@ -37,12 +37,12 @@ export function ToneChip({
   children,
   tone = "muted",
   className,
-  title,
+  tooltip,
   "aria-label": ariaLabel,
 }: ToneChipProps) {
   return (
     <span
-      title={title}
+      data-tooltip={tooltip}
       aria-label={ariaLabel}
       className={cn(
         "inline-flex h-5 max-w-full items-center gap-1 truncate rounded-md px-1.5",

@@ -1,51 +1,29 @@
 import { Database, Timer, History } from "lucide-react";
 import { TextBand } from "@/components/catalog/text-band";
 import { ToneChip } from "@/components/catalog/tone-chip";
-import type { TransitDemo } from "@/data/demo/transit";
+import type { TransitMonitorStats } from "@/lib/transit/snapshot";
 import { SampleBars } from "@/components/transit/sample-bars";
+import { formatTransitDuration as duration } from "@/lib/transit/format";
 
-type SampleStatus = "success" | "partial" | "failure" | "unknown";
-const STATUS: Record<SampleStatus, { label: string; color: string }> = {
-  success: { label: "成功", color: "bg-emerald-500/80" },
-  partial: { label: "部分失败", color: "bg-amber-500/80" },
-  failure: { label: "失败", color: "bg-rose-500/80" },
-  unknown: { label: "无样本", color: "bg-muted-foreground/15" },
-};
+export function TransitMonitorSource({ stats }: { stats?: TransitMonitorStats }) {
+  return <ToneChip className="h-5 shrink-0 gap-1.5 px-2 text-xs" tone={stats?.samples?"sky":"muted"} tooltip={`站点公开统计 · 模型等权均值 · 有数据 ${stats?.samples??0}/360 小时`}>{stats?.samples?"站点公开":"暂无样本"}</ToneChip>;
+}
 
-/** Fifteen daily fictional availability values; null means no samples. */
-const DEMO_DAYS: Record<string, number[]> = {
-  north: [100, 100, 98, 100, 100, 99, 100, 100, 100, 97, 100, 100, 100, 100, 99],
-  orbit: [100, 98, 100, 100, 95, 100, 100, 0, 100, 100, 98, 100, 100, 100, 100],
-  pixel: [100, 100, 100, 97, 100, 100, 100, 100, 98, 100, 100, 100, 100, 100, 100],
-  cedar: [100, 100, 100, 100, 100, 100, 99, 100, 100, 100, 100, 100, 100, 100, 100],
-  echo: [100, 95, 100, 0, 100, 100, 97, 100, 100, 0, 100, 98, 100, 100, 100],
-};
-
-export function TransitMonitor({ site, observationSeed = "" }: { site: TransitDemo; observationSeed?: string }) {
-  const days: (number | null)[] = DEMO_DAYS[site.id] ?? Array.from({ length: 15 }, () => null);
-  const statusOf = (day: number | null): SampleStatus => day === null ? "unknown" : day === 100 ? "success" : day === 0 ? "failure" : "partial";
-  // Four fictional observations per day: 60 columns over the 15-day window.
-  const observations = days.flatMap((day, dayIndex) => Array.from({ length: 4 }, (_, slot) => ({
-    dayIndex,
-    slot,
-    status: statusOf(day),
-    latencyMs: day === null ? null : 1200 + ((dayIndex * 7 + slot * 11 + site.id.length + observationSeed.length) % 19) * 300,
-  })));
-  const latencies = observations.flatMap((sample) => sample.latencyMs === null ? [] : [sample.latencyMs]);
-  const latest = latencies.at(-1);
-  const average = latencies.length ? latencies.reduce((sum, ms) => sum + ms, 0) / latencies.length : null;
-  const cacheTone = site.cacheHitRate === null || site.cacheHitRate === 0 ? "muted" : site.cacheHitRate >= 80 ? "emerald" : site.cacheHitRate >= 50 ? "amber" : "rose";
-  const cacheLevel = site.cacheHitRate === null ? "未披露" : site.cacheHitRate >= 80 ? "健康" : site.cacheHitRate >= 50 ? "一般" : "较差";
-  const cacheHint = `缓存命中率：${site.cacheHitRate === null ? "未披露" : `${site.cacheHitRate.toFixed(2)}% · ${cacheLevel}`}。展示分档：≥80% 健康、50%–80% 一般、＜50% 较差；非行业标准或站点可靠性评级（示例）。`;
-  const duration = (ms: number | null | undefined) => ms == null ? "—" : `${(ms / 1000).toFixed(1)}s`;
+export function TransitMonitor({ name, stats, showSource = true }: { name: string; stats?: TransitMonitorStats; showSource?: boolean }) {
+  const rate=stats?.availability??null;
+  const cacheTone=rate===null?"muted":rate>=99?"emerald":rate>=95?"amber":"rose";
+  const coverage=`有数据 ${stats?.samples??0}/360 小时`;
+  const formatTime=(value:string|null|undefined)=>value?new Date(value).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:false}):"暂无";
+  const cacheHint=`近15日可用率（请求成功率），${name}；${coverage}。统计区间 ${formatTime(stats?.windowStart)} 至 ${formatTime(stats?.windowEnd)}（北京时间，末桶可能尚未结束）。按模型等权、再按小时等权，源站未返回请求量，不是按请求量加权的 SLA；缺失小时不计入百分比。`;
+  const firstTokenHint=`最新有数据小时 ${formatTime(stats?.latestBucketAt)} 的平均首 Token 延迟，不是最近单次请求。采集于 ${formatTime(stats?.collectedAt)}。`;
   return (
-    <section aria-label={`${site.name} 监测示例`} className="grid h-[88px] grid-rows-[20px_28px_20px] content-start gap-2" title="近15日示例，每天4次采样，共60条；颜色表示状态，柱高表示响应耗时（统一0–8秒刻度）。百分比为示例日可用率等权平均">
+    <section aria-label={`${name} 近15日可用率监测`} className="grid h-[88px] grid-rows-[20px_28px_20px] content-start gap-2" data-tooltip={`${cacheHint} 每根6小时；柱高为统一0–120s对数耗时刻度，越高越慢，超过120s封顶；灰色表示缺数据。`}>
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <span className="inline-flex items-center gap-1.5" title={cacheHint} aria-label={cacheHint}><Database className="size-3.5 text-muted-foreground/70" aria-hidden /><TextBand tone={cacheTone} bandClassName={cacheTone === "amber" ? "bg-[var(--apr-amber)]/40 dark:bg-[var(--apr-amber)]/40" : cacheTone === "rose" ? "bg-rose-400/65 dark:bg-rose-400/45" : undefined} className="px-0.5 font-mono text-[13px] font-semibold leading-5 tabular-nums">{site.cacheHitRate === null ? "0.00%" : `${site.cacheHitRate.toFixed(2)}%`}</TextBand></span>
-        <ToneChip className="h-[18px] px-1.5 text-[10px]" tone={site.monitoringSource === "station_public" ? "sky" : "muted"} title="监测来源类型，当前为示例数据">{site.monitoringSource === "station_public" ? "站点公开" : "来源未披露"}</ToneChip>
+        <span className="inline-flex items-center gap-1.5" data-tooltip={cacheHint} aria-label={cacheHint}><Database className="size-3.5 text-muted-foreground/70" aria-hidden /><TextBand tone={cacheTone} bandClassName={cacheTone === "amber" ? "bg-[var(--apr-amber)]/40 dark:bg-[var(--apr-amber)]/40" : cacheTone === "rose" ? "bg-rose-400/65 dark:bg-rose-400/45" : undefined} className="px-0.5 font-mono text-[13px] font-semibold leading-5 tabular-nums">{rate===null?"暂无数据":`${rate.toFixed(2)}%`}</TextBand></span>
+        {showSource && <TransitMonitorSource stats={stats} />}
       </div>
-      <SampleBars maxBars={60} samples={observations.map((sample) => ({ availability: days[sample.dayIndex], latencyMs: sample.latencyMs, label: `示例 · ${sample.dayIndex === 14 ? "今天" : `${14 - sample.dayIndex} 天前`} · 第${sample.slot + 1}次：${STATUS[sample.status].label}` }))} />
-      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1.5" title="最近一条监测样本的响应耗时；并非更新时间或首Token时间（示例）"><Timer className="size-3" aria-hidden />最近 <TextBand tone="sky" className="px-0.5 font-mono font-medium tabular-nums text-foreground/85">{duration(latest)}</TextBand></span><span className="inline-flex items-center gap-1.5" title="近15日同口径示例采样的平均响应耗时"><History className="size-3" aria-hidden />15日均 <TextBand tone="violet" className="px-0.5 font-mono font-medium tabular-nums text-foreground">{duration(average)}</TextBand></span></div>
+      <SampleBars maxBars={60} periodMode placeholderBars={60} samples={stats?.bars??[]} />
+      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1.5" data-tooltip={firstTokenHint}><Timer className="size-3" aria-hidden />首Token <TextBand tone="sky" className="px-0.5 font-mono font-medium tabular-nums text-foreground/85">{duration(stats?.latestTtftMs)}</TextBand></span><span className="inline-flex items-center gap-1.5" data-tooltip={`近15日平均响应耗时；${coverage}；按模型、小时等权，与可用率采用相同时间范围，不是首Token延迟。`}><History className="size-3" aria-hidden />15日均 <TextBand tone="violet" className="px-0.5 font-mono font-medium tabular-nums text-foreground">{duration(stats?.averageLatencyMs)}</TextBand></span></div>
     </section>
   );
 }

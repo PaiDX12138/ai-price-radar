@@ -27,7 +27,7 @@ export function CountryFlag({
   const label = displayCountryLabel(code, countryLabel);
   return (
     <span
-      title={label}
+      data-tooltip={label}
       className={cn(
         "inline-flex shrink-0 overflow-hidden rounded-[3px] ring-1 ring-foreground/10",
         className,

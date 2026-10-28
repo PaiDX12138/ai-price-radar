@@ -347,7 +347,7 @@ export function ProductOffersPanel({
             type="button"
             role="switch"
             aria-checked={hideSelfBuilt}
-            title="开启后隐藏 Kami / 独角等商家自建卡网，仅保留联动/云猫/QXVX 平台店"
+            data-tooltip="开启后隐藏 Kami / 独角等商家自建卡网，仅保留联动/云猫/QXVX 平台店"
             onClick={() => setHideSelfBuilt((v) => !v)}
             className={cn(
               "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2 text-xs transition-colors",

@@ -122,7 +122,7 @@ export function ProductCard({ product, q }: ProductCardProps) {
 
           <CardMeta>
             <CardMetaRow label="渠道">
-              <span className="block truncate tabular-nums" title={`有货 ${product.inStockCount} / 缺货 ${product.outStockCount} · 共 ${product.channelCount}`}>
+              <span className="block truncate tabular-nums" data-tooltip={`有货 ${product.inStockCount} / 缺货 ${product.outStockCount} · 共 ${product.channelCount}`}>
                 <span className="font-semibold text-[var(--apr-ink)]">
                   有货 {product.inStockCount}
                 </span>
@@ -140,7 +140,7 @@ export function ProductCard({ product, q }: ProductCardProps) {
               {product.lowestSourceName ? (
                 <span
                   className="flex w-full min-w-0 items-center justify-end gap-1.5"
-                  title={
+                  data-tooltip={
                     product.lowestSourceTitle
                       ? `${product.lowestSourceTitle}${product.lowestPrice != null ? ` · ${formatCny(product.lowestPrice)}` : ""}`
                       : undefined
@@ -163,7 +163,7 @@ export function ProductCard({ product, q }: ProductCardProps) {
                       <span className="h-3 w-px shrink-0 bg-border" aria-hidden />
                       <span
                         className="inline-flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground"
-                        title="卡网平台"
+                        data-tooltip="卡网平台"
                       >
                         <SourcePlatformLogo
                           platform={product.lowestSourcePlatform}

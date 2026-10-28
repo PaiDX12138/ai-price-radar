@@ -44,16 +44,18 @@ export function CardMetaRow({
 /** 「更新」行：yyyy/mm/dd HH:mm · x 分钟前，琥珀色，悬停显示精确时间。 */
 export function CardUpdatedRow({
   updatedAt,
+  nowMs,
 }: {
   updatedAt: string | null | undefined;
+  nowMs?: number;
 }) {
   const iso = updatedAt ?? null;
-  const ago = formatListedAgo(iso);
+  const ago = formatListedAgo(iso, nowMs);
   return (
     <CardMetaRow label="更新">
       <span
         className="block truncate tabular-nums text-[var(--apr-amber)]"
-        title={formatRelativeTime(iso)}
+        data-tooltip={formatRelativeTime(iso)}
       >
         {formatCardTime(iso)}
         {ago ? ` · ${ago}` : null}

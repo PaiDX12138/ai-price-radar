@@ -155,7 +155,7 @@ export function SourcePlatformLogo({
   const { src, label } = resolveLogoSrc(id, host);
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", className)} title={label}>
+    <span className={cn("inline-flex items-center gap-1.5", className)} data-tooltip={label}>
       {framed ? (
         <span
           className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-background ring-1 ring-border/70 shadow-sm"

@@ -102,7 +102,7 @@ export function EmailPlatformTable({
                   <StatusPill status={row.status} />
                 </td>
                 <td className="max-w-[18rem] px-3 py-2.5 text-xs text-muted-foreground">
-                  <span className="line-clamp-2" title={row.priceNote ?? undefined}>
+                  <span className="line-clamp-2" data-tooltip={row.priceNote ?? undefined}>
                     {row.priceNote ?? "—"}
                   </span>
                 </td>

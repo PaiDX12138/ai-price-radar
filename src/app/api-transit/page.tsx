@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/page-shell";
 import { TransitBoard } from "@/components/transit/transit-board";
+import {connection} from "next/server";
+import {listTransitViews} from "@/lib/transit/queries";
 
 export const metadata: Metadata = {
   title: "中转站点",
@@ -9,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function TransitPage() {
-  return <PageShell><Suspense fallback={<div className="h-40" aria-label="加载中转站点" />}><TransitBoard /></Suspense></PageShell>;
+  return <PageShell><Suspense fallback={<div className="h-40" aria-label="加载中转站点" />}><Board /></Suspense></PageShell>;
+}
+async function Board() {
+  await connection();
+  return <TransitBoard sites={listTransitViews()}/>;
 }

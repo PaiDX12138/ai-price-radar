@@ -38,7 +38,7 @@ export function OtpPlatformLogo({
         className,
       )}
       style={{ width: size + pad, height: size + pad }}
-      title={name ?? platformId}
+      data-tooltip={name ?? platformId}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
