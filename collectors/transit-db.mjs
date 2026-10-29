@@ -18,6 +18,7 @@ import {
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildPerformanceMonitor } from "../src/lib/transit/performance.mjs";
+import { ZETA_SCHEMA_SQL, buildZetaPerformance } from "./transit/zetaapi-storage.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -181,6 +182,17 @@ CREATE TABLE IF NOT EXISTS transit_collect_schedule (
 );
 CREATE INDEX IF NOT EXISTS idx_transit_due ON transit_collect_schedule(next_collect_at, lease_until);
 
+CREATE TABLE IF NOT EXISTS transit_performance_schedule (
+  station_id TEXT PRIMARY KEY REFERENCES transit_stations(id),
+  next_collect_at TEXT NOT NULL,
+  fail_count INTEGER NOT NULL DEFAULT 0,
+  lease_owner TEXT,
+  lease_until TEXT,
+  last_success_at TEXT,
+  last_attempt_at TEXT,
+  last_error TEXT
+);
+
 CREATE TABLE IF NOT EXISTS transit_performance_observations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   station_id TEXT NOT NULL REFERENCES transit_stations(id) ON DELETE CASCADE,
@@ -204,6 +216,8 @@ CREATE INDEX IF NOT EXISTS idx_transit_perf_group_bucket
   ON transit_performance_observations(station_id, group_key, bucket_at DESC);
 CREATE INDEX IF NOT EXISTS idx_transit_perf_model_window_bucket
   ON transit_performance_observations(station_id, model_name, window_hours, bucket_at DESC);
+
+${ZETA_SCHEMA_SQL}
 
 `;
 
@@ -254,7 +268,8 @@ export function openTransitDb(dbPath = resolveTransitDbPath()) {
   db.pragma("journal_mode = WAL");
   db.pragma("synchronous = NORMAL");
   db.exec(SCHEMA_SQL);
-  ensureTransitColumns(db);
+  // Per-site workers may start together after deployment; serialize additive migrations.
+  db.transaction(() => ensureTransitColumns(db)).immediate();
   db.exec(INDEX_SQL);
   cachedDb = db;
   cachedPath = path;
@@ -289,6 +304,14 @@ function ensureTransitColumns(db) {
     db.prepare(`PRAGMA table_info(${table})`).all().map((row) => String(row.name)),
   );
   const additions = {
+    transit_performance_observations: {
+      bucket_end_at: "TEXT",
+      source_generated_at: "TEXT",
+      resolution_seconds: "INTEGER",
+      user_availability: "REAL",
+      first_attempt_availability: "REAL",
+      is_partial: "INTEGER NOT NULL DEFAULT 0",
+    },
     transit_stations: {
       recharge_ratio: "REAL",
       recharge_details_json: "TEXT",
@@ -312,6 +335,7 @@ function ensureTransitColumns(db) {
       raw_group_json: "TEXT",
     },
     transit_offers: {
+      cache_write_1h_price: "REAL",
       discount_ratio: "REAL",
       discount_source: "TEXT",
       discount_basis: "TEXT",
@@ -516,14 +540,14 @@ export function upsertTransitCollection(db, input) {
     const upsertOffer = db.prepare(`
       INSERT INTO transit_offers
         (id, group_id, raw_model, standard_model, family, modality, price_kind,
-         input_price, output_price, cache_read_price, cache_write_price, cache_creation_price, fixed_price,
+         input_price, output_price, cache_read_price, cache_write_price, cache_write_1h_price, cache_creation_price, fixed_price,
          price_unit, currency, composite_multiplier, vendor_id, vendor_name, quota_type, billing_mode,
          model_price_min, model_price_max, image_ratio, image_billing_json, tiers_json,
          supported_endpoint_types_json, base_price_json, effective_price_json, source_model_version,
          source_url, raw_offer_hash, raw_offer_json, discount_ratio, discount_source, discount_basis, discount_details_json, observed_at, updated_at)
       VALUES
         (@id, @group_id, @raw_model, @standard_model, @family, @modality, @price_kind,
-         @input_price, @output_price, @cache_read_price, @cache_write_price, @cache_creation_price, @fixed_price,
+         @input_price, @output_price, @cache_read_price, @cache_write_price, @cache_write_1h_price, @cache_creation_price, @fixed_price,
          @price_unit, @currency, @composite_multiplier, @vendor_id, @vendor_name, @quota_type, @billing_mode,
          @model_price_min, @model_price_max, @image_ratio, @image_billing_json, @tiers_json,
          @supported_endpoint_types_json, @base_price_json, @effective_price_json, @source_model_version,
@@ -536,6 +560,7 @@ export function upsertTransitCollection(db, input) {
         output_price = excluded.output_price,
         cache_read_price = excluded.cache_read_price,
         cache_write_price = excluded.cache_write_price,
+        cache_write_1h_price = excluded.cache_write_1h_price,
         cache_creation_price = COALESCE(excluded.cache_creation_price, transit_offers.cache_creation_price),
         fixed_price = excluded.fixed_price,
         price_unit = excluded.price_unit,
@@ -590,6 +615,7 @@ export function upsertTransitCollection(db, input) {
         output_price: offer.outputPrice ?? null,
         cache_read_price: offer.cacheReadPrice ?? null,
         cache_write_price: offer.cacheWritePrice ?? null,
+        cache_write_1h_price: offer.cacheWrite1hPrice ?? null,
         cache_creation_price: offer.cacheCreationPrice ?? null,
         fixed_price: offer.fixedPrice ?? null,
         price_unit: offer.priceUnit || null,
@@ -713,20 +739,29 @@ export function recordTransitSourceSnapshot(db, snapshot) {
 export function upsertTransitPerformance(db, input) {
   const rows = Array.isArray(input.rows) ? input.rows : [];
   if (!rows.length) return 0;
+  let written = 0;
   const stmt = db.prepare(`
     INSERT INTO transit_performance_observations
       (station_id, model_name, group_key, bucket_at, avg_ttft_ms, avg_latency_ms,
-       success_rate, avg_tps, has_data, window_hours, source_url, source_schema, observed_at)
+       success_rate, avg_tps, has_data, window_hours, source_url, source_schema, observed_at,
+       bucket_end_at,source_generated_at,resolution_seconds,user_availability,first_attempt_availability,is_partial)
     VALUES (@station_id, @model_name, @group_key, @bucket_at, @avg_ttft_ms, @avg_latency_ms,
-      @success_rate, @avg_tps, @has_data, @window_hours, @source_url, @source_schema, @observed_at)
+      @success_rate, @avg_tps, @has_data, @window_hours, @source_url, @source_schema, @observed_at,
+      @bucket_end_at,@source_generated_at,@resolution_seconds,@user_availability,@first_attempt_availability,@is_partial)
     ON CONFLICT(station_id, model_name, group_key, bucket_at, window_hours) DO UPDATE SET
       avg_ttft_ms=excluded.avg_ttft_ms, avg_latency_ms=excluded.avg_latency_ms,
       success_rate=excluded.success_rate, avg_tps=excluded.avg_tps,
       has_data=excluded.has_data, source_url=excluded.source_url,
-      source_schema=excluded.source_schema, observed_at=excluded.observed_at
+      source_schema=excluded.source_schema, observed_at=excluded.observed_at,
+      bucket_end_at=excluded.bucket_end_at,source_generated_at=excluded.source_generated_at,
+      resolution_seconds=excluded.resolution_seconds,user_availability=excluded.user_availability,
+      first_attempt_availability=excluded.first_attempt_availability,is_partial=excluded.is_partial
+    WHERE (transit_performance_observations.source_generated_at IS NULL
+      OR excluded.source_generated_at>=transit_performance_observations.source_generated_at)
+      AND (transit_performance_observations.is_partial=1 OR excluded.is_partial=0)
   `);
   const tx = db.transaction(() => {
-    for (const row of rows) stmt.run({
+    for (const row of rows) written += stmt.run({
       station_id: input.stationId,
       model_name: row.modelName,
       group_key: row.groupKey,
@@ -740,21 +775,37 @@ export function upsertTransitPerformance(db, input) {
       source_url: input.sourceUrl,
       source_schema: input.sourceSchema ?? null,
       observed_at: input.observedAt ?? new Date().toISOString(),
-    });
+      bucket_end_at: row.bucketEndAt ?? null,
+      source_generated_at: input.sourceGeneratedAt ?? null,
+      resolution_seconds: row.resolutionSeconds ?? null,
+      user_availability: row.userAvailability ?? null,
+      first_attempt_availability: row.firstAttemptAvailability ?? null,
+      is_partial: row.isPartial ? 1 : 0,
+    }).changes;
   });
   tx();
-  return rows.length;
+  return written;
 }
 
 export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPath()) {
   return db.transaction(() => {
   // Explicit public projection: never ship collector configs or raw payloads.
   const stations = db.prepare(`
-    SELECT id,name,site_url,canonical_url,host,system,source_type,status,listed_at,
+    SELECT id,name,site_url,canonical_url,host,system,collector_kind,source_type,status,listed_at,
       description,docs_url,logo_url,logo_local_path,recharge_ratio,recharge_details_json,last_seen_at,last_collected_at,last_collect_ok,risk_note
     FROM transit_stations WHERE status = 'published'
     ORDER BY name COLLATE NOCASE, id
   `).all();
+  for (const station of stations) {
+    const raw = db.prepare("SELECT raw_meta_json FROM transit_stations WHERE id=?").get(station.id)?.raw_meta_json;
+    try {
+      const meta=JSON.parse(raw??"{}");
+      if (meta.service && typeof meta.service.allowSignup === "boolean" && typeof meta.service.allowTopup === "boolean")
+        station.service_state={allowSignup:meta.service.allowSignup,allowTopup:meta.service.allowTopup,observedAt:meta.service.observedAt};
+      if(meta.groupOrigin === "synthetic_public_catalog") station.catalog_only=true;
+      if(meta.currencyKind === "usd_cash") station.currency_kind="usd_cash";
+    } catch { /* Never export raw collector metadata. */ }
+  }
   const groups = db.prepare(`
     SELECT g.* FROM transit_groups g JOIN transit_stations s ON s.id=g.station_id
     WHERE g.status = 'active' AND s.status='published'
@@ -771,25 +822,29 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
   const performanceNow = Date.now();
   const performanceRows = db.prepare(`
     SELECT station_id,model_name,group_key,bucket_at,avg_ttft_ms,avg_latency_ms,
-      success_rate,avg_tps,has_data,window_hours,source_url,source_schema,observed_at
+      success_rate,avg_tps,has_data,window_hours,source_url,source_schema,observed_at,
+      bucket_end_at,source_generated_at,resolution_seconds,is_partial
     FROM transit_performance_observations
     WHERE station_id IN (SELECT id FROM transit_stations WHERE status='published')
-      AND window_hours=360 AND bucket_at>=?
+      AND (window_hours=360 OR (window_hours=24 AND resolution_seconds=3600 AND is_partial=0)) AND bucket_at>=?
     ORDER BY station_id,bucket_at,model_name,group_key
   `).all(new Date(Math.floor(performanceNow/3600000)*3600000-359*3600000).toISOString());
   // Export only compact, pre-aggregated public series, never tens of thousands of raw rows.
   const performance = stations.map(s => {
+    const capabilities = { ttft: s.collector_kind !== "rightapi_v1", latency: s.collector_kind !== "rightapi_v1", throughput: s.collector_kind !== "rightapi_v1" };
     const rows=performanceRows.filter(r=>r.station_id===s.id);
     const stationGroups=groups.filter(g=>g.station_id===s.id);
     const ownGroupIds=new Set(stationGroups.map(g=>g.id));
     const modelNames=[...new Set(offers.filter(o=>ownGroupIds.has(o.group_id)).map(o=>o.raw_model))];
+    if (s.collector_kind === "zetaapi_v1") return buildZetaPerformance(db,s.id,modelNames,{now:performanceNow});
     const rowsByModel=new Map();
     for(const row of rows){const bucket=rowsByModel.get(row.model_name)??[];bucket.push(row);rowsByModel.set(row.model_name,bucket);}
     return {stationId:s.id,
-      station:{...buildPerformanceMonitor(rows,{now:performanceNow}),scope:{stationId:s.id,groupKey:null}},
-      groups:Object.fromEntries(stationGroups.map(g=>[g.group_key,{...buildPerformanceMonitor(rows,{now:performanceNow,groupKey:g.group_key}),scope:{stationId:s.id,groupKey:g.group_key}}])),
+      station:{...buildPerformanceMonitor(rows,{now:performanceNow}),capabilities,scope:{stationId:s.id,groupKey:null}},
+      groups:Object.fromEntries(stationGroups.map(g=>[g.group_key,{...buildPerformanceMonitor(rows,{now:performanceNow,groupKey:g.group_key}),capabilities,scope:{stationId:s.id,groupKey:g.group_key}}])),
       models:Object.fromEntries(modelNames.map(modelName=>[modelName,{
         ...buildPerformanceMonitor(rowsByModel.get(modelName)??[],{now:performanceNow,modelName}),
+        capabilities,
         scope:{stationId:s.id,groupKey:null,modelName},
       }])),
     };

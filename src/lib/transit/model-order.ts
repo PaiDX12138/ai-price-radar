@@ -92,7 +92,9 @@ export function orderTransitModels<T extends OrderableTransitModel>(
     const name = normalize(item.modelName ?? item.family ?? "");
     const metadata = Object.hasOwn(catalog, name) ? catalog[name] : undefined;
     return {
-      item, name, platform: metadata?.platform || platformOf(item),
+      // Resold models can appear in another provider's community catalog.
+      // A known model identity must never be reclassified by that metadata.
+      item, name, platform: platformOf(item).startsWith("other:") ? metadata?.platform || platformOf(item) : platformOf(item),
       series: normalize(metadata?.series || inferredSeries(name)),
       released: releaseTime(metadata), version: versionParts(name, metadata),
       deprecated: metadata?.status === "deprecated", match: searchRank(name, normalizedQuery),
@@ -154,8 +156,9 @@ export function orderTransitModels<T extends OrderableTransitModel>(
 }
 
 /** A four-row price table must not mix token, image and video billing units. */
-export function transitModelModality(model: OrderableTransitModel & { category?: string }, catalog: TransitModelCatalog = sharedCatalog): string {
+export function transitModelModality(model: OrderableTransitModel & { category?: string; modality?: string }, catalog: TransitModelCatalog = sharedCatalog): string {
   if (model.category === "image" || model.category === "video") return model.category;
+  if (model.modality === "text" || model.modality === "image" || model.modality === "video") return model.modality;
   const name = normalize(model.modelName ?? "");
   const outputs = (Object.hasOwn(catalog, name) ? catalog[name]?.outputModalities : undefined) ?? [];
   if (outputs.includes("video")) return "video";

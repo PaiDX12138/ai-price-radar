@@ -4,6 +4,9 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export type TransitStation = {
+  service_state?: { allowSignup: boolean; allowTopup: boolean; observedAt: string };
+  catalog_only?: boolean;
+  currency_kind?: "usd_cash";
   id: string;
   name: string;
   site_url: string;
@@ -68,6 +71,7 @@ export type TransitOffer = {
   output_price: number | null;
   cache_read_price: number | null;
   cache_write_price: number | null;
+  cache_write_1h_price?: number | null;
   cache_creation_price?: number | null;
   fixed_price: number | null;
   price_unit: string | null;
@@ -113,6 +117,12 @@ export type TransitSnapshot = {
 };
 
 export type TransitMonitorStats = {
+  kind?: "probe_availability";
+  coverageScope?: "infrastructure";
+  monitoredModels?: number;
+  totalModels?: number;
+  sourceSummary?: { availability: number; observedAt: string; sourceUrl: string };
+  capabilities?: { ttft: boolean; latency: boolean; throughput: boolean };
   scope: { stationId: string; groupKey: string | null; modelName?: string };
   availability: number | null;
   latestTtftMs: number | null;
@@ -137,6 +147,7 @@ export type TransitPerformanceSnapshot = {
   station: TransitMonitorStats;
   groups: Record<string, TransitMonitorStats>;
   models?: Record<string, TransitMonitorStats>;
+  infrastructure?: { id: number; name: string; monitor: TransitMonitorStats }[];
 };
 
 const SNAPSHOT_REL = join("data", "transit", "latest.json");

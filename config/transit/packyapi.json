@@ -15,6 +15,7 @@
   "enabled": true,
   "status": "published",
   "minimumModels": 5,
+  "requiredFamilies": ["Claude", "GPT", "Gemini", "DeepSeek"],
   "timeoutMs": 20000,
   "maxBytes": 2097152,
   "priceBasis": "new_api_display_credit",

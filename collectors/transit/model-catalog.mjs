@@ -29,6 +29,12 @@ export function parseModelCatalog(payload, generatedAt = new Date().toISOString(
     if (!platform) continue;
     for (const [id, model] of Object.entries(data.models)) {
       if (!model || typeof id !== "string" || !id || id.length > 200 || id.includes("/")) continue;
+      const owner = /^(gpt|o\d|chatgpt|codex)/i.test(id) ? "chatgpt"
+        : /^claude/i.test(id) ? "claude" : /^(gemini|imagen|veo)/i.test(id) ? "gemini"
+        : /^deepseek/i.test(id) ? "deepseek" : /^grok/i.test(id) ? "grok"
+        : /^(glm|zai)/i.test(id) ? "glm" : /^(kimi|moonshot)/i.test(id) ? "kimi"
+        : /^qwen/i.test(id) ? "qwen" : null;
+      if (owner && owner !== platform) continue;
       const releasedAt = /^\d{4}-\d{2}(?:-\d{2})?$/.test(model.release_date ?? "") ? model.release_date : undefined;
       models[id.toLowerCase()] = {
         platform, series: typeof model.family === "string" ? model.family : undefined,

@@ -25,6 +25,31 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 使用 Provider 时沿用 `delay={120}`；无需单独复制浮层样式。
 
+## 多字段说明
+
+不要把计算方式、时间、缺失原因拼成长段。使用 `TooltipDetails` 的「标题 / 字段值 / 一句备注」布局，字段左对齐，值右对齐，长值自动换行。
+
+纯文本结构化说明仍走全局委托，不新增触发器或改变整卡跳转：
+
+```tsx
+import { tooltipDetails } from "@/components/ui/tooltip-details";
+
+<span {...tooltipDetails({
+  title: "近15日可用率",
+  rows: [
+    { label: "可用率", value: "97.00%" },
+    { label: "数据覆盖", value: "23 / 360 小时" },
+  ],
+  note: "历史积累中，无记录时段不计入。",
+})}>97.00%</span>
+```
+
+`ToneChip`、`TextBand` 的 `tooltip` 也接受同样的对象。复杂图表已有独立 `Tooltip` 时，在其 `TooltipContent` 内直接渲染 `<TooltipDetails {...details} />`，不嵌套浮层。
+
+`data-tooltip-details` 只接收文本 JSON；不解析 HTML，异常数据退回普通 `data-tooltip`。结构化浮层仍复用全局 `TooltipContent` 的样式与定位。
+
+中转监测文案统一由 `src/lib/transit/monitor-hints.ts` 生成：首页、详情分组、模型卡共用。缺失耗时显示「站点未公开」，无历史显示「暂无记录」，两者不得混为 0 或故障。
+
 ## 机制与边界
 
 - `RootLayout` 只挂一个 `SiteTooltips`，委托处理普通提示。动态筛选、翻页、服务端表格无需重新绑定或逐个创建 React tooltip。

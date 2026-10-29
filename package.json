@@ -24,6 +24,7 @@
     "typecheck": "tsc --noEmit",
     "shops:migrate": "node scripts/migrate-shops-to-sqlite.mjs",
     "transit:migrate": "node scripts/migrate-transit.mjs",
+    "transit:status": "node scripts/transit-status.mjs",
     "collect:transit": "node scripts/collect-transit.mjs",
     "collect:transit-models": "node scripts/collect-transit-models.mjs",
     "shops:probe": "node scripts/shops-probe.mjs",

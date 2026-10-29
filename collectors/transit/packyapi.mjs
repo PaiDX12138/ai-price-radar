@@ -75,5 +75,8 @@ export function parsePackyPricing(payload, config) {
     }
   }
   if(!offers.length || !groups.size) throw new Error("empty_group_offers");
+  const activeFamilies = new Set(offers.filter(o => groups.get(o.groupKey)?.status === "active").map(o => o.family));
+  const missingFamilies = (config.requiredFamilies ?? []).filter(family => !activeFamilies.has(family));
+  if (missingFamilies.length) throw new Error(`incomplete_pricing_families:${missingFamilies.join(",")}`);
   return {groups:[...groups.values()],offers,modelCount:payload.data.length,unresolved};
 }

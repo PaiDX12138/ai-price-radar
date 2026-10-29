@@ -5,6 +5,8 @@ export const MEDIA_BILLING_LABELS = {
 } as const;
 
 export const formatTransitPriceAmount = (value: number) => value !== 0 && Math.abs(value) < 0.000001 ? String(value) : String(Number(value.toFixed(6)));
+/** Compact card display only. Stored and tooltip values keep their precision. */
+export const formatTransitCardAmount = (value: number) => value > 0 && value < 0.005 ? "<0.01" : String(Number(value.toFixed(2)));
 const valid = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 export type MediaPriceBounds = { min: number | null; max: number | null };
 
@@ -19,17 +21,22 @@ export function mediaPriceBounds(value?: TransitMediaPricing, fallbackFixed?: nu
   return valid(fixed) ? { min: fixed, max: fixed } : null;
 }
 
-export function formatMediaPriceBounds(bounds: MediaPriceBounds | null): string {
+export function formatMediaPriceBounds(bounds: MediaPriceBounds | null, compact = false): string {
   if (!bounds) return "未披露";
   const { min, max } = bounds;
-  if (min !== null && max !== null) return min === max ? `$${formatTransitPriceAmount(min)}` : `$${formatTransitPriceAmount(min)}–${formatTransitPriceAmount(max)}`;
-  if (min !== null) return `$${formatTransitPriceAmount(min)}起`;
-  if (max !== null) return `≤$${formatTransitPriceAmount(max)}`;
+  const amount = compact ? formatTransitCardAmount : formatTransitPriceAmount;
+  if (min !== null && max !== null) return min === max ? `$${amount(min)}` : `$${amount(min)}–${amount(max)}`;
+  if (min !== null) return `$${amount(min)}起`;
+  if (max !== null) return `≤$${amount(max)}`;
   return "未披露";
 }
 
-export function formatTransitMediaPrice(value?: TransitMediaPricing, fallbackFixed?: number | null) {
-  return formatMediaPriceBounds(mediaPriceBounds(value, fallbackFixed));
+export function formatTransitMediaPrice(value?: TransitMediaPricing, fallbackFixed?: number | null, compact = false) {
+  if (value?.tokenCurrencyKind === "usd_cash") {
+    const amount=compact?formatTransitCardAmount:formatTransitPriceAmount;
+    return `入 ${valid(value.tokenInput)?`$${amount(value.tokenInput)}`:"—"} · 出 ${valid(value.tokenOutput)?`$${amount(value.tokenOutput)}`:"—"}`;
+  }
+  return formatMediaPriceBounds(mediaPriceBounds(value, fallbackFixed), compact);
 }
 
 /** Summarize disclosed offers only. Never invent the missing end of a one-sided range. */

@@ -14,7 +14,7 @@
  *   PROXY_API_URL=...   or   PROXY_URL=http://user:pass@host:port
  */
 import { verifyMissingShopApiOffers } from "../collectors/offer-lifecycle.mjs";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hostname } from "node:os";
@@ -101,18 +101,26 @@ const workerBootAt = Date.now();
 
 /** Transit is deliberately independent of slow shop batches. SQLite leases also
  * protect against another worker/CLI; --due catches up overdue failures/restarts. */
-let transitChild = null;
+const transitChildren = new Map();
 function maybeRunTransitCollect() {
-  if (FORCE_SHOP_ID || transitChild) return;
-  transitChild=spawn(process.execPath,[join(root,"scripts/collect-transit.mjs"),"--due"],{
-    cwd:root,env:process.env,windowsHide:true,stdio:["ignore","pipe","pipe"],
-  });
-  const child=transitChild;
-  const timeout=setTimeout(()=>child.kill(),4*60*1000);
-  child.stdout?.on("data",data=>console.log("[worker] transit",String(data).trim()));
-  child.stderr?.on("data",data=>console.warn("[worker] transit",String(data).trim().slice(-800)));
-  const done=()=>{clearTimeout(timeout);transitChild=null;};
-  child.on("error",done);child.on("exit",done);
+  if (FORCE_SHOP_ID) return;
+  try {
+    const directory = join(root,"config/transit");
+    for (const file of readdirSync(directory).filter(name => /^[a-z0-9-]+\.json$/.test(name))) {
+      const source = JSON.parse(readFileSync(join(directory,file),"utf8"));
+      if (!source.enabled || !/^[a-z0-9-]+$/.test(source.id) || transitChildren.has(source.id)) continue;
+      const child = spawn(process.execPath,[join(root,"scripts/collect-transit.mjs"),"--due",`--station=${source.id}`],{
+        cwd:root,env:process.env,windowsHide:true,stdio:["ignore","pipe","pipe"],
+      });
+      transitChildren.set(source.id,child);
+      const timeout=setTimeout(()=>child.kill(),4*60*1000);
+      child.stdout?.on("data",data=>console.log(`[worker] transit:${source.id}`,String(data).trim()));
+      child.stderr?.on("data",data=>console.warn(`[worker] transit:${source.id}`,String(data).trim().slice(-800)));
+      const done=()=>{clearTimeout(timeout);if(transitChildren.get(source.id)===child)transitChildren.delete(source.id);};
+      child.on("error",error=>{console.warn(`[worker] transit:${source.id} spawn failed`,error.message);done();});
+      child.on("exit",code=>{if(code)console.warn(`[worker] transit:${source.id} exited`,code);done();});
+    }
+  } catch (error) { console.warn("[worker] transit dispatch failed",error.message); }
 }
 
 /**
@@ -706,7 +714,7 @@ async function main() {
     stopping = true;
     console.log("\n[worker] shutting down…");
     if(transitTimer)clearInterval(transitTimer);
-    transitChild?.kill();
+    for (const child of transitChildren.values()) child.kill();
     closeShopsDb();
     process.exit(0);
   };

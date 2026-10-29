@@ -1,15 +1,27 @@
 import { randomUUID, createHash } from "node:crypto";
-import { readFileSync, mkdirSync, writeFileSync, renameSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, mkdirSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { upsertTransitStation, upsertTransitCollection, upsertTransitPerformance, recordTransitSourceSnapshot, exportTransitSnapshot } from "../transit-db.mjs";
 import { parsePackyPricing } from "./packyapi.mjs";
 import { parsePackyDiscountPolicy, packyOfferDiscount } from "./discounts.mjs";
 import { parsePackyRecharge } from "./recharge.mjs";
+import { collectRightApiSource } from "./rightapi.mjs";
+import { collectZetaApiSource } from "./zetaapi.mjs";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 export const TRANSIT_INTERVAL_MS=6*60*60*1000;
-export function loadTransitSources() { return [JSON.parse(readFileSync(join(root,"config/transit/packyapi.json"),"utf8"))]; }
+export function loadTransitSources() {
+  const directory = join(root, "config/transit");
+  const configs = readdirSync(directory).filter(name => /^[a-z0-9-]+\.json$/.test(name))
+    .sort().map(name => JSON.parse(readFileSync(join(directory, name), "utf8")));
+  const ids = new Set();
+  for (const config of configs) {
+    if (!/^[a-z0-9-]+$/.test(config.id) || ids.has(config.id)) throw new Error("invalid_or_duplicate_transit_id");
+    ids.add(config.id);
+  }
+  return configs;
+}
 const hash=s=>createHash("sha256").update(s).digest("hex");
 
 /** Bounded GET including the response body; no cookies, keys or admin APIs. */
@@ -22,18 +34,20 @@ export async function fetchPublic(url, config, fetchImpl=fetch) {
   return {text:body,httpStatus:response.status,contentType:response.headers.get("content-type"),etag:response.headers.get("etag"),lastModified:response.headers.get("last-modified")};
 }
 
-export function claimTransit(db, config, {owner,now=new Date().toISOString(),force=false}={}) {
+export function claimTransit(db, config, {owner,now=new Date().toISOString(),force=false,task="pricing"}={}) {
+  const table = task === "performance" ? "transit_performance_schedule" : "transit_collect_schedule";
   return db.transaction(()=>{
-    upsertTransitStation(db,{...config,status:"candidate"});
-    db.prepare("INSERT OR IGNORE INTO transit_collect_schedule(station_id,next_collect_at) VALUES (?,?)").run(config.id,now);
-    return db.prepare(`UPDATE transit_collect_schedule SET lease_owner=@owner,lease_until=@until
+    upsertTransitStation(db,{...config,sourceType:config.sourceType??"official_public",status:"candidate"});
+    db.prepare(`INSERT OR IGNORE INTO ${table}(station_id,next_collect_at) VALUES (?,?)`).run(config.id,now);
+    return db.prepare(`UPDATE ${table} SET lease_owner=@owner,lease_until=@until
       WHERE station_id=@id AND (lease_until IS NULL OR lease_until<=@now)
       AND (@force=1 OR next_collect_at<=@now)`).run({owner,until:new Date(Date.parse(now)+5*60*1000).toISOString(),id:config.id,now,force:force?1:0}).changes===1;
   })();
 }
 
-export function finishTransit(db,id,owner,{ok,error=null,at=new Date().toISOString(),retryAfter=null,intervalMs=TRANSIT_INTERVAL_MS}={}) {
-  const row=db.prepare("SELECT * FROM transit_collect_schedule WHERE station_id=? AND lease_owner=?").get(id,owner);
+export function finishTransit(db,id,owner,{ok,error=null,at=new Date().toISOString(),retryAfter=null,intervalMs=TRANSIT_INTERVAL_MS,task="pricing"}={}) {
+  const table = task === "performance" ? "transit_performance_schedule" : "transit_collect_schedule";
+  const row=db.prepare(`SELECT * FROM ${table} WHERE station_id=? AND lease_owner=?`).get(id,owner);
   if(!row) throw new Error("transit_lease_lost");
   const count=ok?0:row.fail_count+1;
   let delay=ok?intervalMs:Math.min(6*60,15*2**Math.min(count-1,5))*60000;
@@ -42,7 +56,7 @@ export function finishTransit(db,id,owner,{ok,error=null,at=new Date().toISOStri
   const retryMs=retryAfter==null?0:Number.isFinite(retrySeconds)?retrySeconds*1000:Number.isFinite(retryDate)?Math.max(0,retryDate-Date.parse(at)):0;
   delay=Math.max(delay,retryMs);
   const next=new Date(Date.parse(at)+delay).toISOString();
-  db.prepare(`UPDATE transit_collect_schedule SET next_collect_at=?,fail_count=?,lease_owner=NULL,lease_until=NULL,
+  db.prepare(`UPDATE ${table} SET next_collect_at=?,fail_count=?,lease_owner=NULL,lease_until=NULL,
     last_attempt_at=?,last_success_at=CASE WHEN ?=1 THEN ? ELSE last_success_at END,last_error=? WHERE station_id=? AND lease_owner=?`).run(next,count,at,ok?1:0,at,error,id,owner);
   return next;
 }
@@ -212,7 +226,17 @@ export async function collectTransitSource(db,config,options={}) {
 /** Rebuilding is cheap and repairs a missed/failed export even with nothing due. */
 export async function runTransitCollection(db,options={}) {
   const results=[];
-  for(const config of options.sources??loadTransitSources()) results.push(await collectTransitSource(db,config,options));
+  for(const config of options.sources??loadTransitSources()) {
+    if(config.collectorKind === "zetaapi_v1") {
+      results.push(await collectZetaApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+    } else if(config.collectorKind === "rightapi_v1") {
+      results.push(await collectRightApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+    } else if(config.collectorKind === "packyapi_v1") {
+      results.push(await collectTransitSource(db,config,options));
+    } else {
+      results.push({id:config.id,status:"failed",error:"unsupported_collector"});
+    }
+  }
   exportTransitSnapshot(db,options.snapshotPath);
   return results;
 }

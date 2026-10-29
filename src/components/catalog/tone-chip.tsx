@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { tooltipDetails, type TooltipDetailsData } from "@/components/ui/tooltip-details";
 
 /** 轻量色标 / 色卡 pill（非圆角大胶囊）。 */
 export type ToneChipTone =
@@ -29,7 +30,7 @@ type ToneChipProps = {
   children: ReactNode;
   tone?: ToneChipTone;
   className?: string;
-  tooltip?: string;
+  tooltip?: string | TooltipDetailsData;
   "aria-label"?: string;
 };
 
@@ -42,7 +43,7 @@ export function ToneChip({
 }: ToneChipProps) {
   return (
     <span
-      data-tooltip={tooltip}
+      {...(typeof tooltip === "string" ? {"data-tooltip":tooltip} : tooltip ? tooltipDetails(tooltip) : {})}
       aria-label={ariaLabel}
       className={cn(
         "inline-flex h-5 max-w-full items-center gap-1 truncate rounded-md px-1.5",

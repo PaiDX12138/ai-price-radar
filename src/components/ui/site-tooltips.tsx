@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipDetails, parseTooltipDetails, type TooltipDetailsData } from "@/components/ui/tooltip-details";
 
 type HintPosition = Element | { contextElement: Element; getBoundingClientRect: () => DOMRect };
-type Hint = { anchor: Element; text: string; position: HintPosition };
+type Hint = { anchor: Element; text: string; position: HintPosition; details?: TooltipDetailsData };
 const HINT = "[data-tooltip]";
 const RICH_TRIGGER = "[data-base-ui-tooltip-trigger]";
 const POPUP = "[data-slot='tooltip-content']";
@@ -57,7 +58,7 @@ export function SiteTooltips() {
           },
         };
       }
-      active = { anchor, text, position };
+      active = { anchor, text, position, details: parseTooltipDetails(anchor.getAttribute("data-tooltip-details")) };
       pending = null;
       setHint(active);
     }
@@ -184,7 +185,7 @@ export function SiteTooltips() {
     anchor.setAttribute("aria-describedby", [...descriptions].join(" "));
     // Only observe the active hint, not all price cells or the whole document.
     const observer = new MutationObserver(() => closeRef.current());
-    observer.observe(anchor, { attributes: true, attributeFilter: ["data-tooltip"] });
+    observer.observe(anchor, { attributes: true, attributeFilter: ["data-tooltip", "data-tooltip-details"] });
     // Covers a hovered row disappearing during an async refresh without watching the document.
     const connectionTimer = setInterval(() => {
       if (!anchor.isConnected || anchor.closest("[hidden], [inert]")) closeRef.current();
@@ -200,7 +201,7 @@ export function SiteTooltips() {
 
   return <TooltipProvider delay={OPEN_DELAY} closeDelay={CLOSE_DELAY}>
     <Tooltip open={hint !== null} onOpenChange={open => { if (!open) closeRef.current(); }}>
-      <TooltipContent id={id} anchor={hint?.position} sideOffset={6} aria-live="off">{hint?.text}</TooltipContent>
+      <TooltipContent id={id} anchor={hint?.position} sideOffset={6} aria-live="off" className={hint?.details ? "w-[min(19rem,calc(100vw-1.5rem))]" : undefined}>{hint?.details ? <TooltipDetails {...hint.details} /> : hint?.text}</TooltipContent>
     </Tooltip>
   </TooltipProvider>;
 }

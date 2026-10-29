@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Initialize the API transit SQLite store and read-side snapshot. */
+import { loadEnvLocal } from "./load-env-local.mjs";
 import {
   closeTransitDb,
   exportTransitSnapshot,
@@ -8,6 +9,7 @@ import {
   TRANSIT_SNAPSHOT_PATH,
 } from "../collectors/transit-db.mjs";
 
+loadEnvLocal();
 const dbPath = resolveTransitDbPath();
 const db = openTransitDb(dbPath);
 try {

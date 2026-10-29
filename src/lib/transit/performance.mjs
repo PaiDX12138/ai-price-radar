@@ -17,7 +17,8 @@ export function buildPerformanceMonitor(rows, { now = Date.now(), groupKey = nul
   for (const r of rows) {
     if (groupKey !== null && r.group_key !== groupKey) continue;
     if (modelName !== null && r.model_name !== modelName) continue;
-    if (r.window_hours != null && r.window_hours !== PERFORMANCE_HOURS) continue;
+    if (r.window_hours != null && r.window_hours !== PERFORMANCE_HOURS
+      && !(r.window_hours === 24 && r.resolution_seconds === 3600 && !r.is_partial)) continue;
     const at = Date.parse(r.bucket_at);
     if (!finite(at) || at < start || at >= end || !r.has_data) continue;
     if (!finite(r.success_rate) || r.success_rate < 0 || r.success_rate > 100) continue;

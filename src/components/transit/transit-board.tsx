@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleDollarSign, SearchX } from "lucide-react";
+import { SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,13 +10,13 @@ import type { TransitSiteView as TransitDemo } from "@/lib/transit/view";
 import { getTransitMonitor } from "@/lib/transit/view";
 import Image from "next/image";
 import { CardMeta, CardUpdatedRow } from "@/components/catalog/card-meta";
-import { ToneChip } from "@/components/catalog/tone-chip";
 import { TransitHomepageLink } from "@/components/transit/transit-homepage-link";
 import { TransitModelPrices } from "@/components/transit/transit-model-prices";
 import { transitTabs, platformNames, matchesTransitTab } from "@/components/transit/transit-tabs";
 import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
 import { TransitMonitor, TransitMonitorSource } from "@/components/transit/transit-monitor";
 import { transitModelModality } from "@/lib/transit/model-order";
+import { TransitBillingBadge, TransitServiceStatus } from "@/components/transit/transit-site-badges";
 
 
 function supports(site: TransitDemo, id: string) {
@@ -55,7 +55,7 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
           <CardHeader className="h-12 shrink-0 pb-1">
             <div className="flex items-start gap-3">
               <Image src={site.logoPath} alt={`${site.name} Logo`} width={32} height={32} className="size-8 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TransitHomepageLink site={site} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><ToneChip tone="sky" className="h-5 gap-1.5 px-2 text-xs" tooltip={site.rechargeInfo?`官网文档与公开接口核实的基础充值比例；$为站内记账额度，不是美元现金。核实于 ${site.rechargeInfo.observedAt}；来源 ${site.rechargeInfo.sourceUrl}`:"尚无核实的站点基础充值比例"}><CircleDollarSign className="size-3.5 shrink-0" aria-hidden /><span>倍率</span><span className="font-mono font-medium tabular-nums">{site.rechargeMultiplier === null ? "未披露" : `¥1 = $${new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 4 }).format(1 / site.rechargeMultiplier)}`}</span></ToneChip><TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
+              <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TransitHomepageLink site={site} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><TransitBillingBadge site={site} />{site.serviceState && (!site.serviceState.allowSignup || !site.serviceState.allowTopup) && <TransitServiceStatus site={site} />}<TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
               <CardCornerArrow />
             </div>
           </CardHeader>

@@ -7,8 +7,13 @@ export type TransitPrice=TransitDemo["prices"][number]&{
   inputPrice:number|null;
   outputPrice:number|null;
   isLive:true;
+  modality?:string;
   discount?:TransitDiscount|null;
   mediaPricing?:TransitMediaPricing;
+  currencyKind?: "usd_cash";
+  cacheReadPrice?: number | null;
+  cacheWritePrice?: number | null;
+  cacheWrite1hPrice?: number | null;
 };
 export type TransitMediaPricing={
   min:number|null;
@@ -16,6 +21,9 @@ export type TransitMediaPricing={
   fixed:number|null;
   billing:"token"|"per_image"|"upstream_cost"|"per_request"|"variable";
   groupKey:string;
+  tokenInput?:number|null;
+  tokenOutput?:number|null;
+  tokenCurrencyKind?:"usd_cash";
 };
 export type TransitDiscount={
   ratio:number;
@@ -24,11 +32,17 @@ export type TransitDiscount={
   groupKey:string;
   sourceUrl:string|null;
   observedAt:string;
+  reference?:{price:number;currency:string;unit:string};
+  metric?:"input"|"request";
+  fxDate?:string;
+  usdToCny?:number;
 };
 export type TransitQuote={
   id:string;family:string;category:string;model:string;group:string;groupKey:string;
   multiplier:number|null;input:number|null;output:number|null;
   cacheRead:number|null;cacheWrite:number|null;fixedPrice:number|null;
+  cacheWrite1h?:number|null;
+  currencyKind?:"usd_cash";
   unit:string;cacheHitRate:null;
   mediaPricing?:TransitMediaPricing;
 };
@@ -45,6 +59,10 @@ export type TransitSiteView=Omit<TransitDemo,"prices">&{
   monitorsByModel:Record<string,TransitMonitorStats>;
   modelCatalog:TransitModelCatalog;
   rechargeInfo:{sourceUrl:string;observedAt:string}|null;
+  serviceState?: { allowSignup:boolean;allowTopup:boolean;observedAt:string };
+  catalogOnly?:boolean;
+  currencyKind?:"usd_cash";
+  infrastructure?:{id:number;name:string;monitor:TransitMonitorStats}[];
 };
 const valid=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const mediaAmount=(v:unknown):number|null=>valid(v)&&v>=0?v:null;
@@ -58,7 +76,9 @@ function mediaPricing(offer:Offer,groupKeys:Map<string,string>):TransitMediaPric
     if(raw==="token"||raw==="per_image"||raw==="upstream_cost")billing=raw;
   }catch{/* No verified mode: keep the specification-based label. */}
   // These persisted bounds already include this offer's group rate. Never multiply again.
-  return {min:coherent?min:null,max:coherent?max:null,fixed:mediaAmount(offer.fixed_price),billing,groupKey:groupKeys.get(offer.group_id)??offer.group_id};
+  let exactTokens=false;try {exactTokens=JSON.parse(offer.effective_price_json??"{}").currencyKind==="usd_cash"&&billing==="token";}catch{/* no exact token quote */}
+  return {min:coherent?min:null,max:coherent?max:null,fixed:mediaAmount(offer.fixed_price),billing,groupKey:groupKeys.get(offer.group_id)??offer.group_id,
+    ...(exactTokens?{tokenInput:offer.input_price,tokenOutput:offer.output_price,tokenCurrencyKind:"usd_cash" as const}:{})};
 }
 function mediaFloor(offer:Offer):number {
   const price=mediaPricing(offer,new Map());
@@ -67,8 +87,17 @@ function mediaFloor(offer:Offer):number {
 function offerDiscount(offer:TransitSite["groups"][number]["offers"][number],groupKeys:Map<string,string>):TransitDiscount|null {
   if(!valid(offer.discount_ratio)||offer.discount_ratio<0 || !["station_reported","station_formula","calculated"].includes(offer.discount_source??"") || !["station_reference","official_input_price","public_reference_input_price"].includes(offer.discount_basis??"")) return null;
   let sourceUrl:string|null=null;
-  try {const details=JSON.parse(offer.discount_details_json??"{}");sourceUrl=typeof details.sourceUrl==="string"?details.sourceUrl:null;}catch{/* basic value remains usable */}
-  return {ratio:offer.discount_ratio,source:offer.discount_source as TransitDiscount["source"],basis:offer.discount_basis as TransitDiscount["basis"],groupKey:groupKeys.get(offer.group_id)??offer.group_id,sourceUrl,observedAt:offer.observed_at};
+  const evidence:Pick<TransitDiscount,"reference"|"metric"|"fxDate"|"usdToCny">={};
+  try {
+    const details=JSON.parse(offer.discount_details_json??"{}");
+    sourceUrl=typeof details.sourceUrl==="string"?details.sourceUrl:null;
+    if(valid(details.reference?.input)&&details.reference.input>0&&typeof details.reference.currency==="string"&&typeof details.reference.unit==="string")
+      evidence.reference={price:details.reference.input,currency:details.reference.currency,unit:details.reference.unit};
+    if(details.metric==="input"||details.metric==="request")evidence.metric=details.metric;
+    if(typeof details.conversion?.fxDate==="string")evidence.fxDate=details.conversion.fxDate;
+    if(valid(details.conversion?.usdToCny)&&details.conversion.usdToCny>0)evidence.usdToCny=details.conversion.usdToCny;
+  }catch{/* basic value remains usable */}
+  return {ratio:offer.discount_ratio,source:offer.discount_source as TransitDiscount["source"],basis:offer.discount_basis as TransitDiscount["basis"],groupKey:groupKeys.get(offer.group_id)??offer.group_id,sourceUrl,observedAt:offer.observed_at,...evidence};
 }
 /** Never substitute whole-station statistics when a group has no data. */
 export function getTransitMonitor(site:Pick<TransitSiteView,"id"|"monitor"|"monitorsByGroup">, groupKey:string|null=null):TransitMonitorStats|undefined {
@@ -91,6 +120,7 @@ const numericRange=(values:(number|null)[])=>{
 /** Maps persisted data into the existing card contract; no visual redesign. */
 export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, {includeModelMonitors=false}:{includeModelMonitors?:boolean}={}):TransitSiteView {
   const s=site.station;
+  const currencyKind=s.currency_kind;
   let rechargeInfo:TransitSiteView["rechargeInfo"]=null;
   try {const detail=JSON.parse(s.recharge_details_json??"{}");if(typeof detail.sourceUrl==="string"&&detail.sourceUrl.startsWith("https://")&&typeof detail.observedAt==="string")rechargeInfo={sourceUrl:detail.sourceUrl,observedAt:detail.observedAt};}catch{/* older snapshots have no verified recharge evidence */}
   const rechargeMultiplier=rechargeInfo&&valid(s.recharge_ratio)&&s.recharge_ratio>0?s.recharge_ratio:null;
@@ -98,7 +128,7 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
   const quotes:TransitQuote[]=site.groups.flatMap(({group:g,offers})=>offers.map(o=>({
     id:o.id,family:o.family??"其他",category:o.modality,model:o.raw_model,group:g.display_name,groupKey:g.group_key,
     multiplier:null,input:o.input_price,output:o.output_price,cacheRead:o.cache_read_price,cacheWrite:o.cache_write_price,
-    fixedPrice:o.fixed_price,unit:o.price_unit??"未披露",cacheHitRate:null,
+    fixedPrice:o.fixed_price,unit:o.price_unit??"未披露",cacheHitRate:null,currencyKind,cacheWrite1h:o.cache_write_1h_price,
     ...(o.modality==="image"||o.modality==="video"?{mediaPricing:mediaPricing(o,groupKeys)}:{}),
   })));
   const all=site.groups.flatMap(g=>g.offers);
@@ -116,8 +146,9 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
       try{return rateJson?JSON.parse(rateJson).groupRate??null:null;}catch{return null;}
     });
     return {id:key,family:first.family??"其他",modelName:first.raw_model,
-      category:first.modality==="image"||first.modality==="video"?first.modality:undefined,
+      category:first.modality==="image"||first.modality==="video"?first.modality:undefined,modality:first.modality,
       range:numericRange(rate),inputPrice:lowest.input_price,outputPrice:lowest.output_price,
+      currencyKind,cacheReadPrice:lowest.cache_read_price,cacheWritePrice:lowest.cache_write_price,cacheWrite1hPrice:lowest.cache_write_1h_price,
       discount:offerDiscount(lowest,groupKeys),
       ...(isMedia?{mediaPricing:mediaPricing(lowest,groupKeys)}:{}),
       fixedPrice:lowest.fixed_price??undefined,priceUnit:first.price_unit??undefined,isLive:true as const};
@@ -134,6 +165,7 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
     detail:{quotes,listedAt:s.listed_at},
     groupLabels:Object.fromEntries(site.groups.map(({group:g})=>[g.display_name,{pool:g.pool_type,subscription:g.subscription,disclosure:g.disclosure??null,description:g.description??null}])),
     monitor,monitorsByGroup,monitorsByModel:includeModelMonitors?(performance?.models??{}):{},
+    serviceState:s.service_state,catalogOnly:s.catalog_only,currencyKind,infrastructure:performance?.infrastructure,
     modelCatalog:Object.fromEntries([...new Set(all.map(o=>o.raw_model.toLowerCase()))].filter(name=>Object.hasOwn(catalog,name)).map(name=>[name,catalog[name]])),
   };
 }

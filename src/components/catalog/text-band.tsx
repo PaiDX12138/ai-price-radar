@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { tooltipDetails, type TooltipDetailsData } from "@/components/ui/tooltip-details";
 
 /** 半高度色带：标题 / 关键文案下半截映衬（列表卡、详情卡共用）。 */
 export type TextBandTone = "muted" | "violet" | "emerald" | "amber" | "sky" | "ink" | "rose";
@@ -19,7 +20,7 @@ type TextBandProps = {
   tone?: TextBandTone;
   className?: string;
   bandClassName?: string;
-  tooltip?: string;
+  tooltip?: string | TooltipDetailsData;
 };
 
 export function TextBand({
@@ -30,7 +31,7 @@ export function TextBand({
   tooltip,
 }: TextBandProps) {
   return (
-    <span className={cn("relative inline-block max-w-full", className)} data-tooltip={tooltip}>
+    <span className={cn("relative inline-block max-w-full", className)} {...(typeof tooltip === "string" ? {"data-tooltip":tooltip} : tooltip ? tooltipDetails(tooltip) : {})}>
       <span
         aria-hidden
         className={cn(

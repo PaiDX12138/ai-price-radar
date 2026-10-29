@@ -94,6 +94,10 @@ node scripts/reclassify-catalog-snapshot.mjs --apply  # 自动备份并原子替
 
 ## 生产建议
 
+### 中转站点独立调度
+
+`pnpm worker` 每分钟发现并检查 `config/transit/*.json` 的到期任务，按站点启动独立采集子进程，不需要为每个站点单独新增cron。报价默认6小时，Right Code可用率每小时，ZetaAPI公开心跳每5分钟；详细的分表保存、35日保留和监控范围见 `docs/zetaapi-integration-plan.md`。`start`只读快照，不负责持续采集。
+
 用 systemd / Docker / pm2 各起两个进程：`start` 与 `worker`。  
 外挂 cron / Windows 计划任务**不是**主路径；仅在无法常驻 worker 时作兜底触发 `pnpm worker` 单次（worker 本身是长循环，一般不需要 cron）。
 
