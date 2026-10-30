@@ -17,6 +17,66 @@ function number(value, field) {
 const optional=(v,field)=>v==null?null:number(v,field);
 const round=v=>v==null?null:Number(v.toPrecision(12));
 
+/** Only the explicitly configured, observed official API origins are eligible.
+ * Keep pricing, status and model/group monitoring on the SAME selected origin.
+ * Do not derive hosts from upstream JSON or send identity-spoofing headers.
+ */
+export function packyApiConfigs(config) {
+  const primary=new URL(config.pricingUrl);
+  const origins=config.apiOrigins??[primary.origin];
+  if(!Array.isArray(origins)||!origins.length||origins.length>3||origins[0]!==primary.origin)
+    throw new Error("invalid_packy_api_origins");
+  return [...new Set(origins)].map(origin=>{
+    const url=new URL(origin);
+    if(url.protocol!=="https:"||url.origin!==origin||url.username||url.password)
+      throw new Error("invalid_packy_api_origin");
+    const source={...config,apiOrigin:origin};
+    for(const field of ["pricingUrl","metadataUrl","performanceSummaryUrl","performanceUrl"]) {
+      if(!config[field])continue;
+      if(new URL(config[field]).origin!==primary.origin)throw new Error(`mixed_packy_api_origin:${field}`);
+      // Preserve the literal {model} template; URL.href would encode its braces.
+      source[field]=origin+config[field].slice(primary.origin.length);
+    }
+    return source;
+  });
+}
+
+/** Inventory the actual response BEFORE parsing, including rejected responses.
+ * Counts refer to distinct active model/group pairs, not vendors or UI previews.
+ */
+export function packyPricingInventory(payload) {
+  if(!Array.isArray(payload?.data))return null;
+  const inactive=new Set(Array.isArray(payload.inactive_groups)?payload.inactive_groups:[]);
+  const vendors=new Map((Array.isArray(payload.vendors)?payload.vendors:[]).map(v=>[v.id,v.name]));
+  const models=new Set(),groups=new Set(),pairs=new Set(),families={};
+  let unassignedModels=0;
+  for(const row of payload.data) {
+    if(typeof row?.model_name!=="string"||!Array.isArray(row.enable_groups))continue;
+    if(!row.enable_groups.length)unassignedModels++;
+    const {family}=classifyPackyModel(row.model_name,[],vendors.get(row.vendor_id));
+    for(const key of row.enable_groups) {
+      if(typeof key!=="string"||!key||inactive.has(key))continue;
+      const pair=JSON.stringify([key,row.model_name]);
+      if(pairs.has(pair))continue;
+      pairs.add(pair);models.add(row.model_name);groups.add(key);
+      families[family]=(families[family]??0)+1;
+    }
+  }
+  return {listedModels:payload.data.length,models:models.size,groups:groups.size,offers:pairs.size,families,unassignedModels};
+}
+
+/** A few surviving rows per family are not evidence of a complete directory.
+ * Compare with the last accepted active catalog before allowing withdrawals.
+ * Never stitch old quotes into a fresh response or hard-code today's model IDs.
+ */
+export function assertPackyCatalogCoverage(inventory, previous, config) {
+  const fraction=config.minimumRetainedCatalogFraction??0.8;
+  if(typeof fraction!=="number"||!Number.isFinite(fraction)||fraction<=0||fraction>1)
+    throw new Error("invalid_packy_catalog_fraction");
+  const drops=["models","groups","offers"].filter(key=>previous?.[key]>0&&inventory[key]<previous[key]*fraction);
+  if(drops.length)throw new Error(`incomplete_pricing_catalog:${drops.map(key=>`${key}=${inventory[key]}/${previous[key]}`).join(",")}; last_good_retained`);
+}
+
 export function parsePackyPricing(payload, config) {
   if(payload?.success!==true || !Array.isArray(payload.data) || payload.data.length<(config.minimumModels??5) || !payload.group_ratio || typeof payload.group_ratio!=="object") throw new Error("invalid_pricing_schema_or_empty");
   const vendors=new Map((payload.vendors??[]).map(v=>[v.id,v.name]));
@@ -78,5 +138,5 @@ export function parsePackyPricing(payload, config) {
   const activeFamilies = new Set(offers.filter(o => groups.get(o.groupKey)?.status === "active").map(o => o.family));
   const missingFamilies = (config.requiredFamilies ?? []).filter(family => !activeFamilies.has(family));
   if (missingFamilies.length) throw new Error(`incomplete_pricing_families:${missingFamilies.join(",")}; received_models=${payload.data.length}; received_families=${[...activeFamilies].sort().join(",")}; last_good_retained`);
-  return {groups:[...groups.values()],offers,modelCount:payload.data.length,unresolved};
+  return {groups:[...groups.values()],offers,modelCount:payload.data.length,unresolved,inventory:packyPricingInventory(payload)};
 }

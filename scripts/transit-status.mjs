@@ -40,12 +40,28 @@ try{
     const stored=table('transit_offers')?db.prepare(`SELECT o.family,o.raw_model FROM transit_offers o JOIN transit_groups g ON g.id=o.group_id
       WHERE g.station_id=? AND g.status='active' AND o.status='active'`).all(config.id):[];
     const missingFamilies=(config.requiredFamilies??[]).filter(f=>!stored.some(o=>o.family===f));
+    let pricingCollection=null;
+    if(config.collectorKind==='packyapi_v1'&&table('transit_stations')) {
+      try {
+        const row=db.prepare('SELECT raw_meta_json FROM transit_stations WHERE id=?').get(config.id);
+        const collection=JSON.parse(row?.raw_meta_json??'{}').pricingCollection;
+        if(collection)pricingCollection={status:collection.status,observedAt:collection.observedAt,
+          selectedOrigin:collection.selectedOrigin??null,sourceUrl:collection.sourceUrl?redactTransitError(collection.sourceUrl):null,
+          inventory:collection.inventory??null,
+          attempts:(Array.isArray(collection.attempts)?collection.attempts:[]).map(attempt=>({
+            origin:attempt.origin,status:attempt.status,httpStatus:attempt.httpStatus??null,
+            inventory:attempt.inventory??null,payloadHash:attempt.payloadHash??null,
+            error:attempt.error?redactTransitError(attempt.error):null,
+          }))};
+      }catch(error){issues.push(`pricing_collection_unreadable:${config.id}:${redactTransitError(error.message)}`);}
+    }
     if(!visible)issues.push(`not_published:${config.id}`);
     if(station?.last_collect_ok===0)issues.push(`last_collection_failed:${config.id}`);
     if(missingFamilies.length)issues.push(`incomplete_families:${config.id}:${missingFamilies.join(',')}`);
     if(visible&&stored.length!==visible.offers)issues.push(`db_snapshot_offer_mismatch:${config.id}`);
     return {id:config.id,collectorKind:config.collectorKind,published:Boolean(visible),station:station??null,
       database:{models:new Set(stored.map(o=>o.raw_model)).size,offers:stored.length,families:familyCounts(stored)},
+      ...(config.collectorKind==='packyapi_v1'?{apiOrigins:config.apiOrigins??[new URL(config.pricingUrl).origin],pricingCollection}:{}),
       missingFamilies,network:{mode:setting.mode,setting:setting.key},runs,schedule:schedule??null,performanceSchedule:performanceSchedule??null};
   });
   console.log(JSON.stringify({cwd,revision,buildId,dbPath,snapshotPath,generatedAt:snapshot?.generatedAt??null,

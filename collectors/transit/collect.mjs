@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync, renameSync, exists
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { upsertTransitStation, upsertTransitCollection, upsertTransitPerformance, recordTransitSourceSnapshot, exportTransitSnapshot } from "../transit-db.mjs";
-import { parsePackyPricing } from "./packyapi.mjs";
+import { parsePackyPricing, packyApiConfigs, packyPricingInventory, assertPackyCatalogCoverage } from "./packyapi.mjs";
 import { parsePackyDiscountPolicy, packyOfferDiscount } from "./discounts.mjs";
 import { parsePackyRecharge } from "./recharge.mjs";
 import { collectRightApiSource } from "./rightapi.mjs";
@@ -133,43 +133,80 @@ export async function collectTransitSource(db,config,options={}) {
   const owner=options.owner??randomUUID(); const startedAt=options.now??new Date().toISOString();
   if(!config.enabled || !claimTransit(db,config,{owner,now:startedAt,force:options.force})) return {id:config.id,status:"skipped"};
   const runId=`transit-${config.id}-${randomUUID()}`; const rawDir=options.rawDir??join(root,"data/transit/raw");
-  const warnings=[]; let priceResult; let rawPath; let parsed;
+  const old=db.prepare("SELECT * FROM transit_stations WHERE id=?").get(config.id);
+  let oldMeta={};try{oldMeta=JSON.parse(old?.raw_meta_json??"{}")??{};}catch{/* legacy metadata */}
+  const attempts=[];
+  const warnings=[]; let priceResult; let rawPath; let parsed; let pricingPayload; let pricingSource;
   try {
     if(config.collectorKind!=="packyapi_v1") throw new Error("unsupported_collector");
-    priceResult=await fetchPublic(config.pricingUrl,config,options.fetchImpl);
-    // Archive before parsing so malformed responses can be investigated offline.
-    rawPath=archive(db,config,runId,"pricing",priceResult,rawDir,startedAt);
-    parsed=parsePackyPricing(JSON.parse(priceResult.text),config);
+    const previous=db.prepare(`SELECT COUNT(DISTINCT o.raw_model) AS models,
+      COUNT(DISTINCT g.id) AS groups,COUNT(*) AS offers
+      FROM transit_offers o JOIN transit_groups g ON g.id=o.group_id
+      WHERE g.station_id=? AND g.status='active' AND o.status='active'`).get(config.id);
+    let lastError;
+    for(const source of packyApiConfigs(config)) {
+      const attempt={sourceUrl:source.pricingUrl,origin:source.apiOrigin,status:"failed"};
+      attempts.push(attempt);priceResult=undefined;rawPath=undefined;
+      try {
+        priceResult=await fetchPublic(source.pricingUrl,source,options.fetchImpl);
+        attempt.httpStatus=priceResult.httpStatus;
+        // Archive EVERY response before parsing, including truncated/regional catalogs.
+        rawPath=archive(db,source,runId,"pricing",priceResult,rawDir,startedAt);
+        attempt.payloadHash=hash(priceResult.text);
+        const payload=JSON.parse(priceResult.text);
+        attempt.inventory=packyPricingInventory(payload);
+        const candidate=parsePackyPricing(payload,source);
+        assertPackyCatalogCoverage(candidate.inventory,previous,source);
+        parsed=candidate;pricingPayload=payload;pricingSource=source;
+        attempt.status="accepted";
+        break;
+      }catch(error) {
+        lastError=error;attempt.error=describeTransitError(error);
+        attempt.httpStatus=error.httpStatus??attempt.httpStatus;
+        // Respect rate limits/access denials; do not cycle endpoints to evade them.
+        if(error.httpStatus===403||error.httpStatus===429)break;
+      }
+    }
+    if(!parsed) {
+      const error=new Error(`packy_pricing_sources_failed: ${attempts.map(attempt=>`${attempt.origin}: ${attempt.error}`).join(" | ")}; last_good_retained`);
+      error.httpStatus=lastError?.httpStatus;error.retryAfter=lastError?.retryAfter;
+      throw error;
+    }
+    if(attempts.length>1)warnings.push(`pricing-source: selected ${pricingSource.apiOrigin}; preferred source failed validation or connection`);
   } catch(error) {
     const at=options.now??new Date().toISOString();
-    upsertTransitCollection(db,{station:{...config,status:"candidate"},run:{runId,collectorKind:config.collectorKind,status:"failed",startedAt,finishedAt:at,httpStatus:error.httpStatus??priceResult?.httpStatus,errorCode:"pricing_failed",errorMessage:error.message,rawSnapshotPath:rawPath}});
+    upsertTransitCollection(db,{station:{...config,status:"candidate",config,rawMeta:{...oldMeta,
+      pricingCollection:{status:"failed",observedAt:startedAt,attempts}}},
+      run:{runId,collectorKind:config.collectorKind,status:"failed",startedAt,finishedAt:at,httpStatus:error.httpStatus??priceResult?.httpStatus,errorCode:"pricing_failed",errorMessage:error.message,rawSnapshotPath:rawPath}});
     const next=finishTransit(db,config.id,owner,{ok:false,error:error.message,at,retryAfter:error.retryAfter});
     // No last-good data or public snapshot is replaced on price failure.
-    return {id:config.id,status:"failed",error:error.message,nextCollectAt:next};
+    return {id:config.id,status:"failed",error:error.message,pricingAttempts:attempts,nextCollectAt:next};
   }
 
   // Performance is public and optional: a failure must never discard a valid price snapshot.
-  const performance = options.includePerformance === false ? {rows:0,warnings:[]} : await collectPerformance(db, config, parsed, { fetchImpl: options.fetchImpl ?? fetch, rawDir: options.rawDir ?? join(root, "data/transit/raw"), runId, observedAt: startedAt });
+  const performance = options.includePerformance === false ? {rows:0,warnings:[]} : await collectPerformance(db, pricingSource, parsed, { fetchImpl: options.fetchImpl ?? fetch, rawDir: options.rawDir ?? join(root, "data/transit/raw"), runId, observedAt: startedAt });
   warnings.push(...performance.warnings);
 
-  const old=db.prepare("SELECT * FROM transit_stations WHERE id=?").get(config.id);
   let publicStatus, homepageText;
-  const station={...config,status:config.status??"candidate",sourceFingerprint:hash(priceResult.text),config,sourceType:"official_public"};
+  const station={...config,status:config.status??"candidate",sourceFingerprint:hash(priceResult.text),config,sourceType:"official_public",
+    rawMeta:{pricingRoot:Object.fromEntries(Object.entries(pricingPayload).filter(([key])=>key!=="data")),
+      pricingCollection:{status:"success",observedAt:startedAt,selectedOrigin:pricingSource.apiOrigin,
+        sourceUrl:pricingSource.pricingUrl,inventory:parsed.inventory,attempts}}};
   try {
-    const meta=await fetchPublic(config.metadataUrl,config,options.fetchImpl);
-    archive(db,config,runId,"metadata",meta,rawDir,startedAt);
+    const meta=await fetchPublic(pricingSource.metadataUrl,pricingSource,options.fetchImpl);
+    archive(db,pricingSource,runId,"metadata",meta,rawDir,startedAt);
     const json=JSON.parse(meta.text);
     if(json.success!==true || !json.data) throw new Error("invalid_metadata");
     station.name=json.data.system_name||config.name;
     publicStatus=json.data;
-    station.rawMeta={publicStatus:json.data,pricingRoot:Object.fromEntries(Object.entries(JSON.parse(priceResult.text)).filter(([k])=>k!=="data"))};
+    station.rawMeta={...station.rawMeta,publicStatus:json.data};
   } catch(error) { warnings.push(`metadata: ${error.message}`); }
   if(config.recharge?.kind==="packy_public_base_v1") {
     try {
       const sourceUrl=config.recharge.documentationUrl;
       const document=await fetchPublic(sourceUrl,config,options.fetchImpl);
       archive(db,config,runId,"recharge-document",document,rawDir,startedAt,"captured",sourceUrl);
-      station.recharge=parsePackyRecharge(document.text,publicStatus,{sourceUrl,statusUrl:config.metadataUrl,observedAt:startedAt});
+      station.recharge=parsePackyRecharge(document.text,publicStatus,{sourceUrl,statusUrl:pricingSource.metadataUrl,observedAt:startedAt});
     } catch(error) {
       // An explicit semantic mismatch must not leave a stale ratio next to fresh prices.
       station.recharge=null;warnings.push(`recharge: ${error.message}`);
@@ -216,7 +253,9 @@ export async function collectTransitSource(db,config,options={}) {
     // Incomplete optional assets re-scan after 15m, while successful pricing is retained.
     finishTransit(db,config.id,owner,{ok:true,at,retryAfter:performance.retryAfter,intervalMs:performance.blocked?3600000:warnings.length?15*60000:options.intervalMs??TRANSIT_INTERVAL_MS});
   })();
-  return {id:config.id,status:"success",models:parsed.modelCount,groups:parsed.groups.length,offers:parsed.offers.length,unpriced:parsed.unresolved.length,performanceRows:performance.rows,warnings};
+  return {id:config.id,status:"success",pricingSource:pricingSource.pricingUrl,pricingAttempts:attempts,
+    models:parsed.modelCount,groups:parsed.groups.length,offers:parsed.offers.length,families:parsed.inventory.families,
+    unpriced:parsed.unresolved.length,performanceRows:performance.rows,warnings};
 }
 
 /** Rebuilding is cheap and repairs a missed/failed export even with nothing due. */

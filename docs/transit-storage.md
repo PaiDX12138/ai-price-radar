@@ -36,6 +36,8 @@ pnpm transit:migrate
 
 ## PackyAPI 当前接口映射
 
+2026-10-30 起，Packy 优先使用官网公告中已核实的全球节点 `slb-v1.api.fan`，主站为通过同样完整性校验后才能采用的备用。报价、状态和性能使用同一选定 origin；入口尝试、返回数量与异常缩减保护见 `docs/packyapi-catalog-recovery.md`。不需要清库或新增表。
+
 PackyAPI 的公开 `/api/pricing` 可以写入：
 
 - `data[].model_name` → `transit_offers.raw_model`
