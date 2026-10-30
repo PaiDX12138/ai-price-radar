@@ -8,6 +8,7 @@ import { parsePackyDiscountPolicy, packyOfferDiscount } from "./discounts.mjs";
 import { parsePackyRecharge } from "./recharge.mjs";
 import { collectRightApiSource } from "./rightapi.mjs";
 import { collectZetaApiSource } from "./zetaapi.mjs";
+import { fetchTransitPublic, describeTransitError } from "./transport.mjs";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 export const TRANSIT_INTERVAL_MS=6*60*60*1000;
@@ -25,13 +26,8 @@ export function loadTransitSources() {
 const hash=s=>createHash("sha256").update(s).digest("hex");
 
 /** Bounded GET including the response body; no cookies, keys or admin APIs. */
-export async function fetchPublic(url, config, fetchImpl=fetch) {
-  const response=await fetchImpl(url,{signal:AbortSignal.timeout(config.timeoutMs??20000),redirect:"error",headers:{accept:"application/json,text/html,image/svg+xml", "user-agent":"AI-Price-Radar/1.0 (public pricing collector)"}});
-  const reader=response.body?.getReader(); const chunks=[]; let size=0;
-  if(reader) { try { while(true) { const r=await reader.read();if(r.done)break;size+=r.value.byteLength;if(size>(config.maxBytes??2097152)) throw new Error("response_too_large");chunks.push(Buffer.from(r.value)); } } catch(e) {await reader.cancel().catch(()=>{});throw e;} }
-  const body=Buffer.concat(chunks).toString("utf8");
-  if(!response.ok) { const e=new Error(`HTTP ${response.status}`); e.httpStatus=response.status; e.retryAfter=response.headers.get("retry-after");throw e; }
-  return {text:body,httpStatus:response.status,contentType:response.headers.get("content-type"),etag:response.headers.get("etag"),lastModified:response.headers.get("last-modified")};
+export async function fetchPublic(url, config, fetchImpl) {
+  return fetchTransitPublic(url,config,fetchImpl===fetch?undefined:fetchImpl);
 }
 
 export function claimTransit(db, config, {owner,now=new Date().toISOString(),force=false,task="pricing"}={}) {
@@ -227,14 +223,24 @@ export async function collectTransitSource(db,config,options={}) {
 export async function runTransitCollection(db,options={}) {
   const results=[];
   for(const config of options.sources??loadTransitSources()) {
-    if(config.collectorKind === "zetaapi_v1") {
-      results.push(await collectZetaApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
-    } else if(config.collectorKind === "rightapi_v1") {
-      results.push(await collectRightApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
-    } else if(config.collectorKind === "packyapi_v1") {
-      results.push(await collectTransitSource(db,config,options));
-    } else {
-      results.push({id:config.id,status:"failed",error:"unsupported_collector"});
+    try {
+      if(config.collectorKind === "zetaapi_v1") {
+        results.push(await collectZetaApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "rightapi_v1") {
+        results.push(await collectRightApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "packyapi_v1") {
+        results.push(await collectTransitSource(db,config,options));
+      } else {
+        results.push({id:config.id,status:"failed",error:"unsupported_collector"});
+      }
+    } catch(error) {
+      // One unexpected adapter/storage failure must not prevent the other sites
+      // from collecting or prevent their successful rows reaching the snapshot.
+      const message=describeTransitError(error),at=options.now??new Date().toISOString();
+      results.push({id:config.id,status:"failed",error:message});
+      try{upsertTransitCollection(db,{station:{...config,status:"candidate",sourceType:"official_public"},
+        run:{runId:`transit-${config.id}-${randomUUID()}`,collectorKind:config.collectorKind,stage:"dispatch",
+          status:"failed",startedAt:at,finishedAt:at,errorMessage:message}});}catch{/* retain original error and last-good snapshot data */}
     }
   }
   exportTransitSnapshot(db,options.snapshotPath);

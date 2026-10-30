@@ -169,18 +169,9 @@ export async function collectRightApiSource(db, config, options, runtime) {
       let logoLocalPath = db.prepare("SELECT logo_local_path FROM transit_stations WHERE id=?").get(config.id)?.logo_local_path ?? null;
       let logoEvidence = null;
       try {
-        const response = await (options.fetchImpl ?? fetch)(config.logoUrl, {
-          signal: AbortSignal.timeout(config.timeoutMs ?? 20000), redirect: "error", headers: { accept: "image/webp" },
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        if (!response.headers.get("content-type")?.includes("image/webp")) throw new Error("invalid_logo_content_type");
-        const chunks = []; let size = 0;
-        for await (const chunk of response.body) {
-          size += chunk.length;
-          if (size > 128 * 1024) throw new Error("logo_too_large");
-          chunks.push(Buffer.from(chunk));
-        }
-        const bytes = Buffer.concat(chunks);
+        const response = await fetchPublic(config.logoUrl, { ...config, maxBytes:128*1024 }, options.fetchImpl);
+        if (!response.contentType?.includes("image/webp")) throw new Error("invalid_logo_content_type");
+        const bytes = response.bytes;
         if (bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WEBP") throw new Error("invalid_webp_logo");
         const path = join(options.publicRoot ?? join(root, "public"), config.logoLocalPath.replace(/^\//, ""));
         mkdirSync(dirname(path), { recursive: true });

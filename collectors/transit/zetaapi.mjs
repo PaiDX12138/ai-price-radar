@@ -164,7 +164,10 @@ export async function collectZetaApiSource(db,config,options,runtime){
         finishTransit(db,config.id,owner,{ok:true,at,intervalMs:warnings.length?15*60000:options.intervalMs});
       }).immediate();status='success';
     }catch(error){
-      recordRun(db,config,runId,'pricing','failed',startedAt,now(),error.message);
+      // Failed first collections must have a real station failure state too,
+      // not only a run row with last_collect_ok left NULL.
+      upsertTransitCollection(db,{station:{...config,status:'candidate',sourceType:'official_public'},
+        run:{runId,collectorKind:config.collectorKind,stage:'pricing',status:'failed',startedAt,finishedAt:now(),errorMessage:error.message}});
       finishTransit(db,config.id,owner,{ok:false,at:now(),error:error.message,retryAfter:error.retryAfter});
       status='failed';warnings.push(`pricing: ${error.message}`);
     }

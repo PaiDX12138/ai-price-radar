@@ -5,6 +5,7 @@
   "host": "www.rightapi.ai",
   "system": "custom",
   "collectorKind": "rightapi_v1",
+  "allowedRedirectOrigins": ["https://rightapi.io"],
   "docsUrl": "https://docs.rightapi.ai/",
   "pricingUrl": "https://www.rightapi.ai/models/public",
   "upstreamsUrl": "https://www.rightapi.ai/upstreams/public",

@@ -60,6 +60,8 @@ PackyAPI 的公开 `/api/pricing` 可以写入：
 
 已接入 `pnpm worker`，PackyAPI、RightAPI 与 ZetaAPI 各自使用独立采集器及站点配置：
 
+线上缺站点或平台不全时，先运行 `pnpm transit:status`，同时查看candidate失败记录；浏览器可读取no-store的 `/api/transit`，用快照指纹与CLI对照。2026-10-30故障和恢复流程见 `docs/transit-server-collection-incident.md`。中转HTTP支持同源及配置白名单重定向，支持显式固定出口，不再把底层连接原因隐藏成单独的fetch failed。
+
 - 所有已启用站点统一 6 小时更新，不按活跃度分档；`TRANSIT_COLLECT_INTERVAL_HOURS` 支持 6 / 12 / 24。
 - 上一项指报价。RightAPI 的公开可用率独立每小时回扫24h，保留真实小时后积累本站15日历史；PackyAPI 沿用每6小时回扫360h。Worker按站点分别启动子进程，避免某站缓慢阻塞其他站。
 - ZetaAPI 每5分钟抓取公开心跳，原始点去重入库后按小时聚合，积累15日历史；24小时和360小时摘要单独存储，不能代替小时序列。模型、基础设施、公开报价容器三种作用域分开，未公开耗时不使用ping代替。规范见 `docs/zetaapi-integration-plan.md`。
