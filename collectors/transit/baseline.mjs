@@ -31,6 +31,10 @@ export function publicValue(value){
 }
 function cleanRow(table,row,at){
   const out={...row};
+  if(table==='transit_stations'){
+    delete out.sponsor_order; // discard legacy editorial ranking, never a scraped fact
+    delete out.sponsorship_json; // sponsorship is controlled by local config, not baseline imports
+  }
   if(table==='transit_performance_observations')delete out.id; // local autoincrement, NOT source identity
   for(const k of Object.keys(out)){
     if(['config_json','error_message','last_error','parse_error'].includes(k)){out[k]=null;continue;}

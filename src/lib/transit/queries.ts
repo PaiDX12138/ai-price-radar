@@ -3,6 +3,7 @@ import {loadTransitSnapshot} from "./snapshot";
 import type {TransitSite} from "./types";
 import {toTransitView} from "./view";
 import {loadTransitModelCatalog} from "./model-catalog";
+import {orderTransitStations} from "./station-order.mjs";
 
 export function listTransitSites(): TransitSite[] {
   const snapshot=loadTransitSnapshot();
@@ -19,7 +20,8 @@ export function listTransitSites(): TransitSite[] {
     groupsByStation.set(group.station_id,rows);
   }
   const performance=snapshot.performance??[];
-  return snapshot.stations.map(station=>({station,groups:groupsByStation.get(station.id)??[],performance:performance.find(row=>row.stationId===station.id)}));
+  return orderTransitStations(snapshot.stations,snapshot.groups,snapshot.offers)
+    .map(station=>({station,groups:groupsByStation.get(station.id)??[],performance:performance.find(row=>row.stationId===station.id)}));
 }
 export function listTransitViews() {const catalog=loadTransitModelCatalog();return listTransitSites().map(site=>toTransitView(site,catalog));}
 export function getTransitSite(id:string) {

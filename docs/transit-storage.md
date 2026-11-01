@@ -22,6 +22,16 @@ pnpm transit:migrate
 
 ## SQLite 表
 
+### 赞助标记与自动排序
+
+- 取消赞助排序：配置、公开快照、视图均不再使用 `sponsorOrder` / `sponsor_order`。迁移会移除旧的实验列，赞助状态不影响顺序。
+- 仅对维护者明确指定的赞助站点保存可选 `sponsorship: { affiliateUrl?, code?, benefit? }`；当前只有 RightCode。其他站点不添加此字段，不从名称、充值优惠或外链推断赞助。
+- SQLite 新增可空的 `transit_stations.sponsorship_json`；每次快照导出按本地配置同步，普通采集更新不覆盖，未配置时清空。不修改报价、监测或采集时间。公开快照只输出白名单对象 `sponsorship`，不输出内部 JSON 列。
+- 名称旁显示同字号墨绿色礼物图标，统一自定义悬浮窗只说明合作关系和福利，不展示推广码；键盘也可聚焦阅读。README 赞助区同样不单独展示推广码。RightCode 名称与详情官网入口使用 `https://rightapi.io/register?aff=434bbb9b`，新标签页添加 `rel="sponsored noopener noreferrer"`。原始 `site_url`、采集域名和价格接口不变，其他站点链接不变。
+- 自动排序统一适用于快照、公共接口和页面：有有效报价的站点优先（输入、输出、固定价或媒体区间任一有限非负数，零元有效）；再按真实收录时间升序，缺失/无效时间排后；同时间按名称和 ID。不是可用率、可靠性或价格优劣排名，也不按推广码、赞助、福利或特定站点加权。当前 RightCode 因收录较早自然排在第二；不保证固定名次。
+- 每次导出和列表查询自动计算，不持久化排序序号；筛选保留相对顺序。有效价格判断不比较跨币种/额度报价，采集时间刷新不会导致频繁洗牌。
+- 赞助资料属于本站编辑配置，不进入公开行情基线；导入旧数据不会覆盖服务器已有合作资料，导出时以当前配置为准。移除 `sponsorship` 后下次导出移除标记和推广链接，恢复官网地址，无需源站采集成功。
+
 SudoCode新增 `transit_sudocode_catalog_versions`、`transit_sudocode_metadata_versions`、`transit_sudocode_tier_hourly`。前两者保存完整来源版本及政策hash；最后一张按“站点/原始型号/站方版本/UTC小时”唯一，不能把版本ID写成真实渠道分组。快照按明确版本与组员关系生成系统综合指标；既有报价表不变。详见 [SudoCode方案](sudocode-integration-plan.md)。
 
 - `transit_stations`：站点档案、发布状态、收录时间、最近采集状态。

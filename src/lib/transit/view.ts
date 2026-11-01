@@ -1,6 +1,6 @@
 import type {TransitDemo} from "@/data/demo/transit";
 import type {TransitSite} from "./types";
-import type {TransitMonitorStats} from "./snapshot";
+import type {TransitMonitorStats, TransitSponsorship} from "./snapshot";
 import type {TransitModelCatalog} from "./model-order";
 import {refreshRunApiOffer} from "./runapi-pricing.mjs";
 import {formatTransitMultiplierAmount, formatTransitMultiplierRange} from "./format";
@@ -61,6 +61,7 @@ export type TransitQuote={
   mediaPricing?:TransitMediaPricing;
 };
 export type TransitSiteView=Omit<TransitDemo,"prices">&{
+  sponsorship?:TransitSponsorship;
   isLive:true;
   logoPath:string;
   renderedAt:number;
@@ -194,6 +195,7 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
   const monitorsByGroup=performance?.groups??{};
   return {
     id:s.id,name:s.name,isLive:true,logoPath:s.logo_local_path??"",siteUrl:s.site_url,renderedAt:Date.now(),
+    ...(s.sponsorship?{sponsorship:s.sponsorship}:{}),
     updatedAt:s.last_seen_at??s.listed_at,system:s.system==="new_api"?"New API":s.system==="sub_to_api"?"Sub2API":"自研",
     description:s.description??"",models:[...new Set(all.map(o=>o.raw_model))],groups:site.groups.length,prices,
     channels:[...new Set(site.groups.flatMap(g=>g.group.channel_type?[g.group.channel_type]:[]))].length?[...new Set(site.groups.flatMap(g=>g.group.channel_type?[g.group.channel_type]:[]))]:["未披露"],

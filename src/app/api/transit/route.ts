@@ -1,12 +1,13 @@
 import { connection, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { loadTransitSnapshot } from "@/lib/transit/snapshot";
+import { orderTransitStations } from "@/lib/transit/station-order.mjs";
 
 /** Actual website process snapshot; public counts only, never DB/config paths or raw data. */
 export async function GET() {
   await connection();
   const snapshot=loadTransitSnapshot();
-  const stations=(snapshot?.stations??[]).map(station=>{
+  const stations=orderTransitStations(snapshot?.stations??[],snapshot?.groups??[],snapshot?.offers??[]).map(station=>{
     const groups=snapshot!.groups.filter(g=>g.station_id===station.id),ids=new Set(groups.map(g=>g.id));
     const offers=snapshot!.offers.filter(o=>ids.has(o.group_id));
     const families:Record<string,number>={};

@@ -11,6 +11,7 @@ import { getTransitMonitor } from "@/lib/transit/view";
 import Image from "next/image";
 import { CardMeta, CardUpdatedRow } from "@/components/catalog/card-meta";
 import { TransitHomepageLink } from "@/components/transit/transit-homepage-link";
+import { TransitSponsorMark } from "@/components/transit/transit-sponsor-mark";
 import { TransitModelPrices } from "@/components/transit/transit-model-prices";
 import { transitTabs, platformNames, matchesTransitTab } from "@/components/transit/transit-tabs";
 import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
@@ -55,7 +56,7 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
           <CardHeader className="h-12 shrink-0 pb-1">
             <div className="flex items-start gap-3">
               <Image src={site.logoPath} alt={`${site.name} Logo`} width={32} height={32} className={`size-8 shrink-0 rounded-lg${site.id === "soleapi" ? " dark:invert" : ""}`} />
-              <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TransitHomepageLink site={site} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><TransitBillingBadge site={site} />{site.serviceState && (!site.serviceState.allowSignup || !site.serviceState.allowTopup) && <TransitServiceStatus site={site} />}<TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
+              <div className="min-w-0 flex-1"><h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold"><TransitHomepageLink site={site} /><TransitSponsorMark sponsorship={site.sponsorship} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><TransitBillingBadge site={site} />{site.serviceState && (!site.serviceState.allowSignup || !site.serviceState.allowTopup) && <TransitServiceStatus site={site} />}<TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
               <CardCornerArrow />
             </div>
           </CardHeader>

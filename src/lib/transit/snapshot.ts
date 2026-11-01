@@ -3,6 +3,8 @@ import "server-only";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+export type TransitSponsorship = { affiliateUrl?: string; code?: string; benefit?: string };
+
 export type TransitStation = {
   service_state?: { allowSignup: boolean; allowTopup: boolean; observedAt: string };
   catalog_only?: boolean;
@@ -10,6 +12,7 @@ export type TransitStation = {
   billing_configuration?: {price:number;usdExchangeRate:number;stripeUnitPrice:number|null};
   id: string;
   name: string;
+  sponsorship?: TransitSponsorship;
   site_url: string;
   canonical_url?: string | null;
   host: string;

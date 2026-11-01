@@ -27,6 +27,9 @@ import { CUBENCE_SCHEMA_SQL } from "./transit/cubence-storage.mjs";
 import { CRAZY_SCHEMA_SQL } from "./transit/crazyrouter-storage.mjs";
 import { SUDO_SCHEMA_SQL, buildSudoPerformance } from "./transit/sudocode-storage.mjs";
 import { refreshCrazyOffer } from "../src/lib/transit/crazyrouter-pricing.mjs";
+import { syncTransitSponsorships } from "./transit/sponsorship.mjs";
+import { normalizeTransitSponsorship } from "../src/lib/transit/sponsorship.mjs";
+import { orderTransitStations } from "../src/lib/transit/station-order.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -50,6 +53,7 @@ CREATE TABLE IF NOT EXISTS transit_stations (
   source_type TEXT NOT NULL DEFAULT 'manual',
   collector_kind TEXT,
   status TEXT NOT NULL DEFAULT 'candidate',
+  sponsorship_json TEXT,
   listed_at TEXT NOT NULL,
   description TEXT,
   docs_url TEXT,
@@ -326,6 +330,7 @@ function ensureTransitColumns(db) {
       is_partial: "INTEGER NOT NULL DEFAULT 0",
     },
     transit_stations: {
+      sponsorship_json: "TEXT",
       recharge_ratio: "REAL",
       recharge_details_json: "TEXT",
       canonical_url: "TEXT",
@@ -378,6 +383,8 @@ function ensureTransitColumns(db) {
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
     }
   }
+  // Remove the superseded local sponsor-rank experiment; sponsorship is not a rank.
+  if (columns("transit_stations").has("sponsor_order")) db.exec("ALTER TABLE transit_stations DROP COLUMN sponsor_order");
 }
 
 function idForGroup(stationId, groupKey) {
@@ -802,14 +809,20 @@ export function upsertTransitPerformance(db, input) {
 
 export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPath()) {
   return db.transaction(() => {
+  syncTransitSponsorships(db);
   // Explicit public projection: never ship collector configs or raw payloads.
-  const stations = db.prepare(`
+  let stations = db.prepare(`
     SELECT id,name,site_url,canonical_url,host,system,collector_kind,source_type,status,listed_at,
-      description,docs_url,logo_url,logo_local_path,recharge_ratio,recharge_details_json,last_seen_at,last_collected_at,last_collect_ok,risk_note
+      description,docs_url,logo_url,logo_local_path,recharge_ratio,recharge_details_json,last_seen_at,last_collected_at,last_collect_ok,risk_note,sponsorship_json
     FROM transit_stations WHERE status = 'published'
     ORDER BY name COLLATE NOCASE, id
   `).all();
   for (const station of stations) {
+    try {
+      const sponsor=normalizeTransitSponsorship(JSON.parse(station.sponsorship_json??"null"));
+      if(sponsor!==null)station.sponsorship=sponsor;
+    } catch { /* Invalid editorial metadata never becomes a public link. */ }
+    delete station.sponsorship_json;
     const raw = db.prepare("SELECT raw_meta_json FROM transit_stations WHERE id=?").get(station.id)?.raw_meta_json;
     try {
       const meta=JSON.parse(raw??"{}");
@@ -838,6 +851,7 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
     WHERE o.status='active' AND g.status='active' AND s.status='published'
     ORDER BY o.group_id, o.standard_model COLLATE NOCASE, o.raw_model COLLATE NOCASE
   `).all().map(offer=>refreshCrazyOffer(refreshRunApiOffer(offer)));
+  stations=orderTransitStations(stations,groups,offers);
   for (const g of groups) { delete g.raw_group_json; delete g.endpoint_overrides_json; }
   const cubenceGroups=new Set(groups.filter(g=>stations.some(s=>s.id===g.station_id&&s.collector_kind==='cubence_v1')).map(g=>g.id));
   for (const o of offers) {

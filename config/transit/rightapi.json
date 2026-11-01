@@ -1,6 +1,11 @@
 {
   "id": "rightapi",
   "name": "Right Code",
+  "sponsorship": {
+    "affiliateUrl": "https://rightapi.io/register?aff=434bbb9b",
+    "code": "434bbb9b",
+    "benefit": "首充5%返利"
+  },
   "siteUrl": "https://www.rightapi.ai/",
   "host": "www.rightapi.ai",
   "system": "custom",
