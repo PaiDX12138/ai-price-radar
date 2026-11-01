@@ -1,17 +1,17 @@
 import Image from "next/image";
-import { TRANSIT_SPONSORS } from "@/data/transit-sponsors";
+import { SITE_SPONSORS } from "@/data/sponsors";
 import { TextBand } from "@/components/catalog/text-band";
-import { TransitSponsorContact } from "@/components/transit/transit-sponsor-contact";
+import { SponsorContact } from "@/components/layout/sponsor-contact";
 
 /** Image-only sponsor strip; the same delegated custom tooltip supports keyboard focus. */
-export function TransitSponsors() {
+export function SiteSponsors() {
   return <section aria-label="赞助商" className="mt-10 border-t border-border/70 pt-5">
     <div className="mb-3 flex w-full max-w-4xl items-center gap-3 sm:gap-4">
       <h2 className="shrink-0 text-base font-semibold leading-6 tracking-tight sm:text-[17px]"><TextBand tone="ink">赞助商</TextBand></h2>
-      <TransitSponsorContact />
+      <SponsorContact />
     </div>
     <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-3">
-      {TRANSIT_SPONSORS.map((sponsor) => <a key={sponsor.id} href={sponsor.href} target="_blank"
+      {SITE_SPONSORS.map((sponsor) => <a key={sponsor.id} href={sponsor.href} target="_blank"
         rel={sponsor.sponsored ? "sponsored noopener noreferrer" : "noopener noreferrer"}
         aria-label={`打开 ${sponsor.name}（新标签页）`} data-tooltip={sponsor.description} data-tooltip-anchor="element"
         className="relative aspect-[40/17] w-full max-w-[20rem] overflow-hidden rounded-lg border border-border/70 bg-background outline-none transition-[border-color,box-shadow] hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">

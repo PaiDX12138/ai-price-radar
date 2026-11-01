@@ -22,7 +22,7 @@ import { TransitBillingBadge, TransitServiceStatus } from "@/components/transit/
 import { ListPagination } from "@/components/catalog/catalog-pagination";
 import { paginateTransitSites, transitSitePageHref } from "@/lib/transit/pagination";
 import { navigateTransitPage, useTransitPageSearch } from "@/lib/transit/use-page-search";
-import { TransitSponsors } from "@/components/transit/transit-sponsors";
+import { SiteSponsors } from "@/components/layout/site-sponsors";
 
 
 function supports(site: TransitDemo, id: string) {
@@ -101,7 +101,7 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
           navigateTransitPage(hrefForPage(page));
         }} />
       {filtered.length === 0 && <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14"><SearchX className="size-7 text-muted-foreground" /><h2 className="text-sm font-medium">没有匹配的平台</h2><p className="text-xs text-muted-foreground">试试其他名称、模型或来源渠道。</p><Button variant="outline" size="sm" onClick={() => router.replace("/api-transit", { scroll: false })}>重置筛选</Button></div>}
-      <TransitSponsors />
+      <SiteSponsors />
     </div>
   );
 }

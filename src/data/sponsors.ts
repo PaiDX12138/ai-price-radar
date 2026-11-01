@@ -1,5 +1,5 @@
 /** Display order belongs to this sponsor strip, never to the station ranking. */
-export const TRANSIT_SPONSORS = [
+export const SITE_SPONSORS = [
   {
     id: "rightcode",
     name: "RightCode",

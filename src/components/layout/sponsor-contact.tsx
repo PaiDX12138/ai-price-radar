@@ -9,7 +9,7 @@ import { TonePanel } from "@/components/catalog/tone-panel";
 const CONTACT_QQ = "3632164290";
 
 /** Shared dialog handles focus, outside-click / Escape close and focus restoration. */
-export function TransitSponsorContact() {
+export function SponsorContact() {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [copying, setCopying] = useState(false);
   const copyMessage = copyStatus === "copied" ? "QQ 号已复制" : copyStatus === "failed" ? "复制失败，请选中号码复制" : "复制 QQ 号";

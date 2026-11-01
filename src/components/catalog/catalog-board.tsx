@@ -7,6 +7,7 @@ import { CatalogFilterChrome } from "@/components/catalog/catalog-filter-chrome"
 import { ProductCard } from "@/components/catalog/product-card";
 import { ShopIndexedCard } from "@/components/catalog/shop-indexed-card";
 import { ShopSubmitDialog } from "@/components/catalog/shop-submit-dialog";
+import { SiteSponsors } from "@/components/layout/site-sponsors";
 import { getIndexedShopCount } from "@/lib/catalog/shop-count";
 import {
   filterProductSummaries,
@@ -149,6 +150,7 @@ export async function CatalogBoard({
           />
         </>
       )}
+      <SiteSponsors />
     </div>
   );
 }

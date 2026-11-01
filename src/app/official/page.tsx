@@ -8,6 +8,7 @@ import { OfficialListPagination } from "@/components/catalog/catalog-pagination"
 import { OfficialEmailCard } from "@/components/email/official-email-card";
 import { OfficialPlanCard } from "@/components/official/official-plan-card";
 import { OfficialSmsCard } from "@/components/sms/official-sms-card";
+import { SiteSponsors } from "@/components/layout/site-sponsors";
 import { getOfficialPlatformTabs } from "@/lib/catalog/official-prices";
 import {
   OFFICIAL_PLANS_PAGE_SIZE,
@@ -186,6 +187,7 @@ async function OfficialBoard({ searchParams }: PageProps) {
         totalItems={totalItems}
         q={q}
       />
+      <SiteSponsors />
     </div>
   );
 }
