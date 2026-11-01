@@ -30,8 +30,7 @@
       <td valign="middle">
         <a href="https://rightapi.io/register?aff=434bbb9b"><strong>RightCode</strong></a><br />
         AI 模型 API 中转服务，感谢 RightCode 对项目的赞助支持。<br /><br />
-        推广码：<code>434bbb9b</code> &nbsp; <strong>福利首冲5%返利</strong><br />
-        <a href="https://rightapi.io/register?aff=434bbb9b">通过推广链接注册 →</a>
+        推广码：<code>434bbb9b</code> &nbsp; <strong>福利首冲5%返利</strong>
       </td>
     </tr>
     <tr>
