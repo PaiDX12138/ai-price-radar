@@ -32,31 +32,57 @@ pnpm transit:import              # 自动备份、事务合并、重新导出前
 
 ## 服务器完整更新命令
 
-以下沿用此前确认的目录和PM2全部进程可重启约定。先构建，短暂停止进程后导入；出错时EXIT trap会尝试恢复原有PM2进程。括号为子shell，避免把`set -e`或trap留在当前登录Shell。
+服务器已确认PM2进程为`quote-web`和`quote-worker`。停止进程后仍出现Turbopack构建137时，改用已验证的`build:server`低内存模式；不要重复相同构建、盲目扩大Node堆或拿不完整产物重启。括号为子shell，失败会停止后续步骤。
 
 ```bash
-cd /www/wwwroot/radar.ftuashcahs.xyz
 (
   set -e
+  cd /www/wwwroot/radar.ftuashcahs.xyz
   git pull --ff-only origin main
   pnpm install --frozen-lockfile
-  pnpm build
+  pnpm transit:import --check
 
-  pm2 stop all
-  trap 'pm2 restart all --update-env' EXIT
+  pm2 stop quote-web quote-worker
+  pnpm build:server
   pnpm transit:migrate
   pnpm transit:import
 
-  pm2 restart all --update-env
+  pm2 restart quote-web quote-worker --update-env
   pm2 save
-  trap - EXIT
   pnpm transit:status
+  pm2 status
 )
 ```
 
 不删除`data`或`.env.local`，不执行`git reset --hard`，不覆盖整库。导入不访问外站，即使采集出口仍有问题也能先恢复现有已采数据。结束后查看`transit:status`的8站库存；线上已有更多新数据时，数量可以高于清单。
 
 已有Worker由PM2恢复后按原有到期任务继续采集。导入不会新增一个此前不存在的Worker；若原PM2列表根本没有采集Worker，需要另行核对原进程配置，不猜测进程名或重复创建服务。
+
+## 构建137的处理边界
+
+退出137通常对应SIGKILL，可能是宿主机或cgroup的OOM，也可能是外部强制终止；仅凭构建日志不能确认是哪一种。线上报告发生在`Creating an optimized production build`，停止PM2后仍复现，不能只靠停止采集进程解释。
+
+新增`pnpm build:server`：
+
+- 使用当前Next 16.4.2的Webpack编译器，不升级Next、不改变页面样式、路由或数据读取逻辑。
+- 单页面生成Worker、静态生成并发1、Webpack build worker及其内存优化；不是给Turbopack添加无效的Webpack参数。
+- 默认单Node进程堆上限1024MiB，限制Rust编译线程为1；堆上限**不是整棵构建进程的RSS上限**。不自动扩成4096、不修改系统swap或cgroup。
+- 沿用同一个Tailwind 4.3.3编译器：Webpack使用官方PostCSS入口；普通`pnpm build`仍用现有Turbopack loader。配置及lockfile同时更新，保留类型检查。
+- 文件追踪排除临时研究、原始传输归档、备份、Git和导入包；不排除运行中的最新快照、Logo或原生模块。仍有既有动态文件追踪警告，不声称已消除所有构建扫描。
+
+本机验证：低内存Webpack完整构建成功，正常Turbopack完整构建也通过；6项配置/诊断测试、类型检查及相关ESLint通过。Webpack产物的首页、SudoCode详情/图片筛选、8站诊断API、Logo及两份CSS均通过纯HTTP检查，Tailwind样式已生成；没有浏览器操作。这个结果不等于已证明未知配置的服务器不会OOM。
+
+若新模式仍137，暂停继续构建，采集以下只读证据；需要据此确认物理内存、swap或cgroup配额，不盲目创建swap文件或修改限制：
+
+```bash
+free -h
+swapon --show
+journalctl -k --since '30 minutes ago' --no-pager | grep -Ei 'out of memory|oom-kill|killed process|memory cgroup' | tail -n 25
+```
+
+`pnpm build:server --diagnose`只输出可见内存/cgroup和计划参数，不启动编译。调整堆上限可显式设置`RADAR_BUILD_HEAP_MB`（512–2048整数），但未知服务器容量时不要随意加大。构建失败后不会自动重启`quote-web`；需成功构建或恢复完整旧产物后才启动。
+
+参考：[Next内存优化](https://nextjs.org/docs/app/guides/memory-usage)、[阿里云OOM排查](https://help.aliyun.com/en/alinux/support/causes-of-and-solutions-to-the-issue-of-oom-killer-being-triggered)。
 
 ## 本机发布准备
 
