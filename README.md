@@ -17,6 +17,38 @@
 
 ---
 
+## 赞助伙伴
+
+感谢以下伙伴对 Quote Board 的支持。
+
+<table>
+  <tbody>
+    <tr>
+      <td width="220" align="left" valign="middle">
+        <a href="https://rightapi.io/register?aff=434bbb9b"><img src="./docs/assets/sponsors/rightcode.jpg" alt="RightCode" width="200" /></a>
+      </td>
+      <td valign="middle">
+        <a href="https://rightapi.io/register?aff=434bbb9b"><strong>RightCode</strong></a><br />
+        AI 模型 API 中转服务，感谢 RightCode 对项目的赞助支持。<br /><br />
+        推广码：<code>434bbb9b</code> &nbsp; <strong>福利首冲5%返利</strong><br />
+        <a href="https://rightapi.io/register?aff=434bbb9b">通过推广链接注册 →</a>
+      </td>
+    </tr>
+    <tr>
+      <td width="220" align="left" valign="middle">
+        <a href="https://www.aliyun.com/"><img src="./docs/assets/sponsors/aliyun.svg" alt="阿里云 Alibaba Cloud" width="200" /></a>
+      </td>
+      <td valign="middle">
+        <a href="https://www.aliyun.com/"><strong>阿里云</strong></a><br />
+        云服务器赞助，支持 Quote Board 的站点运行与持续数据采集。<br /><br />
+        <a href="https://www.aliyun.com/">了解阿里云 →</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
 ## 项目目的
 
 AI 订阅、卡网货源与接码邮箱价格分散在大量公开站点上：标题杂乱、库存跳变、低价常过期。手工打开十几个站比对成本高，也容易被异常低价误导。
