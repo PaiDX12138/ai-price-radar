@@ -12,19 +12,24 @@ export function TransitGroupMediaPrices({ rows, models }: { rows: TransitQuote[]
   const first = rows[0];
   const byModel = new Map(rows.map(row => [row.model, row]));
   const ordered = models.map(model => byModel.get(model)).filter((row): row is TransitQuote => row !== undefined);
-  if (ordered.length && ordered.every(row=>row.mediaPricing?.tokenCurrencyKind === "usd_cash")) return <TokenGroupMediaPrices rows={ordered} />;
+  if(ordered.length&&ordered.every(row=>row.currencyKind==="usd_base"))return <BaseGroupMediaPrices rows={ordered} />;
+  if(ordered.length&&ordered.every(row=>row.currencyKind==="cny_credit"))return <CreditGroupMediaPrices rows={ordered} />;
+  if (ordered.length && ordered.every(row=>row.mediaPricing?.tokenCurrencyKind === "usd_cash"||row.mediaPricing?.tokenCurrencyKind === "usd_credit")) return <TokenGroupMediaPrices rows={ordered} />;
   const bounds = ordered.map(row => mediaPriceBounds(row.mediaPricing, row.fixedPrice));
-  const known = bounds.filter(value => value !== null).length;
-  const quote = formatMediaPriceBounds(summarizeMediaPrices(bounds), true);
-  const unit = ordered.every(row => row.mediaPricing?.billing === "per_request") ? "次" : first.category === "image" ? "张" : "次";
-  const modes = [...new Set(ordered.filter((_, index) => bounds[index] !== null).map(row => row.mediaPricing ? MEDIA_BILLING_LABELS[row.mediaPricing.billing] : "未披露"))];
+  const unitFor = (row: TransitQuote) => row.mediaPricing?.tokenCurrencyKind ? "百万Token" : row.mediaPricing?.unit ?? (row.mediaPricing?.billing === "per_request" ? "次" : first.category === "image" ? "张" : "次");
+  const known = ordered.filter((row,index)=>bounds[index]!==null||Boolean(row.mediaPricing?.tokenCurrencyKind)).length;
+  const units = [...new Set(ordered.map(unitFor))];
+  const mixedUnits = units.length > 1;
+  const quote = mixedUnits ? "按模型规格" : formatMediaPriceBounds(summarizeMediaPrices(bounds), true);
+  const unit = units[0] ?? "次";
+  const modes = [...new Set(ordered.filter((row, index) => bounds[index] !== null||Boolean(row.mediaPricing?.tokenCurrencyKind)).map(row => row.mediaPricing ? MEDIA_BILLING_LABELS[row.mediaPricing.billing] : "未披露"))];
   const billing = !modes.length ? "未披露" : modes.length > 2 ? "混合计费" : modes.join(" / ");
   return <TooltipProvider delay={120} closeDelay={80}>
     <TonePanel tone="ink" className="flex h-14 min-w-0 shrink-0 flex-col justify-center gap-1 px-2 py-2">
       <div className="flex min-w-0 items-baseline justify-between gap-2 text-[10px]">
         <span className="shrink-0 text-muted-foreground">{first.category === "image" ? "图片报价" : "视频报价"}</span>
-        <span className="min-w-0 truncate text-right font-mono font-semibold tabular-nums" {...tooltipDetails({title:"分组报价",subtitle:first.groupKey,rows:[{label:"价格区间",value:`${quote}${quote === "未披露" ? "" : `/${unit}`}`},{label:"已披露模型",value:`${known} / ${ordered.length}`}],note:"仅统计本组已披露价格；$ 为站内额度。"})}>
-          {quote}{quote !== "未披露" && <span className="ml-0.5 font-sans font-normal text-muted-foreground">/{unit}</span>}
+        <span className="min-w-0 truncate text-right font-mono font-semibold tabular-nums" {...tooltipDetails({title:"分组报价",subtitle:first.groupKey,rows:[{label:"价格区间",value:`${quote}${quote === "未披露" || mixedUnits ? "" : `/${unit}`}`},{label:"已披露模型",value:`${known} / ${ordered.length}`}],note:"仅统计本组已披露价格；$ 为站内额度。"})}>
+          {quote}{quote !== "未披露" && !mixedUnits && <span className="ml-0.5 font-sans font-normal text-muted-foreground">/{unit}</span>}
         </span>
       </div>
       <div className="flex min-w-0 items-center justify-between gap-2 text-[10px]">
@@ -37,15 +42,15 @@ export function TransitGroupMediaPrices({ rows, models }: { rows: TransitQuote[]
               <div className="mb-2 border-b border-border/60 pb-2"><p className="text-xs font-semibold">{first.category === "image" ? "图片报价" : "视频报价"}</p><p className="mt-1 break-words text-[11px] text-muted-foreground [overflow-wrap:anywhere]">{first.group} · 已披露 {known}/{ordered.length} 个模型</p></div>
               <dl className="space-y-2">{ordered.map(row => {
                 const price = formatTransitMediaPrice(row.mediaPricing, row.fixedPrice);
-                const exactToken = row.mediaPricing?.tokenCurrencyKind === "usd_cash";
+                const exactToken = Boolean(row.mediaPricing?.tokenCurrencyKind);
                 return <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 text-[11px]">
                   <dt className="min-w-0 break-words [overflow-wrap:anywhere]">{row.model}</dt>
-                  <dd className="whitespace-nowrap text-right font-mono tabular-nums">{price}{price === "未披露" || exactToken ? "" : `/${unit}`}</dd>
+                  <dd className="whitespace-nowrap text-right font-mono tabular-nums">{price}{price === "未披露" || exactToken ? "" : `/${unitFor(row)}`}</dd>
                   <dd className="col-span-2 text-[10px] text-muted-foreground">{row.mediaPricing ? MEDIA_BILLING_LABELS[row.mediaPricing.billing] : "计费未披露"}</dd>
                 </div>;
               })}</dl>
               <p className="mt-2 border-t border-border/60 pt-1.5 text-[10px] text-muted-foreground">
-                {first.category === "video" ? "依时长、分辨率计费。" : modes.includes(MEDIA_BILLING_LABELS.token) ? "Token 为输出参考价，输入另计。" : "依质量、尺寸计费。"}$ 为站内额度，已含本组倍率，不含峰时变化。
+                {ordered.every(row=>row.mediaPricing?.billing==="per_request") ? "按次基础价，规格以站点说明为准。" : first.category === "video" ? "依时长、分辨率计费。" : modes.includes(MEDIA_BILLING_LABELS.token) ? "Token报价与按次报价分别计费，不合并单位。" : "依质量、尺寸计费。"}$ 为站内额度，已含本组倍率，不含峰时变化。
               </p>
             </TooltipContent>
           </Tooltip>
@@ -53,6 +58,40 @@ export function TransitGroupMediaPrices({ rows, models }: { rows: TransitQuote[]
       </div>
     </TonePanel>
   </TooltipProvider>;
+}
+
+/** Public base catalogs can mix fixed returned-image prices and token images.
+ * Keep both units separate within the existing two-line price region. */
+function BaseGroupMediaPrices({rows}:{rows:TransitQuote[]}) {
+  const token=rows.filter(row=>row.mediaPricing?.billing==="token");
+  const fixed=rows.filter(row=>row.mediaPricing?.billing==="per_image");
+  const range=(values:(number|null)[])=>{
+    const known=values.filter((v):v is number=>typeof v==="number"&&Number.isFinite(v)&&v>=0);
+    if(!known.length)return "—";
+    const min=Math.min(...known),max=Math.max(...known);
+    return min===max?`$${formatTransitCardAmount(min)}`:`$${formatTransitCardAmount(min)}–${formatTransitCardAmount(max)}`;
+  };
+  const items=token.length&&fixed.length
+    ? [{label:"按返回图片",value:`${range(fixed.map(r=>r.fixedPrice))}/张`},{label:"Token 入 / 出 · 百万",value:`${range(token.map(r=>r.input))} / ${range(token.map(r=>r.output))}`}]
+    : token.length?[{label:"输入 / 百万Token",value:range(token.map(r=>r.input))},{label:"图片输出 / 百万Token",value:range(token.map(r=>r.output))}]
+    : [{label:"按返回图片",value:`${range(fixed.map(r=>r.fixedPrice))}/张`},{label:"报价口径",value:"USD基础价"}];
+  return <TonePanel tone="ink" className="flex h-14 min-w-0 shrink-0 flex-col justify-center gap-1 px-2 py-2">
+    {items.map(item=><div key={item.label} className="flex min-w-0 justify-between gap-2 text-[10px]"><span className="shrink-0 text-muted-foreground">{item.label}</span><span className="truncate text-right font-mono font-semibold tabular-nums">{item.value}</span></div>)}
+  </TonePanel>;
+}
+
+function CreditGroupMediaPrices({rows}:{rows:TransitQuote[]}) {
+  const token=rows.every(r=>r.mediaPricing?.billing==="token");
+  const units=[...new Set(rows.map(r=>r.mediaPricing?.unit??r.unit))];
+  const range=(values:(number|null|undefined)[])=>{
+    const known=values.filter((v):v is number=>typeof v==="number"&&Number.isFinite(v)&&v>=0);
+    if(!known.length)return "—";const min=Math.min(...known),max=Math.max(...known);
+    return min===max?`¥${formatTransitCardAmount(min)}`:`¥${formatTransitCardAmount(min)}–${formatTransitCardAmount(max)}`;
+  };
+  return <TonePanel tone="ink" className="flex h-14 min-w-0 shrink-0 flex-col justify-center gap-1 px-2 py-2">
+    <div className="flex min-w-0 justify-between gap-2 text-[10px]"><span className="shrink-0 text-muted-foreground">{token?"输入 / 百万Token":"基础规格"}</span><span className="truncate text-right font-mono font-semibold tabular-nums">{token?range(rows.map(r=>r.mediaPricing?.tokenInput)):units.length===1?`${range(rows.map(r=>r.fixedPrice))}/${units[0]}`:"按模型规格"}</span></div>
+    <div className="flex min-w-0 justify-between gap-2 text-[10px]"><span className="shrink-0 text-muted-foreground">{token?"图片输出 / 百万Token":"结算"}</span><span className="truncate text-right font-mono font-semibold tabular-nums">{token?range(rows.map(r=>r.mediaPricing?.tokenOutput)):"Credits · ¥1/额度"}</span></div>
+  </TonePanel>;
 }
 
 function TokenGroupMediaPrices({ rows }: { rows: TransitQuote[] }) {

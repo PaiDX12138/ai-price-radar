@@ -9,7 +9,7 @@ const timeLabel = (ms) => formatter.format(new Date(ms));
  * First average groups within each model, then models within each hour, then hours.
  * This is an explicitly labelled equal-weight index, NOT a traffic-weighted SLA.
  */
-export function buildPerformanceMonitor(rows, { now = Date.now(), groupKey = null, modelName = null } = {}) {
+export function buildPerformanceMonitor(rows, { now = Date.now(), groupKey = null, modelName = null, includeHourly = false } = {}) {
   const end = Math.floor(now / HOUR) * HOUR + HOUR;
   const start = end - PERFORMANCE_HOURS * HOUR;
   const buckets = new Map();
@@ -49,5 +49,7 @@ export function buildPerformanceMonitor(rows, { now = Date.now(), groupKey = nul
     averageLatencyMs: mean(covered.map(p => p.latencyMs).filter(finite)), averageThroughputTps: mean(covered.map(p => p.throughputTps).filter(finite)), samples: covered.length,
     latencyHours: covered.filter(p => p.latencyMs !== null).length, throughputHours: covered.filter(p => p.throughputTps !== null).length,
     expectedHours: PERFORMANCE_HOURS, windowHours: PERFORMANCE_HOURS, windowStart: new Date(start).toISOString(), windowEnd: new Date(end).toISOString(),
-    latestBucketAt: newest?.bucketAt ?? null, collectedAt, method: modelName !== null ? "group_hour_equal_weight" : "model_hour_equal_weight", bars };
+    latestBucketAt: newest?.bucketAt ?? null, collectedAt, method: modelName !== null ? "group_hour_equal_weight" : "model_hour_equal_weight", bars,
+    // Export-only intermediate series; removed before writing the public snapshot.
+    ...(includeHourly ? { _hourly: covered } : {}) };
 }

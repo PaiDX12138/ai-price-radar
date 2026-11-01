@@ -158,14 +158,15 @@ export function buildZetaPerformance(db,stationId,modelNames,{now=Date.now()}={}
   const make=(selected,{modelName,groupKey=null,monitoredModels=modelMonitors.length,sourceSummary}={})=>({
     ...buildPerformanceMonitor(selected.map(r=>({station_id:stationId,model_name:r.model_name??`monitor:${r.monitor_id}`,
       group_key:'monitor',bucket_at:r.bucket_at,success_rate:100*r.up_count/(r.up_count+r.down_count),
-      has_data:1,window_hours:360,avg_ttft_ms:null,avg_latency_ms:null,avg_tps:null,observed_at:r.observed_at})),{now,modelName:modelName??null}),
+      has_data:1,window_hours:360,avg_ttft_ms:null,avg_latency_ms:null,avg_tps:null,observed_at:r.observed_at})),{now,modelName:modelName??null,includeHourly:!!modelName}),
     capabilities:{ttft:false,latency:false,throughput:false},collectedAt:collectAt,
     scope:{stationId,groupKey,...(modelName?{modelName}:{})},
     kind:'probe_availability',method:'observed_probe_hour_equal_weight',monitoredModels,totalModels:modelNames.length,sourceSummary,
   });
   return {stationId,
     station:make(rows.filter(r=>r.scope_kind==='model'&&modelsSet.has(r.model_name))),
-    // No source group identity exists. Never reuse model/station uptime as a pricing group's uptime.
+    // No source group identity exists. The exporter may derive a clearly labelled
+    // member-model index, without inserting invented channel observations.
     groups:{public:make([],{groupKey:'public',monitoredModels:0})},
     models:Object.fromEntries(modelNames.map(modelName=>{
       const m=modelMonitors.find(i=>i.model_name===modelName);

@@ -19,6 +19,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildPerformanceMonitor } from "../src/lib/transit/performance.mjs";
 import { ZETA_SCHEMA_SQL, buildZetaPerformance } from "./transit/zetaapi-storage.mjs";
+import { SOLE_SCHEMA_SQL, buildSolePerformance } from "./transit/soleapi-storage.mjs";
+import { withModelDerivedGroups } from "./transit/group-performance.mjs";
+import { RUN_SCHEMA_SQL, buildRunPerformance } from "./transit/runapi-storage.mjs";
+import { refreshRunApiOffer } from "../src/lib/transit/runapi-pricing.mjs";
+import { CUBENCE_SCHEMA_SQL } from "./transit/cubence-storage.mjs";
+import { CRAZY_SCHEMA_SQL } from "./transit/crazyrouter-storage.mjs";
+import { SUDO_SCHEMA_SQL, buildSudoPerformance } from "./transit/sudocode-storage.mjs";
+import { refreshCrazyOffer } from "../src/lib/transit/crazyrouter-pricing.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -218,6 +226,11 @@ CREATE INDEX IF NOT EXISTS idx_transit_perf_model_window_bucket
   ON transit_performance_observations(station_id, model_name, window_hours, bucket_at DESC);
 
 ${ZETA_SCHEMA_SQL}
+${SOLE_SCHEMA_SQL}
+${RUN_SCHEMA_SQL}
+${CUBENCE_SCHEMA_SQL}
+${CRAZY_SCHEMA_SQL}
+${SUDO_SCHEMA_SQL}
 
 `;
 
@@ -803,7 +816,15 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
       if (meta.service && typeof meta.service.allowSignup === "boolean" && typeof meta.service.allowTopup === "boolean")
         station.service_state={allowSignup:meta.service.allowSignup,allowTopup:meta.service.allowTopup,observedAt:meta.service.observedAt};
       if(meta.groupOrigin === "synthetic_public_catalog") station.catalog_only=true;
+      if(meta.currencyKind === "usd_base") station.currency_kind="usd_base";
       if(meta.currencyKind === "usd_cash") station.currency_kind="usd_cash";
+      if(meta.currencyKind === "cny_credit") station.currency_kind="cny_credit";
+      if(meta.currencyKind === "usd_credit") {
+        station.currency_kind="usd_credit";
+        const b=meta.billingConfiguration;
+        if(b&&typeof b.price==='number'&&typeof b.usdExchangeRate==='number')
+          station.billing_configuration={price:b.price,usdExchangeRate:b.usdExchangeRate,stripeUnitPrice:b.stripeUnitPrice??null};
+      }
     } catch { /* Never export raw collector metadata. */ }
   }
   const groups = db.prepare(`
@@ -816,9 +837,15 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
       JOIN transit_stations s ON s.id=g.station_id
     WHERE o.status='active' AND g.status='active' AND s.status='published'
     ORDER BY o.group_id, o.standard_model COLLATE NOCASE, o.raw_model COLLATE NOCASE
-  `).all();
+  `).all().map(offer=>refreshCrazyOffer(refreshRunApiOffer(offer)));
   for (const g of groups) { delete g.raw_group_json; delete g.endpoint_overrides_json; }
-  for (const o of offers) { delete o.raw_offer_json; delete o.base_price_json; }
+  const cubenceGroups=new Set(groups.filter(g=>stations.some(s=>s.id===g.station_id&&s.collector_kind==='cubence_v1')).map(g=>g.id));
+  for (const o of offers) {
+    delete o.raw_offer_json;
+    // Cubence's whitelisted basePrice is the ONLY verified public quote; it is
+    // not an effective group price. Never export a collector's arbitrary raw JSON.
+    if(!cubenceGroups.has(o.group_id))delete o.base_price_json;
+  }
   const performanceNow = Date.now();
   const performanceRows = db.prepare(`
     SELECT station_id,model_name,group_key,bucket_at,avg_ttft_ms,avg_latency_ms,
@@ -831,23 +858,30 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
   `).all(new Date(Math.floor(performanceNow/3600000)*3600000-359*3600000).toISOString());
   // Export only compact, pre-aggregated public series, never tens of thousands of raw rows.
   const performance = stations.map(s => {
+    if(s.collector_kind === "cubence_v1")return {stationId:s.id,
+      station:{...buildPerformanceMonitor([],{now:performanceNow}),capabilities:{ttft:false,latency:false,throughput:false},scope:{stationId:s.id,groupKey:null}},
+      groups:{},models:{}};
     const capabilities = { ttft: s.collector_kind !== "rightapi_v1", latency: s.collector_kind !== "rightapi_v1", throughput: s.collector_kind !== "rightapi_v1" };
     const rows=performanceRows.filter(r=>r.station_id===s.id);
     const stationGroups=groups.filter(g=>g.station_id===s.id);
     const ownGroupIds=new Set(stationGroups.map(g=>g.id));
     const modelNames=[...new Set(offers.filter(o=>ownGroupIds.has(o.group_id)).map(o=>o.raw_model))];
-    if (s.collector_kind === "zetaapi_v1") return buildZetaPerformance(db,s.id,modelNames,{now:performanceNow});
+    if (s.collector_kind === "sudocode_v1") return buildSudoPerformance(db,s.id,stationGroups,offers,{now:performanceNow});
+    const finish = result => withModelDerivedGroups(result,stationGroups,offers,{now:performanceNow});
+    if (s.collector_kind === "zetaapi_v1") return finish(buildZetaPerformance(db,s.id,modelNames,{now:performanceNow}));
+    if (s.collector_kind === "soleapi_v1") return finish(buildSolePerformance(db,s.id,modelNames,{now:performanceNow}));
+    if (s.collector_kind === "runapi_v1") return finish(buildRunPerformance(db,s.id,modelNames,{now:performanceNow}));
     const rowsByModel=new Map();
     for(const row of rows){const bucket=rowsByModel.get(row.model_name)??[];bucket.push(row);rowsByModel.set(row.model_name,bucket);}
-    return {stationId:s.id,
+    return finish({stationId:s.id,
       station:{...buildPerformanceMonitor(rows,{now:performanceNow}),capabilities,scope:{stationId:s.id,groupKey:null}},
       groups:Object.fromEntries(stationGroups.map(g=>[g.group_key,{...buildPerformanceMonitor(rows,{now:performanceNow,groupKey:g.group_key}),capabilities,scope:{stationId:s.id,groupKey:g.group_key}}])),
       models:Object.fromEntries(modelNames.map(modelName=>[modelName,{
-        ...buildPerformanceMonitor(rowsByModel.get(modelName)??[],{now:performanceNow,modelName}),
+        ...buildPerformanceMonitor(rowsByModel.get(modelName)??[],{now:performanceNow,modelName,includeHourly:true}),
         capabilities,
         scope:{stationId:s.id,groupKey:null,modelName},
       }])),
-    };
+    });
   });
   const snapshot = {
     schemaVersion: 1,

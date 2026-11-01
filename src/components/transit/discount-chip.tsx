@@ -18,14 +18,16 @@ export function discountLabel(ratio: number): string {
 export function TransitDiscountChip({ discount }: { discount?: TransitDiscount | null }) {
   if (!discount || !Number.isFinite(discount.ratio) || discount.ratio < 0 || discount.ratio >= 1) return null;
   const label = discountLabel(discount.ratio);
+  const baseQuote=discount.currencyBasis==="public_usd_base_not_final_charge";
   const source = discount.source === "calculated" ? "本站测算" : "站方参考";
   const basis = discount.basis === "station_reference" ? "站方模型基准价" : discount.basis === "official_input_price" ? "官方输入价" : "公开参考输入价";
   const rows: TooltipDetailsData["rows"] = [
     { label: "折扣", value: label },
-    { label: "分组", value: discount.groupKey },
+    { label: baseQuote?"报价范围":"分组", value: baseQuote?"公开基础价":discount.groupKey },
     { label: "对比基准", value: basis },
   ];
   if (discount.reference) rows.push({ label: "基准价", value: `${discount.reference.currency === "CNY" ? "¥" : "$"}${formatTransitPriceAmount(discount.reference.price)}/${discount.reference.unit}` });
+  if(discount.currencyBasis==="station_usd_credit_nominal_not_cash_payment")rows.push({label:"计算口径",value:"美元额度面值，不含充值差价"});
   if (discount.fxDate && discount.usdToCny) rows.push(
     { label: "美元汇率", value: `1 USD = ¥${discount.usdToCny}` },
     { label: "汇率日期", value: discount.fxDate },
@@ -37,8 +39,8 @@ export function TransitDiscountChip({ discount }: { discount?: TransitDiscount |
       </ToneChip>
     </TooltipTrigger>
     <TooltipContent className="w-[min(18rem,calc(100vw-1.5rem))]">
-      <TooltipDetails title={`${source}折扣`} rows={rows}
-        note={`${discount.source === "calculated" ? discount.metric === "request" ? "按同型号基础按次价测算。" : "按同型号基础输入档测算。" : "站方提供，未经独立核价。"}不含其他档位及个人优惠。`} />
+      <TooltipDetails title={baseQuote?"基础价对比":`${source}折扣`} rows={rows}
+        note={baseQuote?"仅对比同型号公开基础输入价，不是实际分组或现金实付折扣。":`${discount.source === "calculated" ? discount.metric === "request" ? "按同型号基础按次价测算。" : "按同型号基础输入档测算。" : "站方提供，未经独立核价。"}不含其他档位及个人优惠。`} />
     </TooltipContent>
   </Tooltip>;
 }

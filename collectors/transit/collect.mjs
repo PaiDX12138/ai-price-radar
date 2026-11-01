@@ -8,6 +8,11 @@ import { parsePackyDiscountPolicy, packyOfferDiscount } from "./discounts.mjs";
 import { parsePackyRecharge } from "./recharge.mjs";
 import { collectRightApiSource } from "./rightapi.mjs";
 import { collectZetaApiSource } from "./zetaapi.mjs";
+import { collectSoleApiSource } from "./soleapi.mjs";
+import { collectRunApiSource } from "./runapi.mjs";
+import { collectCubenceSource } from "./cubence.mjs";
+import { collectCrazyRouterSource } from "./crazyrouter.mjs";
+import { collectSudoCodeSource } from "./sudocode.mjs";
 import { fetchTransitPublic, describeTransitError } from "./transport.mjs";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
@@ -263,7 +268,17 @@ export async function runTransitCollection(db,options={}) {
   const results=[];
   for(const config of options.sources??loadTransitSources()) {
     try {
-      if(config.collectorKind === "zetaapi_v1") {
+      if(config.collectorKind === "sudocode_v1") {
+        results.push(await collectSudoCodeSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "crazyrouter_v1") {
+        results.push(await collectCrazyRouterSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "cubence_v1") {
+        results.push(await collectCubenceSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "runapi_v1") {
+        results.push(await collectRunApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "soleapi_v1") {
+        results.push(await collectSoleApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "zetaapi_v1") {
         results.push(await collectZetaApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
       } else if(config.collectorKind === "rightapi_v1") {
         results.push(await collectRightApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));

@@ -6,7 +6,8 @@ import { join } from "node:path";
 export type TransitStation = {
   service_state?: { allowSignup: boolean; allowTopup: boolean; observedAt: string };
   catalog_only?: boolean;
-  currency_kind?: "usd_cash";
+  currency_kind?: "usd_cash" | "cny_credit" | "usd_credit" | "usd_base";
+  billing_configuration?: {price:number;usdExchangeRate:number;stripeUnitPrice:number|null};
   id: string;
   name: string;
   site_url: string;
@@ -117,7 +118,12 @@ export type TransitSnapshot = {
 };
 
 export type TransitMonitorStats = {
-  kind?: "probe_availability";
+  kind?: "probe_availability" | "model_probe_availability";
+  availabilityBasis?: "normal_probe";
+  aggregation?: { kind: "group_models"; monitoredModels: number; totalModels: number };
+  sourceVersion?: string;
+  probeCount?: number;
+  throughputSummary?: { value: number; windowHours: number; observedAt: string; sourceUrl: string; sourceUrls?: string[]; modelCount?: number };
   coverageScope?: "infrastructure";
   monitoredModels?: number;
   totalModels?: number;

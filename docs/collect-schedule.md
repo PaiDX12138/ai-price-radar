@@ -3,6 +3,14 @@
 架构：**`pnpm worker` 采集 → 落盘快照 → 前台只读**。  
 不要把采集塞进 `next dev` / `next start`；页请求禁止直打发卡网。
 
+中转站点同样由本Worker独立调度，无需额外cron。SoleAPI报价6小时、模型探测1小时、逐型号详情失败补采与十五日保存见 [SoleAPI采集运行说明](soleapi-collection.md)。
+
+RunAPI报价6小时、公开对话探测5分钟，沿用同一独立任务调度；表达式时段价格本地重算，详见 [RunAPI采集运行说明](runapi-collection.md)。
+
+Cubence公开基础报价与设置6小时，Logo每日检查，接入同一Worker；登录分组与监测未取得数据，不创建空转轮询或虚构15日历史，详见 [Cubence采集运行说明](cubence-collection.md)。
+
+CrazyRouter报价/媒体矩阵6小时，活跃型号性能1小时、无流量型号6小时，源7日小时原点持续积累15日；独立队列、租约、时段重算和限流退避见 [CrazyRouter采集运行说明](crazyrouter-collection.md)。
+
 ## 开箱用法（一键）
 
 ```bash
@@ -95,6 +103,8 @@ node scripts/reclassify-catalog-snapshot.mjs --apply  # 自动备份并原子替
 ## 生产建议
 
 ### 中转站点独立调度
+
+SudoCode已接入同一调度：报价/公式/目录每6小时，版本性能每1小时，Logo每日复核；独立持久化next-due、租约、失败退避，不需要新增cron。接口可直接回填15日，小时事实持续保存35日。版本性能不会伪装成渠道独立观测，详见 [SudoCode运行说明](sudocode-collection.md)。
 
 `pnpm worker` 每分钟发现并检查 `config/transit/*.json` 的到期任务，按站点启动独立采集子进程，不需要为每个站点单独新增cron。报价默认6小时，Right Code可用率每小时，ZetaAPI公开心跳每5分钟；详细的分表保存、35日保留和监控范围见 `docs/zetaapi-integration-plan.md`。`start`只读快照，不负责持续采集。
 

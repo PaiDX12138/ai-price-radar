@@ -2,6 +2,9 @@ import type {TransitDemo} from "@/data/demo/transit";
 import type {TransitSite} from "./types";
 import type {TransitMonitorStats} from "./snapshot";
 import type {TransitModelCatalog} from "./model-order";
+import {refreshRunApiOffer} from "./runapi-pricing.mjs";
+import {formatTransitMultiplierAmount, formatTransitMultiplierRange} from "./format";
+import {refreshCrazyOffer} from "./crazyrouter-pricing.mjs";
 
 export type TransitPrice=TransitDemo["prices"][number]&{
   inputPrice:number|null;
@@ -10,7 +13,11 @@ export type TransitPrice=TransitDemo["prices"][number]&{
   modality?:string;
   discount?:TransitDiscount|null;
   mediaPricing?:TransitMediaPricing;
-  currencyKind?: "usd_cash";
+  currencyKind?: "usd_cash" | "cny_credit" | "usd_credit" | "usd_base";
+  chargeItems?: TransitChargeItem[];
+  pricingRules?: unknown[];
+  pricingDetailsAt?: string | null;
+  groupKey?: string;
   cacheReadPrice?: number | null;
   cacheWritePrice?: number | null;
   cacheWrite1hPrice?: number | null;
@@ -19,12 +26,15 @@ export type TransitMediaPricing={
   min:number|null;
   max:number|null;
   fixed:number|null;
-  billing:"token"|"per_image"|"upstream_cost"|"per_request"|"variable";
+  billing:"token"|"per_image"|"per_second"|"per_minute"|"per_output_token"|"upstream_cost"|"per_request"|"variable";
   groupKey:string;
   tokenInput?:number|null;
   tokenOutput?:number|null;
-  tokenCurrencyKind?:"usd_cash";
+  tokenCurrencyKind?:"usd_cash"|"cny_credit"|"usd_credit"|"usd_base";
+  currencyKind?:"usd_cash"|"cny_credit"|"usd_credit"|"usd_base";
+  unit?: string;
 };
+export type TransitChargeItem = { key:string;unit:string;creditPrice:string;basePrice:string;baseCurrency:string;multiplier:string };
 export type TransitDiscount={
   ratio:number;
   source:"station_reported"|"station_formula"|"calculated";
@@ -34,6 +44,7 @@ export type TransitDiscount={
   observedAt:string;
   reference?:{price:number;currency:string;unit:string};
   metric?:"input"|"request";
+  currencyBasis?:"station_usd_credit_nominal_not_cash_payment"|"public_usd_base_not_final_charge";
   fxDate?:string;
   usdToCny?:number;
 };
@@ -42,7 +53,10 @@ export type TransitQuote={
   multiplier:number|null;input:number|null;output:number|null;
   cacheRead:number|null;cacheWrite:number|null;fixedPrice:number|null;
   cacheWrite1h?:number|null;
-  currencyKind?:"usd_cash";
+  currencyKind?:"usd_cash"|"cny_credit"|"usd_credit"|"usd_base";
+  chargeItems?:TransitChargeItem[];
+  pricingRules?:unknown[];
+  pricingDetailsAt?:string|null;
   unit:string;cacheHitRate:null;
   mediaPricing?:TransitMediaPricing;
 };
@@ -61,12 +75,18 @@ export type TransitSiteView=Omit<TransitDemo,"prices">&{
   rechargeInfo:{sourceUrl:string;observedAt:string}|null;
   serviceState?: { allowSignup:boolean;allowTopup:boolean;observedAt:string };
   catalogOnly?:boolean;
-  currencyKind?:"usd_cash";
+  currencyKind?:"usd_cash"|"cny_credit"|"usd_credit"|"usd_base";
+  billingConfiguration?:{price:number;usdExchangeRate:number;stripeUnitPrice:number|null};
   infrastructure?:{id:number;name:string;monitor:TransitMonitorStats}[];
 };
 const valid=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const mediaAmount=(v:unknown):number|null=>valid(v)&&v>=0?v:null;
 type Offer=TransitSite["groups"][number]["offers"][number];
+function presentationPrice(offer:Offer) {
+  if(offer.effective_price_json)return JSON.parse(offer.effective_price_json);
+  const base=JSON.parse(offer.base_price_json??"{}");
+  return base.basis==="cubence_public_base_v1"&&base.priceBasis==="base"&&base.currencyKind==="usd_base"?base:{};
+}
 function mediaPricing(offer:Offer,groupKeys:Map<string,string>):TransitMediaPricing {
   const min=mediaAmount(offer.model_price_min),max=mediaAmount(offer.model_price_max);
   const coherent=min===null||max===null||max>=min;
@@ -76,24 +96,41 @@ function mediaPricing(offer:Offer,groupKeys:Map<string,string>):TransitMediaPric
     if(raw==="token"||raw==="per_image"||raw==="upstream_cost")billing=raw;
   }catch{/* No verified mode: keep the specification-based label. */}
   // These persisted bounds already include this offer's group rate. Never multiply again.
-  let exactTokens=false;try {exactTokens=JSON.parse(offer.effective_price_json??"{}").currencyKind==="usd_cash"&&billing==="token";}catch{/* no exact token quote */}
+  let exactTokens=false,currencyKind:TransitMediaPricing["currencyKind"],imageOutput:number|null=null,unit:string|undefined;
+  try {const value=presentationPrice(offer);
+    if(value.currencyKind==="usd_cash"||value.currencyKind==="cny_credit"||value.currencyKind==="usd_credit"||value.currencyKind==="usd_base")currencyKind=value.currencyKind;
+    exactTokens=Boolean(currencyKind)&&billing==="token";
+    if(offer.billing_mode==="per_second"||offer.billing_mode==="per_minute"||offer.billing_mode==="per_output_token")billing=offer.billing_mode;
+    if(typeof value.mediaUnit==="string")unit=value.mediaUnit;
+    const output=value.chargeItems?.find((c:TransitChargeItem)=>c.key==="image_output"&&c.unit==="per_M_tokens");
+    if(output)imageOutput=Number(output.creditPrice);
+  }catch{/* no exact token quote */}
   return {min:coherent?min:null,max:coherent?max:null,fixed:mediaAmount(offer.fixed_price),billing,groupKey:groupKeys.get(offer.group_id)??offer.group_id,
-    ...(exactTokens?{tokenInput:offer.input_price,tokenOutput:offer.output_price,tokenCurrencyKind:"usd_cash" as const}:{})};
+    currencyKind,unit:unit??(currencyKind==="cny_credit"?offer.price_unit??undefined:undefined),
+    ...(exactTokens?{tokenInput:offer.input_price,tokenOutput:imageOutput??offer.output_price,tokenCurrencyKind:currencyKind}:{})};
 }
 function mediaFloor(offer:Offer):number {
   const price=mediaPricing(offer,new Map());
-  return price.min??price.fixed??price.max??Infinity;
+  return price.min??price.fixed??price.max??price.tokenOutput??price.tokenInput??Infinity;
+}
+function extraPricing(offer:Offer) {
+  try {const value=presentationPrice(offer);
+    return {chargeItems:Array.isArray(value.chargeItems)?value.chargeItems as TransitChargeItem[]:undefined,
+      pricingRules:Array.isArray(value.tiers)?value.tiers as unknown[]:undefined,pricingDetailsAt:typeof value.detailObservedAt==="string"?value.detailObservedAt:null};
+  }catch{return {};}
 }
 function offerDiscount(offer:TransitSite["groups"][number]["offers"][number],groupKeys:Map<string,string>):TransitDiscount|null {
   if(!valid(offer.discount_ratio)||offer.discount_ratio<0 || !["station_reported","station_formula","calculated"].includes(offer.discount_source??"") || !["station_reference","official_input_price","public_reference_input_price"].includes(offer.discount_basis??"")) return null;
   let sourceUrl:string|null=null;
-  const evidence:Pick<TransitDiscount,"reference"|"metric"|"fxDate"|"usdToCny">={};
+  const evidence:Pick<TransitDiscount,"reference"|"metric"|"fxDate"|"usdToCny"|"currencyBasis">={};
   try {
     const details=JSON.parse(offer.discount_details_json??"{}");
     sourceUrl=typeof details.sourceUrl==="string"?details.sourceUrl:null;
     if(valid(details.reference?.input)&&details.reference.input>0&&typeof details.reference.currency==="string"&&typeof details.reference.unit==="string")
       evidence.reference={price:details.reference.input,currency:details.reference.currency,unit:details.reference.unit};
     if(details.metric==="input"||details.metric==="request")evidence.metric=details.metric;
+    if(details.currencyBasis==="station_usd_credit_nominal_not_cash_payment")evidence.currencyBasis=details.currencyBasis;
+    if(details.currencyBasis==="public_usd_base_not_final_charge")evidence.currencyBasis=details.currencyBasis;
     if(typeof details.conversion?.fxDate==="string")evidence.fxDate=details.conversion.fxDate;
     if(valid(details.conversion?.usdToCny)&&details.conversion.usdToCny>0)evidence.usdToCny=details.conversion.usdToCny;
   }catch{/* basic value remains usable */}
@@ -112,13 +149,10 @@ export function getTransitModelMonitor(site:Pick<TransitSiteView,"id">&{monitors
   if(stats?.scope?.stationId!==site.id||stats.scope.groupKey!==null||stats.scope.modelName!==modelName||stats.windowHours!==360)return undefined;
   return stats;
 }
-const numericRange=(values:(number|null)[])=>{
-  const ns=values.filter(valid);if(!ns.length)return "—";
-  const min=Math.min(...ns),max=Math.max(...ns);
-  return min===max?`${min}×`:`${min}–${max}×`;
-};
 /** Maps persisted data into the existing card contract; no visual redesign. */
 export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, {includeModelMonitors=false}:{includeModelMonitors?:boolean}={}):TransitSiteView {
+  if(site.station.collector_kind==="runapi_v1")site={...site,groups:site.groups.map(g=>({...g,offers:g.offers.map(o=>refreshRunApiOffer(o))}))};
+  if(site.station.collector_kind==="crazyrouter_v1")site={...site,groups:site.groups.map(g=>({...g,offers:g.offers.map(o=>refreshCrazyOffer(o))}))};
   const s=site.station;
   const currencyKind=s.currency_kind;
   let rechargeInfo:TransitSiteView["rechargeInfo"]=null;
@@ -129,7 +163,7 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
     id:o.id,family:o.family??"其他",category:o.modality,model:o.raw_model,group:g.display_name,groupKey:g.group_key,
     multiplier:null,input:o.input_price,output:o.output_price,cacheRead:o.cache_read_price,cacheWrite:o.cache_write_price,
     fixedPrice:o.fixed_price,unit:o.price_unit??"未披露",cacheHitRate:null,currencyKind,cacheWrite1h:o.cache_write_1h_price,
-    ...(o.modality==="image"||o.modality==="video"?{mediaPricing:mediaPricing(o,groupKeys)}:{}),
+    ...extraPricing(o),...(o.modality==="image"||o.modality==="video"?{mediaPricing:mediaPricing(o,groupKeys)}:{}),
   })));
   const all=site.groups.flatMap(g=>g.offers);
   const byModel=new Map<string,typeof all>();
@@ -147,9 +181,11 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
     });
     return {id:key,family:first.family??"其他",modelName:first.raw_model,
       category:first.modality==="image"||first.modality==="video"?first.modality:undefined,modality:first.modality,
-      range:numericRange(rate),inputPrice:lowest.input_price,outputPrice:lowest.output_price,
+      range:currencyKind==="usd_base"?(extraPricing(lowest).pricingRules?.length?"阶梯":"基础"):formatTransitMultiplierRange(rate),inputPrice:lowest.input_price,outputPrice:lowest.output_price,
       currencyKind,cacheReadPrice:lowest.cache_read_price,cacheWritePrice:lowest.cache_write_price,cacheWrite1hPrice:lowest.cache_write_1h_price,
       discount:offerDiscount(lowest,groupKeys),
+      ...extraPricing(lowest),
+      groupKey:groupKeys.get(lowest.group_id),
       ...(isMedia?{mediaPricing:mediaPricing(lowest,groupKeys)}:{}),
       fixedPrice:lowest.fixed_price??undefined,priceUnit:first.price_unit??undefined,isLive:true as const};
   });
@@ -161,11 +197,11 @@ export function toTransitView(site:TransitSite, catalog:TransitModelCatalog={}, 
     updatedAt:s.last_seen_at??s.listed_at,system:s.system==="new_api"?"New API":s.system==="sub_to_api"?"Sub2API":"自研",
     description:s.description??"",models:[...new Set(all.map(o=>o.raw_model))],groups:site.groups.length,prices,
     channels:[...new Set(site.groups.flatMap(g=>g.group.channel_type?[g.group.channel_type]:[]))].length?[...new Set(site.groups.flatMap(g=>g.group.channel_type?[g.group.channel_type]:[]))]:["未披露"],
-    availability:monitor?.availability==null?null:`${monitor.availability.toFixed(2)}%`,samples:monitor?.samples??0,latency:monitor?.averageLatencyMs==null?null:`${(monitor.averageLatencyMs/1000).toFixed(1)}s`,recharge:rechargeMultiplier===null?"未披露":`¥1 = $${1/rechargeMultiplier}`,rechargeMultiplier,rechargeInfo,cacheHitRate:null,monitoringSource:monitor?.samples?"station_public":"unknown",
+    availability:monitor?.availability==null?null:`${monitor.availability.toFixed(2)}%`,samples:monitor?.samples??0,latency:monitor?.averageLatencyMs==null?null:`${(monitor.averageLatencyMs/1000).toFixed(1)}s`,recharge:rechargeMultiplier===null?"未披露":`¥1 = $${formatTransitMultiplierAmount(1/rechargeMultiplier)}`,rechargeMultiplier,rechargeInfo,cacheHitRate:null,monitoringSource:monitor?.samples?"station_public":"unknown",
     detail:{quotes,listedAt:s.listed_at},
     groupLabels:Object.fromEntries(site.groups.map(({group:g})=>[g.display_name,{pool:g.pool_type,subscription:g.subscription,disclosure:g.disclosure??null,description:g.description??null}])),
     monitor,monitorsByGroup,monitorsByModel:includeModelMonitors?(performance?.models??{}):{},
-    serviceState:s.service_state,catalogOnly:s.catalog_only,currencyKind,infrastructure:performance?.infrastructure,
+    serviceState:s.service_state,catalogOnly:s.catalog_only,currencyKind,billingConfiguration:s.billing_configuration,infrastructure:performance?.infrastructure,
     modelCatalog:Object.fromEntries([...new Set(all.map(o=>o.raw_model.toLowerCase()))].filter(name=>Object.hasOwn(catalog,name)).map(name=>[name,catalog[name]])),
   };
 }

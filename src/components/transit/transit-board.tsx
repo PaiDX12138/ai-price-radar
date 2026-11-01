@@ -54,7 +54,7 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
           <Link href={`/api-transit/${site.id}`} data-tooltip-surface aria-label={`查看 ${site.name} 详情`} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" />
           <CardHeader className="h-12 shrink-0 pb-1">
             <div className="flex items-start gap-3">
-              <Image src={site.logoPath} alt={`${site.name} Logo`} width={32} height={32} className="size-8 shrink-0 rounded-lg" />
+              <Image src={site.logoPath} alt={`${site.name} Logo`} width={32} height={32} className={`size-8 shrink-0 rounded-lg${site.id === "soleapi" ? " dark:invert" : ""}`} />
               <div className="min-w-0 flex-1"><h2 className="truncate text-[15px] font-semibold"><TransitHomepageLink site={site} /></h2><div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><TransitBillingBadge site={site} />{site.serviceState && (!site.serviceState.allowSignup || !site.serviceState.allowTopup) && <TransitServiceStatus site={site} />}<TransitMonitorSource stats={getTransitMonitor(site)} /></div></div>
               <CardCornerArrow />
             </div>

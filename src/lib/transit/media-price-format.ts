@@ -1,7 +1,7 @@
 import type { TransitMediaPricing } from "./view";
 
 export const MEDIA_BILLING_LABELS = {
-  token: "按 Token", per_image: "按张 · 随规格", upstream_cost: "按上游实际费用", per_request: "按次", variable: "按规格",
+  token: "按 Token", per_image: "按张 · 随规格", per_second:"按秒", per_minute:"按分钟", per_output_token:"按输出Token", upstream_cost: "按上游实际费用", per_request: "按次", variable: "按规格",
 } as const;
 
 export const formatTransitPriceAmount = (value: number) => value !== 0 && Math.abs(value) < 0.000001 ? String(value) : String(Number(value.toFixed(6)));
@@ -32,11 +32,13 @@ export function formatMediaPriceBounds(bounds: MediaPriceBounds | null, compact 
 }
 
 export function formatTransitMediaPrice(value?: TransitMediaPricing, fallbackFixed?: number | null, compact = false) {
-  if (value?.tokenCurrencyKind === "usd_cash") {
+  if (value?.tokenCurrencyKind) {
     const amount=compact?formatTransitCardAmount:formatTransitPriceAmount;
-    return `入 ${valid(value.tokenInput)?`$${amount(value.tokenInput)}`:"—"} · 出 ${valid(value.tokenOutput)?`$${amount(value.tokenOutput)}`:"—"}`;
+    const prefix=value.tokenCurrencyKind==="cny_credit"?"¥":"$";
+    return `入 ${valid(value.tokenInput)?`${prefix}${amount(value.tokenInput)}`:"—"} · 出 ${valid(value.tokenOutput)?`${prefix}${amount(value.tokenOutput)}`:"—"}`;
   }
-  return formatMediaPriceBounds(mediaPriceBounds(value, fallbackFixed), compact);
+  const text=formatMediaPriceBounds(mediaPriceBounds(value, fallbackFixed), compact);
+  return value?.currencyKind==="cny_credit"?text.replace(/\$/g,"¥"):text;
 }
 
 /** Summarize disclosed offers only. Never invent the missing end of a one-sided range. */

@@ -11,22 +11,23 @@ export { aggregateObservations } from "@/lib/transit/bar-chart";
 export type { DetectionObservation } from "@/lib/transit/bar-chart";
 type Bar = ReturnType<typeof aggregateObservations>[number];
 
-function BarDetails({ bar, latencyAvailable, probeMode }: { bar: Bar; latencyAvailable: boolean; probeMode: boolean }) {
+function BarDetails({ bar, latencyAvailable, probeMode, modelProbeMode, derivedFromModels }: { bar: Bar; latencyAvailable: boolean; probeMode: boolean; modelProbeMode:boolean; derivedFromModels:boolean }) {
   const rows: TooltipDetailsData["rows"] = [{label:probeMode?"监测可用率":"可用率",value:bar.availability === null ? "暂无记录" : `${bar.availability.toFixed(2)}%`}];
   if (bar.knownHours !== undefined && bar.expectedHours !== undefined)
     rows.push({label:probeMode?"有记录小时":"数据覆盖",value:`${bar.knownHours} / ${bar.expectedHours} 小时`});
   if (bar.availability !== null) {
     if (latencyAvailable) {
-      rows.push({label:"首Token",value:formatTransitDuration(bar.ttftMs)},{label:"平均耗时",value:formatTransitDuration(bar.latencyMs)});
+      if(!modelProbeMode)rows.push({label:"首Token",value:formatTransitDuration(bar.ttftMs)});
+      rows.push({label:"平均耗时",value:formatTransitDuration(bar.latencyMs)});
       if (bar.throughputTps !== undefined) rows.push({label:"吞吐",value:formatTransitThroughput(bar.throughputTps)});
     } else rows.push({label:"耗时数据",value:"站点未公开"});
   }
   return <TooltipDetails title={bar.startAt ? barTimeRange(bar) : "时段数据"} rows={rows}
-    note={bar.availability === null ? "该时段没有记录，不参与计算。" : probeMode ? "按心跳样本统计，非请求成功率；柱高一致。北京时间。" : latencyAvailable ? "颜色看可用率，越高表示耗时越长。北京时间。" : "颜色表示可用率；未公开耗时，柱高一致。北京时间。"} />;
+    note={bar.availability === null ? "该时段没有记录，不参与计算。" : derivedFromModels ? latencyAvailable ? "组内模型、小时等权；颜色看可用率，柱高看耗时。" : "组内模型、小时等权；未公开耗时，柱高一致。" : modelProbeMode ? "按站方模型探测统计；柱高看成功探测耗时。北京时间。" : probeMode ? "按心跳样本统计，非请求成功率；柱高一致。北京时间。" : latencyAvailable ? "颜色看可用率，越高表示耗时越长。北京时间。" : "颜色表示可用率；未公开耗时，柱高一致。北京时间。"} />;
 }
 
 /** Shared narrow bars: colour = availability; period heights use one fixed log scale. */
-export function SampleBars({ samples, maxBars = 50, fitHeight = false, placeholderBars = 0, periodMode = false, latencyAvailable = true, probeMode = false }: { samples: DetectionObservation[]; maxBars?: number; fitHeight?: boolean; placeholderBars?: number; periodMode?: boolean; latencyAvailable?: boolean; probeMode?: boolean }) {
+export function SampleBars({ samples, maxBars = 50, fitHeight = false, placeholderBars = 0, periodMode = false, latencyAvailable = true, probeMode = false, modelProbeMode=false, derivedFromModels=false }: { samples: DetectionObservation[]; maxBars?: number; fitHeight?: boolean; placeholderBars?: number; periodMode?: boolean; latencyAvailable?: boolean; probeMode?: boolean; modelProbeMode?:boolean; derivedFromModels?:boolean }) {
   const [handle] = useState(() => createTooltipHandle<Bar>());
   const [focusIndex, setFocusIndex] = useState(0);
   const bars = useMemo(() => {
@@ -48,7 +49,7 @@ export function SampleBars({ samples, maxBars = 50, fitHeight = false, placehold
       </TooltipTrigger>)}
     </div>
     <Tooltip handle={handle} disableHoverablePopup>
-      {({ payload }) => <TooltipContent className="w-[min(18rem,calc(100vw-1.5rem))]">{payload && <BarDetails bar={payload} latencyAvailable={latencyAvailable} probeMode={probeMode} />}</TooltipContent>}
+      {({ payload }) => <TooltipContent className="w-[min(18rem,calc(100vw-1.5rem))]">{payload && <BarDetails bar={payload} latencyAvailable={latencyAvailable} probeMode={probeMode} modelProbeMode={modelProbeMode} derivedFromModels={derivedFromModels} />}</TooltipContent>}
     </Tooltip>
   </TooltipProvider>;
 }

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { ChartColumn, CircleDollarSign, Waypoints } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { clearCatalogScroll } from "@/lib/catalog/nav-state";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -52,6 +53,15 @@ export function SitePrimaryNav({ className }: { className?: string }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const value = resolveNavValue(pathname);
+  const navigateHome = (href: (typeof NAV)[number]["href"]) => {
+    // A section heading always opens its unfiltered home, not a saved detail return position.
+    clearCatalogScroll();
+    router.push(href, { scroll: true });
+    if (window.location.pathname === href && !window.location.search && !window.location.hash) {
+      // An identical URL is a router no-op; still honour the explicit home click.
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  };
 
   return (
     <Tabs
@@ -59,7 +69,7 @@ export function SitePrimaryNav({ className }: { className?: string }) {
       onValueChange={(next) => {
         if (next === NAV_NONE) return;
         const item = NAV.find((n) => n.id === next);
-        if (item) router.push(item.href);
+        if (item) navigateHome(item.href);
       }}
       className={cn("gap-0", className)}
     >
@@ -77,6 +87,10 @@ export function SitePrimaryNav({ className }: { className?: string }) {
             <TabsTrigger
               key={item.id}
               value={item.id}
+              onClick={() => {
+                // Tabs only emits onValueChange for a different value.
+                if (item.id === value) navigateHome(item.href);
+              }}
               className={cn(
                 "h-12 gap-1.5 rounded-none border-0 px-2 sm:px-3",
                 "text-[13px] leading-none tracking-tight",

@@ -1,0 +1,23 @@
+{
+  "id": "cubence",
+  "name": "Cubence",
+  "siteUrl": "https://cubence.com/zh-hans",
+  "host": "cubence.com",
+  "system": "custom",
+  "collectorKind": "cubence_v1",
+  "docsUrl": "https://docs.cubence.com/zh/docs",
+  "pricingUrl": "https://cubence.com/zh-hans/models",
+  "metadataUrl": "https://cubence.com/api/v1/settings/public",
+  "logoUrl": "https://cubence.com/logo.svg",
+  "logoLocalPath": "/brand/transit/cubence.svg",
+  "enabled": true,
+  "status": "published",
+  "minimumModels": 20,
+  "minimumCatalogFraction": 0.8,
+  "requiredFamilies": ["Claude", "GPT", "DeepSeek", "Gemini"],
+  "collectionBudgetMs": 100000,
+  "requestIntervalMs": 350,
+  "timeoutMs": 20000,
+  "maxBytes": 8388608,
+  "assetIntervalMs": 86400000
+}

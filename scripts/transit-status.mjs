@@ -41,13 +41,14 @@ try{
       WHERE g.station_id=? AND g.status='active' AND o.status='active'`).all(config.id):[];
     const missingFamilies=(config.requiredFamilies??[]).filter(f=>!stored.some(o=>o.family===f));
     let pricingCollection=null;
-    if(config.collectorKind==='packyapi_v1'&&table('transit_stations')) {
+    if(['packyapi_v1','soleapi_v1','runapi_v1','cubence_v1','crazyrouter_v1','sudocode_v1'].includes(config.collectorKind)&&table('transit_stations')) {
       try {
         const row=db.prepare('SELECT raw_meta_json FROM transit_stations WHERE id=?').get(config.id);
         const collection=JSON.parse(row?.raw_meta_json??'{}').pricingCollection;
         if(collection)pricingCollection={status:collection.status,observedAt:collection.observedAt,
           selectedOrigin:collection.selectedOrigin??null,sourceUrl:collection.sourceUrl?redactTransitError(collection.sourceUrl):null,
-          inventory:collection.inventory??null,
+          inventory:collection.inventory??null,detailsPending:collection.detailsPending??null,
+          multiplierMismatches:collection.multiplierMismatches??[],
           attempts:(Array.isArray(collection.attempts)?collection.attempts:[]).map(attempt=>({
             origin:attempt.origin,status:attempt.status,httpStatus:attempt.httpStatus??null,
             inventory:attempt.inventory??null,payloadHash:attempt.payloadHash??null,
@@ -59,9 +60,35 @@ try{
     if(station?.last_collect_ok===0)issues.push(`last_collection_failed:${config.id}`);
     if(missingFamilies.length)issues.push(`incomplete_families:${config.id}:${missingFamilies.join(',')}`);
     if(visible&&stored.length!==visible.offers)issues.push(`db_snapshot_offer_mismatch:${config.id}`);
+    let detailCollection=null;
+    if(config.collectorKind==='soleapi_v1'&&table('transit_model_detail_state')) {
+      const detail=db.prepare(`SELECT COUNT(*) AS subjects,SUM(CASE WHEN model_json IS NOT NULL THEN 1 ELSE 0 END) AS saved,
+        SUM(CASE WHEN last_error IS NOT NULL THEN 1 ELSE 0 END) AS failed,MIN(last_success_at) AS oldestDetailAt,
+        MIN(next_attempt_at) AS nextDetailAt FROM transit_model_detail_state WHERE station_id=? AND active=1`).get(config.id);
+      const probes=db.prepare(`SELECT COUNT(*) AS probes,COUNT(DISTINCT canonical_model) AS monitoredModels,MIN(probe_at) AS earliestProbe,MAX(probe_at) AS latestProbe
+        FROM transit_model_probe_observations WHERE station_id=? AND probe_at>=?`).get(config.id,new Date(Date.now()-15*86400000).toISOString());
+      const errors=db.prepare('SELECT canonical_model,last_error,next_attempt_at FROM transit_model_detail_state WHERE station_id=? AND active=1 AND last_error IS NOT NULL LIMIT 5').all(config.id)
+        .map(r=>({...r,last_error:redactTransitError(r.last_error)}));
+      detailCollection={...detail,...probes,errors};
+      if(detail.failed)issues.push(`detail_collection_failed:${config.id}:${detail.failed}`);
+    }
+    let runapiMonitoring=null;
+    if(config.collectorKind==='runapi_v1'&&table('transit_runapi_probe_targets')) {
+      runapiMonitoring={targets:db.prepare('SELECT mapping_status,COUNT(*) AS count FROM transit_runapi_probe_targets WHERE station_id=? AND active=1 GROUP BY mapping_status').all(config.id),
+        history:db.prepare('SELECT COUNT(*) AS probes,MIN(checked_at) AS firstProbe,MAX(checked_at) AS lastProbe FROM transit_runapi_probe_observations WHERE station_id=?').get(config.id),
+        conflicts:db.prepare("SELECT name,model,group_hint,mapping_status FROM transit_runapi_probe_targets WHERE station_id=? AND active=1 AND mapping_status<>'matched'").all(config.id)};
+    }
     return {id:config.id,collectorKind:config.collectorKind,published:Boolean(visible),station:station??null,
+      ...(config.collectorKind==='runapi_v1'?{pricingCollection,runapiMonitoring}:{}),
+      ...(config.collectorKind==='cubence_v1'?{pricingCollection,monitoring:{status:'login_required',pollingEnabled:false},priceBasis:'public_usd_base'}:{}),
+      ...(config.collectorKind==='crazyrouter_v1'?{pricingCollection,monitoring:table('transit_crazyrouter_metric_subjects')?db.prepare(`SELECT COUNT(*) subjects,SUM(CASE WHEN last_success_at IS NOT NULL THEN 1 ELSE 0 END) saved,
+        SUM(CASE WHEN last_error IS NOT NULL THEN 1 ELSE 0 END) failed,MIN(next_attempt_at) nextSubjectAt FROM transit_crazyrouter_metric_subjects WHERE station_id=? AND active=1`).get(config.id):null}:{}),
       database:{models:new Set(stored.map(o=>o.raw_model)).size,offers:stored.length,families:familyCounts(stored)},
+      ...(config.collectorKind==='sudocode_v1'?{pricingCollection,monitoring:table('transit_sudocode_tier_hourly')?db.prepare(`SELECT COUNT(*) versionHourRows,COUNT(DISTINCT model) models,
+        COUNT(DISTINCT tier) versions,MIN(bucket_at) earliestHour,MAX(bucket_at) latestHour,MAX(observed_at) lastObservedAt
+        FROM transit_sudocode_tier_hourly WHERE station_id=?`).get(config.id):null,monitoringScope:'version_model_hour_not_independent_channel'}:{}),
       ...(config.collectorKind==='packyapi_v1'?{apiOrigins:config.apiOrigins??[new URL(config.pricingUrl).origin],pricingCollection}:{}),
+      ...(config.collectorKind==='soleapi_v1'?{pricingCollection,detailCollection}:{}),
       missingFamilies,network:{mode:setting.mode,setting:setting.key},runs,schedule:schedule??null,performanceSchedule:performanceSchedule??null};
   });
   console.log(JSON.stringify({cwd,revision,buildId,dbPath,snapshotPath,generatedAt:snapshot?.generatedAt??null,

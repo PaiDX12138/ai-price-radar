@@ -91,6 +91,8 @@ server {
 
 ## 升级
 
+中转站已采公开数据随版本发布时，使用 [数据包导入与既有PM2更新流程](transit-baseline.md)：`transit:migrate` 后执行 `transit:import`，不要以本机SQLite覆盖服务器整库。该操作会备份并保留服务器更新的数据。
+
 ```bash
 git pull
 pnpm install

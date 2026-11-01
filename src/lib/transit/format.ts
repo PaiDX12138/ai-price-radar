@@ -1,3 +1,20 @@
+const multiplierFormatter = new Intl.NumberFormat("en-US", { useGrouping: false, maximumFractionDigits: 2 });
+
+/** Presentation only. Never round persisted rates or use this output for billing. */
+export function formatTransitMultiplierAmount(value: unknown): string {
+  const number = typeof value === "number" ? value : typeof value === "string" && /^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim()) ? Number(value) : NaN;
+  if (!Number.isFinite(number) || number < 0) return "—";
+  // A small positive multiplier must not be presented as zero/free.
+  return number === 0 ? "0" : number < 0.005 ? "<0.01" : multiplierFormatter.format(number);
+}
+
+export function formatTransitMultiplierRange(values: readonly (number | null | undefined)[]): string {
+  const known = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0);
+  if (!known.length) return "—";
+  const min = formatTransitMultiplierAmount(Math.min(...known)), max = formatTransitMultiplierAmount(Math.max(...known));
+  return min === max ? `${min}×` : `${min}–${max}×`;
+}
+
 /** Display only ms/s; persisted durations always remain milliseconds. */
 export function formatTransitDuration(ms: number | null | undefined): string {
   if (ms == null || !Number.isFinite(ms) || ms < 0) return "—";
