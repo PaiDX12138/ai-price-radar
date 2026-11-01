@@ -14,7 +14,7 @@
  *   PROXY_API_URL=...   or   PROXY_URL=http://user:pass@host:port
  */
 import { verifyMissingShopApiOffers } from "../collectors/offer-lifecycle.mjs";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hostname } from "node:os";
@@ -58,6 +58,8 @@ import {
   sanitizeShopDisplayName,
 } from "../collectors/sanitize-shop-name.mjs";
 import { hostOf } from "../collectors/util.mjs";
+import { openTransitDb, closeTransitDb } from "../collectors/transit-db.mjs";
+import { createTransitDispatcher } from "../collectors/transit/worker.mjs";
 
 loadEnvLocal();
 
@@ -101,25 +103,12 @@ const workerBootAt = Date.now();
 
 /** Transit is deliberately independent of slow shop batches. SQLite leases also
  * protect against another worker/CLI; --due catches up overdue failures/restarts. */
-const transitChildren = new Map();
+let transitDispatcher;
 function maybeRunTransitCollect() {
   if (FORCE_SHOP_ID) return;
   try {
-    const directory = join(root,"config/transit");
-    for (const file of readdirSync(directory).filter(name => /^[a-z0-9-]+\.json$/.test(name))) {
-      const source = JSON.parse(readFileSync(join(directory,file),"utf8"));
-      if (!source.enabled || !/^[a-z0-9-]+$/.test(source.id) || transitChildren.has(source.id)) continue;
-      const child = spawn(process.execPath,[join(root,"scripts/collect-transit.mjs"),"--due",`--station=${source.id}`],{
-        cwd:root,env:process.env,windowsHide:true,stdio:["ignore","pipe","pipe"],
-      });
-      transitChildren.set(source.id,child);
-      const timeout=setTimeout(()=>child.kill(),4*60*1000);
-      child.stdout?.on("data",data=>console.log(`[worker] transit:${source.id}`,String(data).trim()));
-      child.stderr?.on("data",data=>console.warn(`[worker] transit:${source.id}`,String(data).trim().slice(-800)));
-      const done=()=>{clearTimeout(timeout);if(transitChildren.get(source.id)===child)transitChildren.delete(source.id);};
-      child.on("error",error=>{console.warn(`[worker] transit:${source.id} spawn failed`,error.message);done();});
-      child.on("exit",code=>{if(code)console.warn(`[worker] transit:${source.id} exited`,code);done();});
-    }
+    transitDispatcher??=createTransitDispatcher({db:openTransitDb(),root});
+    transitDispatcher.tick();
   } catch (error) { console.warn("[worker] transit dispatch failed",error.message); }
 }
 
@@ -714,7 +703,8 @@ async function main() {
     stopping = true;
     console.log("\n[worker] shutting down…");
     if(transitTimer)clearInterval(transitTimer);
-    for (const child of transitChildren.values()) child.kill();
+    transitDispatcher?.stop();
+    closeTransitDb();
     closeShopsDb();
     process.exit(0);
   };
@@ -734,12 +724,16 @@ async function main() {
   } while (!stopping);
 
   if (once) {
+    await transitDispatcher?.runOnce();
+    transitDispatcher?.stop();
+    closeTransitDb();
     closeShopsDb();
     console.log("[worker] once complete");
   }
 }
 
 main().catch((error) => {
+  try{transitDispatcher?.stop();closeTransitDb();}catch{/* preserve the original startup failure */}
   console.error("[worker]", error instanceof Error ? error.message : error);
   process.exit(1);
 });

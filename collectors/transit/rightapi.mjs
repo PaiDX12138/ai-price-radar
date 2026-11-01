@@ -192,11 +192,14 @@ export async function collectRightApiSource(db, config, options, runtime) {
       upsertTransitCollection(db, { station: { ...config, status: "candidate" },
         run: { runId, collectorKind: config.collectorKind, status: "failed", startedAt, finishedAt: now(), errorMessage: error.message, httpStatus: error.httpStatus } });
       finishTransit(db, config.id, owner, { ok: false, at: now(), error: error.message, retryAfter: error.retryAfter });
-      return { id: config.id, status: "failed", error: error.message };
+      status = "failed";
+      warnings.push(`pricing: ${error.message}`);
     }
   }
   let performanceRows = 0;
+  let performanceStatus = "skipped";
   if (options.includePerformance !== false && claimTransit(db, config, { owner, now: now(), force: options.force, task: "performance" })) {
+    const perfStart=now(),perfRun=`transit-${config.id}-performance-${randomUUID()}`;
     try {
       const groups = db.prepare("SELECT group_key,raw_group_json,id FROM transit_groups WHERE station_id=? AND status='active'").all(config.id);
       const identity = new Map(groups.map(group => [group.group_key, {
@@ -207,11 +210,19 @@ export async function collectRightApiSource(db, config, options, runtime) {
       const performance = parseRightApiAvailability(payload, identity, now());
       performanceRows = upsertTransitPerformance(db, { stationId: config.id, ...performance, observedAt: now(),
         sourceUrl: config.performanceUrl, sourceSchema: "rightapi_availability_24h_v1", windowHours: 24 });
+      db.prepare('DELETE FROM transit_performance_observations WHERE station_id=? AND bucket_at<?').run(config.id,new Date(Date.parse(now())-35*86400000).toISOString());
       finishTransit(db, config.id, owner, { ok: true, at: now(), task: "performance", intervalMs: config.performanceIntervalMs ?? 3600000 });
+      performanceStatus="success";
+      db.prepare(`INSERT INTO transit_collection_runs(run_id,station_id,collector_kind,stage,status,started_at,finished_at,offer_count)
+        VALUES (?,?,?,'performance','success',?,?,?)`).run(perfRun,config.id,config.collectorKind,perfStart,now(),performanceRows);
     } catch (error) {
       warnings.push(`performance: ${error.message}`);
       finishTransit(db, config.id, owner, { ok: false, at: now(), task: "performance", error: error.message, retryAfter: error.retryAfter });
+      performanceStatus="failed";
+      db.prepare(`INSERT INTO transit_collection_runs(run_id,station_id,collector_kind,stage,status,started_at,finished_at,error_message)
+        VALUES (?,?,?,'performance','failed',?,?,?)`).run(perfRun,config.id,config.collectorKind,perfStart,now(),error.message);
     }
   }
-  return { id: config.id, status, models: parsed?.modelCount, offers: parsed?.offers.length, performanceRows, warnings };
+  return { id: config.id, status:status==="failed"||performanceStatus==="failed"?"failed":status==="success"||performanceStatus==="success"?"success":"skipped",
+    pricingStatus:status,performanceStatus, models: parsed?.modelCount, offers: parsed?.offers.length, performanceRows, warnings };
 }

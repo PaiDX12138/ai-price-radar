@@ -21,6 +21,8 @@
   "minimumRetainedCatalogFraction": 0.8,
   "timeoutMs": 20000,
   "maxBytes": 2097152,
+  "performanceIntervalMs": 3600000,
+  "performanceBudgetMs": 120000,
   "priceBasis": "new_api_display_credit",
   "recharge": {
     "kind": "packy_public_base_v1",

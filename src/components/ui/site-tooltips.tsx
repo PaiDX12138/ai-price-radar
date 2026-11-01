@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { tooltipPlacement, type TooltipPlacement } from "@/lib/ui/tooltip-position";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { TooltipDetails, parseTooltipDetails, type TooltipDetailsData } from "@/components/ui/tooltip-details";
 
-type HintPosition = Element | { contextElement: Element; getBoundingClientRect: () => DOMRect };
-type Hint = { anchor: Element; text: string; position: HintPosition; details?: TooltipDetailsData };
+type Hint = TooltipPlacement & { anchor: Element; text: string; details?: TooltipDetailsData };
 const HINT = "[data-tooltip]";
 const RICH_TRIGGER = "[data-base-ui-tooltip-trigger]";
 const POPUP = "[data-slot='tooltip-content']";
@@ -43,22 +44,7 @@ export function SiteTooltips() {
     function show(anchor: Element, keyboard = false) {
       const text = anchor.getAttribute("data-tooltip")?.trim();
       if (!anchor.isConnected || !text) { close(); return; }
-      const rect = anchor.getBoundingClientRect();
-      let position: HintPosition = anchor;
-      // Wide cells/flex labels are layout boxes, not meaningful hover centres.
-      // Freeze a local anchor near the pointer when opening; don't chase the mouse.
-      if (!keyboard && point && (rect.width > 160 || rect.height > 48)) {
-        const offsetX = Math.max(0, Math.min(rect.width, point.x - rect.left));
-        const offsetY = Math.max(0, Math.min(Math.max(0, rect.height - 16), point.y - rect.top - 8));
-        position = {
-          contextElement: anchor,
-          getBoundingClientRect: () => {
-            const current = anchor.getBoundingClientRect();
-            return new DOMRect(current.left + offsetX, current.top + offsetY, 0, Math.min(16, current.height));
-          },
-        };
-      }
-      active = { anchor, text, position, details: parseTooltipDetails(anchor.getAttribute("data-tooltip-details")) };
+      active = { anchor, text, ...tooltipPlacement(anchor, point, keyboard), details: parseTooltipDetails(anchor.getAttribute("data-tooltip-details")) };
       pending = null;
       setHint(active);
     }
@@ -185,7 +171,7 @@ export function SiteTooltips() {
     anchor.setAttribute("aria-describedby", [...descriptions].join(" "));
     // Only observe the active hint, not all price cells or the whole document.
     const observer = new MutationObserver(() => closeRef.current());
-    observer.observe(anchor, { attributes: true, attributeFilter: ["data-tooltip", "data-tooltip-details"] });
+    observer.observe(anchor, { attributes: true, attributeFilter: ["data-tooltip", "data-tooltip-details", "data-tooltip-anchor"] });
     // Covers a hovered row disappearing during an async refresh without watching the document.
     const connectionTimer = setInterval(() => {
       if (!anchor.isConnected || anchor.closest("[hidden], [inert]")) closeRef.current();
@@ -201,7 +187,10 @@ export function SiteTooltips() {
 
   return <TooltipProvider delay={OPEN_DELAY} closeDelay={CLOSE_DELAY}>
     <Tooltip open={hint !== null} onOpenChange={open => { if (!open) closeRef.current(); }}>
-      <TooltipContent id={id} anchor={hint?.position} sideOffset={6} aria-live="off" className={hint?.details ? "w-[min(19rem,calc(100vw-1.5rem))]" : undefined}>{hint?.details ? <TooltipDetails {...hint.details} /> : hint?.text}</TooltipContent>
+      <TooltipContent id={id} anchor={hint?.position} side="top" align="center" sideOffset={6} aria-live="off" className={cn(
+        hint?.details && "w-[min(19rem,calc(100vw-1.5rem))]",
+        hint?.elementAnchored && "max-w-[min(22rem,var(--anchor-width),calc(100vw-1.5rem))]",
+      )}>{hint?.details ? <TooltipDetails {...hint.details} /> : hint?.text}</TooltipContent>
     </Tooltip>
   </TooltipProvider>;
 }

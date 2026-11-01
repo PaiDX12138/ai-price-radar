@@ -129,7 +129,26 @@ export async function collectZetaApiSource(db,config,options,runtime){
   const startedAt=now();
   if(claimTransit(db,config,{owner,now:startedAt,force:options.force})){
     try{
-      const html=await get(config.pricingUrl,'pricing',false);parsed=parseZetaPricing(html,config,{observedAt:now()});
+      const html=await get(config.pricingUrl,'pricing',false);
+      // HTTP 200 is not a catalog: the official site can become a closure notice.
+      const closedAt=html.match(/<time\b[^>]*datetime=["'](\d{4}-\d{2}-\d{2})["'][^>]*>/i)?.[1];
+      if(/<title>\s*ZetaAPI\s*已停止服务\s*<\/title>/i.test(html)&&closedAt&&/API、控制台和充值入口都已下线/.test(html)){
+        const at=now(),error=`source_service_closed:${closedAt}`;
+        const row=db.prepare('SELECT raw_meta_json FROM transit_stations WHERE id=?').get(config.id);let oldMeta={};try{oldMeta=JSON.parse(row?.raw_meta_json??'{}');}catch{/* first observation */}
+        db.transaction(()=>{
+          upsertTransitCollection(db,{station:{...config,status:'candidate',sourceType:'official_public',rawMeta:{...oldMeta,
+            service:{allowSignup:false,allowTopup:false,closed:true,closedAt,observedAt:at,sourceUrl:config.pricingUrl}}},
+            run:{runId,collectorKind:config.collectorKind,stage:'pricing',status:'failed',startedAt,finishedAt:at,errorCode:'source_service_closed',errorMessage:error}});
+          saveZetaServiceState(db,config.id,{allow_signup:false,allow_topup:false,closed:true,closed_at:closedAt},config.pricingUrl,at);
+          finishTransit(db,config.id,owner,{ok:false,at,error,retryAfter:86400});
+          if(claimTransit(db,config,{owner,now:at,force:options.force,task:'performance'})){
+            recordRun(db,config,runId+'-monitor','performance','failed',at,at,error);
+            finishTransit(db,config.id,owner,{ok:false,at,task:'performance',error,retryAfter:86400});
+          }
+        }).immediate();
+        return {id:config.id,status:'failed',pricingStatus:'failed',performanceStatus:'unavailable',sourceStatus:'closed',closedAt,warnings:[error],performanceRows:0};
+      }
+      parsed=parseZetaPricing(html,config,{observedAt:now()});
       const previousCount=db.prepare(`SELECT COUNT(DISTINCT raw_model) AS n FROM transit_offers o JOIN transit_groups g ON g.id=o.group_id
         WHERE g.station_id=? AND o.status='active'`).get(config.id).n;
       if(previousCount&&parsed.modelCount<previousCount*(config.minimumCatalogFraction??0.8))throw new Error('zeta_catalog_shrank_requires_review');
@@ -172,7 +191,7 @@ export async function collectZetaApiSource(db,config,options,runtime){
       status='failed';warnings.push(`pricing: ${error.message}`);
     }
   }
-  let performanceRows=0;
+  let performanceRows=0,performanceStatus='skipped';
   if(options.includePerformance!==false&&claimTransit(db,config,{owner,now:now(),force:options.force,task:'performance'})){
     runId=`transit-${config.id}-monitor-${randomUUID()}`;const perfStarted=now();
     try{
@@ -199,15 +218,18 @@ export async function collectZetaApiSource(db,config,options,runtime){
       const saved=saveZetaMonitoring(db,{stationId:config.id,monitors,probes,summaries,sourceUrl:config.performanceUrl,configUrl:config.monitorConfigUrl,observedAt,runId});
       performanceRows=saved.inserted;
       recordRun(db,config,runId,'performance','success',perfStarted,observedAt,null,saved.returned);
+      performanceStatus='success';
       finishTransit(db,config.id,owner,{ok:true,at:now(),task:'performance',intervalMs:config.performanceIntervalMs??300000});
       try{pruneZetaMonitoring(db,config.id,observedAt,config.retentionDays,rawDir);}catch(error){warnings.push(`retention: ${error.message}`);}
     }catch(error){
       warnings.push(`performance: ${error.message}`);
+      performanceStatus='failed';
       recordRun(db,config,runId,'performance','failed',perfStarted,now(),error.message);
       db.prepare(`INSERT OR REPLACE INTO transit_monitor_polls(station_id,run_id,observed_at,ok,source_url,error) VALUES (?,?,?,0,?,?)`)
         .run(config.id,runId,now(),config.performanceUrl,error.message);
       finishTransit(db,config.id,owner,{ok:false,at:now(),task:'performance',error:error.message,retryAfter:error.retryAfter});
     }
   }
-  return{id:config.id,status,models:parsed?.modelCount,offers:parsed?.offers.length,performanceRows,warnings};
+  return{id:config.id,status:status==='failed'||performanceStatus==='failed'?'failed':status==='success'||performanceStatus==='success'?'success':'skipped',pricingStatus:status,performanceStatus,
+    models:parsed?.modelCount,offers:parsed?.offers.length,performanceRows,warnings};
 }

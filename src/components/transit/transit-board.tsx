@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -18,6 +19,10 @@ import { CardCornerArrow } from "@/components/catalog/card-corner-arrow";
 import { TransitMonitor, TransitMonitorSource } from "@/components/transit/transit-monitor";
 import { transitModelModality } from "@/lib/transit/model-order";
 import { TransitBillingBadge, TransitServiceStatus } from "@/components/transit/transit-site-badges";
+import { ListPagination } from "@/components/catalog/catalog-pagination";
+import { paginateTransitSites, transitSitePageHref } from "@/lib/transit/pagination";
+import { navigateTransitPage, useTransitPageSearch } from "@/lib/transit/use-page-search";
+import { TransitSponsors } from "@/components/transit/transit-sponsors";
 
 
 function supports(site: TransitDemo, id: string) {
@@ -28,7 +33,11 @@ const systemTypes = ["New API", "Sub2API", "自研"];
 
 export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const serverParams = useSearchParams();
+  const pageSearch = useTransitPageSearch(serverParams.toString());
+  const params = new URLSearchParams(pageSearch);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const scrollSnapshot = useRef<{ x: number; y: number } | null>(null);
   const query = params.get("q") ?? "";
   const active = transitTabs.find((tab) => tab.id === params.get("platform"))?.id ?? "all";
   const system = params.get("type");
@@ -37,6 +46,21 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
     supports(site, active) &&
     [site.name, site.system, ...site.prices.filter(price => matchesTransitTab(price, active) && (active === "image" || active === "video" || transitModelModality(price, site.modelCatalog) === "text")).map(price => price.modelName), ...site.channels, ...Object.entries(platformNames).filter(([id]) => supports(site, id)).flatMap(([, names]) => names)].join(" ").toLowerCase().includes(query.trim().toLowerCase()),
   );
+  const pagination = paginateTransitSites(filtered, params.get("page"));
+  const hrefForPage = (page: number) => transitSitePageHref(pageSearch, page);
+
+  useEffect(() => {
+    if (gridRef.current) gridRef.current.style.minHeight = "";
+    scrollSnapshot.current = null;
+  }, [active, system, query]);
+  useLayoutEffect(() => {
+    const saved = scrollSnapshot.current;
+    if (!saved) return;
+    scrollSnapshot.current = null;
+    if (window.scrollX !== saved.x || window.scrollY !== saved.y) {
+      window.scrollTo({ left: saved.x, top: saved.y, behavior: "instant" });
+    }
+  }, [pagination.page, pageSearch]);
 
   return (
     <div>
@@ -48,10 +72,10 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
         </div>
       </div>
 
-      <CatalogFilterChrome tabs={transitTabs} active={active} basePath="/api-transit" deliveryTypes={systemTypes} searchPlaceholder="搜索 AI 平台 / 站点名称 / 模型" searchLabel="搜索中转站点" />
+      <CatalogFilterChrome tabs={transitTabs} active={active} basePath="/api-transit" deliveryTypes={systemTypes} searchPlaceholder="搜索 AI 平台 / 站点名称 / 模型" searchLabel="搜索中转站点" clientNavigation />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {filtered.map((site) => <div key={site.id} className="group h-full rounded-xl outline-none"><Card size="sm" className="relative h-full gap-2 bg-card shadow-sm ring-1 ring-foreground/10 transition-[box-shadow,transform,ring-color] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-foreground/20">
+      <div ref={gridRef} className="grid grid-cols-1 content-start gap-4 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-4">
+        {pagination.items.map((site) => <div key={site.id} className="group h-full rounded-xl outline-none"><Card size="sm" className="relative h-full gap-2 bg-card shadow-sm ring-1 ring-foreground/10 transition-[box-shadow,transform,ring-color] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-foreground/20">
           <Link href={`/api-transit/${site.id}`} data-tooltip-surface aria-label={`查看 ${site.name} 详情`} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" />
           <CardHeader className="h-12 shrink-0 pb-1">
             <div className="flex items-start gap-3">
@@ -69,8 +93,15 @@ export function TransitBoard({ sites: transitDemos }: { sites: TransitDemo[] }) 
           </CardContent>
         </Card></div>)}
       </div>
+      <ListPagination page={pagination.page} totalPages={pagination.totalPages} totalItems={pagination.totalItems} itemLabel="个站点" hrefForPage={hrefForPage}
+        onPageClick={(page) => {
+          if (page === pagination.page) return;
+          if (gridRef.current) gridRef.current.style.minHeight = `${Math.ceil(gridRef.current.getBoundingClientRect().height)}px`;
+          scrollSnapshot.current = { x: window.scrollX, y: window.scrollY };
+          navigateTransitPage(hrefForPage(page));
+        }} />
       {filtered.length === 0 && <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14"><SearchX className="size-7 text-muted-foreground" /><h2 className="text-sm font-medium">没有匹配的平台</h2><p className="text-xs text-muted-foreground">试试其他名称、模型或来源渠道。</p><Button variant="outline" size="sm" onClick={() => router.replace("/api-transit", { scroll: false })}>重置筛选</Button></div>}
-
+      <TransitSponsors />
     </div>
   );
 }

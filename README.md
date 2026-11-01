@@ -35,7 +35,7 @@
     </tr>
     <tr>
       <td width="220" align="left" valign="middle">
-        <a href="https://www.aliyun.com/"><img src="./docs/assets/sponsors/aliyun.svg" alt="阿里云 Alibaba Cloud" width="200" /></a>
+        <a href="https://www.aliyun.com/"><img src="./public/brand/sponsors/aliyun-cloud.png" alt="阿里云 Alibaba Cloud" width="200" /></a>
       </td>
       <td valign="middle">
         <a href="https://www.aliyun.com/"><strong>阿里云</strong></a><br />

@@ -108,6 +108,30 @@ SudoCode已接入同一调度：报价/公式/目录每6小时，版本性能每
 
 `pnpm worker` 每分钟发现并检查 `config/transit/*.json` 的到期任务，按站点启动独立采集子进程，不需要为每个站点单独新增cron。报价默认6小时，Right Code可用率每小时，ZetaAPI公开心跳每5分钟；详细的分表保存、35日保留和监控范围见 `docs/zetaapi-integration-plan.md`。`start`只读快照，不负责持续采集。
 
+### 停采诊断与自动恢复
+
+- 调度器默认同时运行2个站点子进程（`TRANSIT_WORKER_CONCURRENCY=1..4`），只启动已到期且没有活跃租约的任务。不再每分钟同时启动8个无事可做的Node进程。单个站点配置损坏、启动失败、网络失败不阻断其他站点；4分钟超时后终止，5秒后强制清理，过期租约可接管。
+- 运行心跳写入 `transit_worker_heartbeats`，记录进程、主机、最后轮询、活跃子进程及错误；不进入公开数据基线。`pnpm transit:status`现在必须区分心跳缺失/超过3分钟、任务缺失、逾期、失败退避和正在采集。不能仅凭旧的`last_collect_ok=1`判定任务正常。
+- PackyAPI报价仍默认6小时，但监测改为独立小时任务，不再依赖报价到期或报价成功。逐型号游标写入 `transit_packy_metric_subjects`，时间预算中止后下次先采尚未完成的型号，失败型号按退避重试，避免永远只采前几个型号。可用率、首Token、总耗时与吞吐仍取同一模型/分组/小时接口事实，最多保留35日，不补造缺失小时。
+- RightCode报价失败不再跳过可用率；监测成功和失败均记录独立`performance`运行。RightCode公共源的逐小时点只有约24小时；另有7日/30日各24个粗粒度区间，完整响应仍归档，但不能把7小时/30小时平均值复制成逐小时事实。所以离线超过逐小时源窗口的缺口无法据此精确回填；公共源不含TTFT/耗时/吞吐，界面保留未知，不能冒充网络故障或填0。Cubence公共基础价无公开监测，不创建虚构监测轮询。
+- 启动立即检查全部到期任务；常驻每分钟持续检查。原`pnpm worker`已集成，无需新增cron。只想运行中转采集可选择`pnpm worker:transit`（30秒轮询）；已有`quote-worker`时不必另起重复服务。一次性排障可运行`pnpm worker:transit -- --once`，会等待所有到期站点而不是只启动子进程就退出；它不是常驻替代品。
+- 可选目录/模型元数据刷新移到真实采集之后，不再阻塞站点网络请求。采集完成原子导出快照，页面仍仅只读快照，不能依赖用户访问页面来触发采集。
+- 低于64MiB可用磁盘空间时暂停启动新的采集子进程并明确告警，保留last-good，释放空间后自动恢复。排障时不要删除正式`data/transit.sqlite`、采集原始历史或备份来“修复”缺口。
+- 官网明确停服时，不把停服公告的HTTP200当作价格页。ZetaAPI于2026-10-31停服的公告已实测：保留历史报价/监测、记录来源与日期，沿用原有状态标签显示停服，任务每日自动复核，不继续高频轮询已返回410的监控。诊断明确显示`source_closed`，不是调度器漏跑。
+
+沿用本站现有PM2名称的检查/恢复（不是新增未知进程，也不会重启其他业务）：
+
+```bash
+cd /www/wwwroot/radar.ftuashcahs.xyz
+pm2 describe quote-worker
+pm2 restart quote-worker --update-env
+pm2 save
+pnpm transit:status
+pm2 logs quote-worker --lines 50 --nostream
+```
+
+若`describe`显示worker并不是本项目`scripts/worker.mjs` / `pnpm worker`或工作目录不同，先修正其原始启动配置；`restart`不会把另一套脚本自动变成本项目Worker。只有`pnpm start`没有采集进程时，数据不会自行更新。系统重启后的拉起仍由已有PM2/systemd启动服务负责；应用无法替代操作系统守护。`transit:status -- --strict`在发现异常时退出2，便于外部监控，不会暴露代理密钥。
+
 用 systemd / Docker / pm2 各起两个进程：`start` 与 `worker`。  
 外挂 cron / Windows 计划任务**不是**主路径；仅在无法常驻 worker 时作兜底触发 `pnpm worker` 单次（worker 本身是长循环，一般不需要 cron）。
 

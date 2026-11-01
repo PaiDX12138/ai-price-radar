@@ -6,7 +6,7 @@ import { join } from "node:path";
 export type TransitSponsorship = { affiliateUrl?: string; code?: string; benefit?: string };
 
 export type TransitStation = {
-  service_state?: { allowSignup: boolean; allowTopup: boolean; observedAt: string };
+  service_state?: { allowSignup: boolean; allowTopup: boolean; observedAt: string; closed?: boolean; closedAt?: string };
   catalog_only?: boolean;
   currency_kind?: "usd_cash" | "cny_credit" | "usd_credit" | "usd_base";
   billing_configuration?: {price:number;usdExchangeRate:number;stripeUnitPrice:number|null};

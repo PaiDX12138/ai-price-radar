@@ -49,6 +49,7 @@
     "collect:prices:all": "node scripts/collect-prices.mjs --all",
     "collect:all": "node scripts/collect-shopapi.mjs --all && node scripts/collect-16688.mjs --all && node scripts/collect-prices.mjs --all",
     "worker": "node scripts/worker.mjs",
+    "worker:transit": "node scripts/transit-worker.mjs",
     "sync:favicons": "node scripts/sync-host-favicons.mjs",
     "prewarm:catalog": "node scripts/prewarm-catalog.mjs",
     "assert:catalog-cache": "node scripts/assert-catalog-cache-header.mjs",

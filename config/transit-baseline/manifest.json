@@ -1,101 +1,101 @@
 {
   "schemaVersion": 1,
   "kind": "public_transit_baseline",
-  "createdAt": "2026-11-01T01:20:40.482Z",
-  "sha256": "853c2afeb9b91402b2dd3eec33b81ea821b6333fdff9f1dc6f922942e2b3fece",
-  "bytes": 2338389,
+  "createdAt": "2026-11-01T14:17:53.077Z",
+  "sha256": "3e620e302f0a909191e38b9ff0a67ff69a933369e124b7a96d3030c8db3d7ce9",
+  "bytes": 2754981,
   "sourceTimesPreserved": true,
   "notLiveData": true,
   "stations": [
     {
       "id": "crazyrouter",
       "groups": 1,
-      "models": 168,
-      "offers": 168,
-      "collectedAt": "2026-10-30T07:57:05.229Z"
+      "models": 167,
+      "offers": 167,
+      "collectedAt": "2026-11-01T13:48:14.228Z"
     },
     {
       "id": "cubence",
       "groups": 1,
       "models": 73,
       "offers": 73,
-      "collectedAt": "2026-10-30T07:17:03.489Z"
+      "collectedAt": "2026-11-01T13:48:14.462Z"
     },
     {
       "id": "packyapi",
       "groups": 25,
-      "models": 78,
-      "offers": 143,
-      "collectedAt": "2026-10-30T05:49:18.251Z"
+      "models": 75,
+      "offers": 140,
+      "collectedAt": "2026-11-01T13:48:44.813Z"
     },
     {
       "id": "rightapi",
       "groups": 14,
-      "models": 54,
-      "offers": 77,
-      "collectedAt": "2026-10-30T05:49:21.071Z"
+      "models": 48,
+      "offers": 70,
+      "collectedAt": "2026-11-01T13:49:45.214Z"
     },
     {
       "id": "runapi",
       "groups": 11,
       "models": 199,
-      "offers": 350,
-      "collectedAt": "2026-10-30T06:45:06.304Z"
+      "offers": 348,
+      "collectedAt": "2026-11-01T13:50:13.643Z"
     },
     {
       "id": "soleapi",
-      "groups": 14,
-      "models": 51,
-      "offers": 83,
-      "collectedAt": "2026-10-30T05:49:59.475Z"
+      "groups": 15,
+      "models": 52,
+      "offers": 90,
+      "collectedAt": "2026-11-01T13:50:52.001Z"
     },
     {
       "id": "sudocode",
-      "groups": 28,
+      "groups": 29,
       "models": 77,
-      "offers": 279,
-      "collectedAt": "2026-10-30T08:29:29.126Z"
+      "offers": 281,
+      "collectedAt": "2026-11-01T13:50:46.328Z"
     },
     {
       "id": "zetaapi",
       "groups": 1,
       "models": 44,
       "offers": 44,
-      "collectedAt": "2026-10-30T05:50:01.430Z"
+      "collectedAt": "2026-11-01T13:54:15.617Z"
     }
   ],
   "rows": {
     "transit_stations": 8,
-    "transit_groups": 105,
-    "transit_offers": 1221,
+    "transit_groups": 109,
+    "transit_offers": 1259,
     "transit_monitor_identities": 8,
     "transit_monitor_probes": 991,
     "transit_monitor_hourly": 114,
     "transit_monitor_summaries": 32,
-    "transit_service_states": 4,
-    "transit_model_catalog_versions": 54,
-    "transit_model_detail_state": 51,
-    "transit_offer_charge_items": 407,
-    "transit_fx_observations": 3,
-    "transit_model_probe_observations": 1502,
-    "transit_model_probe_hourly": 528,
-    "transit_model_metric_summaries": 328,
-    "transit_runapi_catalog_versions": 2,
+    "transit_service_states": 5,
+    "transit_model_catalog_versions": 76,
+    "transit_model_detail_state": 52,
+    "transit_offer_charge_items": 609,
+    "transit_fx_observations": 6,
+    "transit_model_probe_observations": 2822,
+    "transit_model_probe_hourly": 990,
+    "transit_model_metric_summaries": 494,
+    "transit_runapi_catalog_versions": 3,
     "transit_runapi_billing_versions": 8,
-    "transit_runapi_metadata_observations": 1,
-    "transit_runapi_memberships": 391,
+    "transit_runapi_metadata_observations": 2,
+    "transit_runapi_memberships": 396,
     "transit_runapi_probe_targets": 8,
-    "transit_runapi_probe_observations": 504,
-    "transit_runapi_probe_hourly": 48,
-    "transit_runapi_monitor_summaries": 72,
+    "transit_runapi_probe_observations": 1024,
+    "transit_runapi_probe_hourly": 112,
+    "transit_runapi_monitor_summaries": 216,
     "transit_cubence_catalog_versions": 1,
-    "transit_cubence_metadata_observations": 1,
-    "transit_crazyrouter_catalog_versions": 3,
+    "transit_cubence_metadata_observations": 2,
+    "transit_crazyrouter_catalog_versions": 4,
     "transit_crazyrouter_metadata_versions": 1,
-    "transit_crazyrouter_metric_summaries": 1,
-    "transit_sudocode_catalog_versions": 1,
-    "transit_sudocode_metadata_versions": 1,
-    "transit_sudocode_tier_hourly": 23168,
-    "transit_performance_observations": 52502
+    "transit_crazyrouter_metric_summaries": 2,
+    "transit_sudocode_catalog_versions": 2,
+    "transit_sudocode_metadata_versions": 2,
+    "transit_sudocode_tier_hourly": 26181,
+    "transit_performance_observations": 61963
   }
 }

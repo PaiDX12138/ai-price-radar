@@ -20,9 +20,13 @@ export function useTransitPageSearch(serverSearch: string) {
   return useSyncExternalStore(subscribe, currentSearch, () => serverSearch);
 }
 
-export function navigateTransitGroupPage(href: string) {
+export function navigateTransitPage(href: string) {
   window.history.pushState(null, "", `${href}${window.location.hash}`);
   window.dispatchEvent(new Event(PAGE_CHANGE));
+}
+
+export function navigateTransitGroupPage(href: string) {
+  navigateTransitPage(href);
 }
 
 /** Client-only filter navigation for a detail view whose complete quote set is already loaded. */

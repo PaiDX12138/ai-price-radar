@@ -2,7 +2,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { readFileSync, readdirSync, mkdirSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { upsertTransitStation, upsertTransitCollection, upsertTransitPerformance, recordTransitSourceSnapshot, exportTransitSnapshot } from "../transit-db.mjs";
+import { upsertTransitStation, upsertTransitCollection, recordTransitSourceSnapshot, exportTransitSnapshot } from "../transit-db.mjs";
 import { parsePackyPricing, packyApiConfigs, packyPricingInventory, assertPackyCatalogCoverage } from "./packyapi.mjs";
 import { parsePackyDiscountPolicy, packyOfferDiscount } from "./discounts.mjs";
 import { parsePackyRecharge } from "./recharge.mjs";
@@ -14,16 +14,19 @@ import { collectCubenceSource } from "./cubence.mjs";
 import { collectCrazyRouterSource } from "./crazyrouter.mjs";
 import { collectSudoCodeSource } from "./sudocode.mjs";
 import { fetchTransitPublic, describeTransitError } from "./transport.mjs";
+import { collectPackyPerformance } from "./packyapi-performance.mjs";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 export const TRANSIT_INTERVAL_MS=6*60*60*1000;
-export function loadTransitSources() {
-  const directory = join(root, "config/transit");
+export function loadTransitSources({stationId=null,directory=join(root,"config/transit")}={}) {
+  if(stationId!==null&&!/^[a-z0-9-]+$/.test(stationId))throw new Error("invalid_transit_station_id");
   const configs = readdirSync(directory).filter(name => /^[a-z0-9-]+\.json$/.test(name))
+    .filter(name=>stationId===null||name===`${stationId}.json`)
     .sort().map(name => JSON.parse(readFileSync(join(directory, name), "utf8")));
   const ids = new Set();
   for (const config of configs) {
     if (!/^[a-z0-9-]+$/.test(config.id) || ids.has(config.id)) throw new Error("invalid_or_duplicate_transit_id");
+    if(stationId!==null&&config.id!==stationId)throw new Error("transit_config_filename_mismatch");
     ids.add(config.id);
   }
   return configs;
@@ -88,52 +91,6 @@ export function performanceRows(payload, { modelName, groupKey, observedAt }) {
   return rows;
 }
 
-async function collectPerformance(db, config, parsed, { fetchImpl, rawDir, runId, observedAt }) {
-  if (!config.performanceSummaryUrl || !config.performanceUrl) return { rows: 0, warnings: [] };
-  const warnings = []; let rows = 0; let requests=0; let blocked=false; let retryAfter=null; let consecutiveFailures=0;
-  const deadline=Date.now()+120000;
-  try {
-    const result = await fetchPublic(config.performanceSummaryUrl, config, fetchImpl);
-    archive(db, config, runId, "performance-summary", result, rawDir, observedAt, "captured", config.performanceSummaryUrl);
-    const payload = JSON.parse(result.text);
-    if (payload.success !== true || !Array.isArray(payload.data?.models)) throw new Error("invalid_performance_summary");
-    // Summary hourly timings are often zeros. Do not duplicate those rows into station stats;
-    // use the model/group endpoint as the one aligned source of all three metrics.
-  } catch (error) {
-    warnings.push(`performance-summary: ${error.message}`);
-    if(error.httpStatus===403||error.httpStatus===429){blocked=true;retryAfter=error.retryAfter;}
-  }
-
-  const modelNames = [...new Set(parsed.offers.map(o => o.rawModel))];
-  const queue = modelNames.slice();
-  const worker = async () => {
-    while (queue.length && !blocked) {
-      const modelName = queue.shift(); if (!modelName) return;
-      if(Date.now()>deadline){warnings.push("performance: time budget reached; remaining models will be rescanned");return;}
-      const sourceUrl = config.performanceUrl.replace("{model}", encodeURIComponent(modelName));
-      try {
-        const result = await fetchPublic(sourceUrl, config, fetchImpl);
-        requests++;
-        archive(db, config, runId, `performance-model-${hash(modelName).slice(0, 16)}`, result, rawDir, observedAt, "captured", sourceUrl);
-        const payload = JSON.parse(result.text);
-        if (payload.success !== true || payload.data?.model_name!==modelName || !Array.isArray(payload.data?.groups)) throw new Error("invalid_performance_model");
-        const modelRows = payload.data.groups.flatMap(group => performanceRows(group, { modelName, groupKey: group.group, observedAt }));
-        rows += upsertTransitPerformance(db, { stationId: config.id, rows: modelRows, sourceUrl, sourceSchema: payload.data.series_schema, observedAt, windowHours: 360 });
-        consecutiveFailures=0;
-      } catch (error) {
-        warnings.push(`performance:${modelName}: ${error.message}`);
-        consecutiveFailures++;
-        if(error.httpStatus===403||error.httpStatus===429){blocked=true;retryAfter=error.retryAfter;return;}
-        if(consecutiveFailures>=3){warnings.push("performance: three consecutive failures; stop and rescan later");return;}
-      }
-      // Public source: serial, bounded and gently paced, never a request burst.
-      if(fetchImpl===fetch) await new Promise(resolve=>setTimeout(resolve,100));
-    }
-  };
-  await worker();
-  return { rows, warnings, requests, blocked, retryAfter };
-}
-
 export async function collectTransitSource(db,config,options={}) {
   const owner=options.owner??randomUUID(); const startedAt=options.now??new Date().toISOString();
   if(!config.enabled || !claimTransit(db,config,{owner,now:startedAt,force:options.force})) return {id:config.id,status:"skipped"};
@@ -189,7 +146,7 @@ export async function collectTransitSource(db,config,options={}) {
   }
 
   // Performance is public and optional: a failure must never discard a valid price snapshot.
-  const performance = options.includePerformance === false ? {rows:0,warnings:[]} : await collectPerformance(db, pricingSource, parsed, { fetchImpl: options.fetchImpl ?? fetch, rawDir: options.rawDir ?? join(root, "data/transit/raw"), runId, observedAt: startedAt });
+  const performance = {rows:0,warnings:[]}; // Hourly monitoring has its own lease/queue below.
   warnings.push(...performance.warnings);
 
   let publicStatus, homepageText;
@@ -283,7 +240,13 @@ export async function runTransitCollection(db,options={}) {
       } else if(config.collectorKind === "rightapi_v1") {
         results.push(await collectRightApiSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
       } else if(config.collectorKind === "packyapi_v1") {
-        results.push(await collectTransitSource(db,config,options));
+        const actorStarted=Date.now();
+        const pricing=await collectTransitSource(db,config,{...options,includePerformance:false});
+        // Reserve shutdown/export time below the worker's 4-minute hard boundary.
+        const performance=await collectPackyPerformance(db,config,{...options,root,budgetMs:Math.max(0,Math.min(config.performanceBudgetMs??120000,200000-(Date.now()-actorStarted)))},{fetchPublic,claimTransit,finishTransit,performanceRows,archive});
+        results.push({...pricing,pricingStatus:pricing.status,performanceStatus:performance.status,
+          status:[pricing.status,performance.status].includes('failed')?'failed':pricing.status==='skipped'&&performance.status==='skipped'?'skipped':'success',
+          performanceRows:performance.rows,performanceRequests:performance.requests,warnings:[...(pricing.warnings??[]),...performance.warnings]});
       } else {
         results.push({id:config.id,status:"failed",error:"unsupported_collector"});
       }

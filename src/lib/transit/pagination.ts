@@ -1,13 +1,26 @@
 export const TRANSIT_GROUPS_PAGE_SIZE = 12;
+export const TRANSIT_SITES_PAGE_SIZE = 12;
 
-/** Paginate the existing group cards after filtering, without changing their contents. */
-export function paginateTransitGroups<T>(groups: readonly T[], requestedPage: string | null) {
-  const totalItems = groups.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / TRANSIT_GROUPS_PAGE_SIZE));
+function paginateTransitItems<T>(items: readonly T[], requestedPage: string | null, pageSize: number) {
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const parsed = requestedPage && /^\d+$/.test(requestedPage) ? Number(requestedPage) : 1;
   const page = Number.isSafeInteger(parsed) && parsed > 0 ? Math.min(parsed, totalPages) : 1;
-  const offset = (page - 1) * TRANSIT_GROUPS_PAGE_SIZE;
-  return { page, totalPages, totalItems, items: groups.slice(offset, offset + TRANSIT_GROUPS_PAGE_SIZE) };
+  const offset = (page - 1) * pageSize;
+  return { page, totalPages, totalItems, items: items.slice(offset, offset + pageSize) };
+}
+
+/** Slice only after filtering; neither pagination changes the upstream ordering. */
+export function paginateTransitGroups<T>(groups: readonly T[], requestedPage: string | null) {
+  return paginateTransitItems(groups, requestedPage, TRANSIT_GROUPS_PAGE_SIZE);
+}
+
+export function paginateTransitSites<T>(sites: readonly T[], requestedPage: string | null) {
+  return paginateTransitItems(sites, requestedPage, TRANSIT_SITES_PAGE_SIZE);
+}
+
+export function transitSitePageHref(currentSearch: string, page: number) {
+  return transitGroupPageHref("/api-transit", currentSearch, page);
 }
 
 export function transitGroupPageHref(basePath: string, currentSearch: string, page: number) {

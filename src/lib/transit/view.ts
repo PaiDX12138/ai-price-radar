@@ -74,7 +74,7 @@ export type TransitSiteView=Omit<TransitDemo,"prices">&{
   monitorsByModel:Record<string,TransitMonitorStats>;
   modelCatalog:TransitModelCatalog;
   rechargeInfo:{sourceUrl:string;observedAt:string}|null;
-  serviceState?: { allowSignup:boolean;allowTopup:boolean;observedAt:string };
+  serviceState?: { allowSignup:boolean;allowTopup:boolean;observedAt:string;closed?:boolean;closedAt?:string };
   catalogOnly?:boolean;
   currencyKind?:"usd_cash"|"cny_credit"|"usd_credit"|"usd_base";
   billingConfiguration?:{price:number;usdExchangeRate:number;stripeUnitPrice:number|null};

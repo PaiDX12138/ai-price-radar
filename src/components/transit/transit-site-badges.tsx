@@ -19,6 +19,9 @@ export function TransitBillingBadge({ site }: { site: TransitSiteView }) {
 
 export function TransitServiceStatus({ site }: { site: TransitSiteView }) {
   const state=site.serviceState;
+  if(state?.closed)return <ToneChip tone="amber" tooltip={{title:"已停止服务",rows:[
+    {label:"来源",value:"官网停服公告"},...(state.closedAt?[{label:"停服日期",value:state.closedAt}]:[]),
+  ],note:"保留历史报价与监测记录，不代表当前仍可使用。"}}>已停止服务</ToneChip>;
   if(!state || state.allowSignup&&state.allowTopup)return null;
   const text=!state.allowSignup&&!state.allowTopup?"注册/充值暂停":!state.allowSignup?"暂停注册":"暂停充值";
   return <ToneChip tone="amber" className="h-5 shrink-0 text-[10px]" tooltip={{title:"站点开放状态",rows:[

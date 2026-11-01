@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import Database from "better-sqlite3";
 import { loadEnvLocal } from "./load-env-local.mjs";
 import { transitProxySetting, redactTransitError } from "../collectors/transit/transport.mjs";
+import { transitRuntimeHealth } from "../collectors/transit/health.mjs";
 loadEnvLocal();
 const cwd=process.cwd(),snapshotPath=resolve(process.env.TRANSIT_SNAPSHOT_PATH||"data/transit/latest.json");
 const dbPath=resolve(process.env.TRANSIT_DB_PATH||"data/transit.sqlite"),issues=[];
@@ -25,6 +26,9 @@ const rowsOf=id=>{
 };
 const familyCounts=offers=>offers.reduce((map,o)=>{map[o.family||'其他']=(map[o.family||'其他']??0)+1;return map;},{});
 try{
+  const runtime=transitRuntimeHealth(db,configs);
+  issues.push(...runtime.issues);
+  for(const worker of runtime.workers)if(worker.last_error)worker.last_error=redactTransitError(worker.last_error);
   const stations=(snapshot?.stations??[]).map(station=>{
     const {groups,offers}=rowsOf(station.id);
     return {id:station.id,status:station.status,lastCollectOk:station.last_collect_ok,lastCollectedAt:station.last_collected_at,
@@ -33,6 +37,11 @@ try{
   const configured=configs.map(config=>{
     const visible=stations.find(s=>s.id===config.id),setting=transitProxySetting(config);
     const station=table('transit_stations')?db.prepare('SELECT status,last_collect_ok,last_collected_at FROM transit_stations WHERE id=?').get(config.id):null;
+    let sourceState=null;
+    if(table('transit_stations'))try{
+      const service=JSON.parse(db.prepare('SELECT raw_meta_json FROM transit_stations WHERE id=?').get(config.id)?.raw_meta_json??'{}').service;
+      if(service?.closed===true)sourceState={status:'closed',closedAt:service.closedAt,observedAt:service.observedAt};
+    }catch{/* malformed metadata is not evidence of closure */}
     const runs=table('transit_collection_runs')?db.prepare('SELECT stage,status,finished_at,error_message FROM transit_collection_runs WHERE station_id=? ORDER BY finished_at DESC LIMIT 3').all(config.id).map(r=>({...r,error_message:r.error_message?redactTransitError(r.error_message):null})):[];
     const schedule=table('transit_collect_schedule')?db.prepare('SELECT next_collect_at,last_success_at,last_error FROM transit_collect_schedule WHERE station_id=?').get(config.id):null;
     const performanceSchedule=table('transit_performance_schedule')?db.prepare('SELECT next_collect_at,last_success_at,last_error FROM transit_performance_schedule WHERE station_id=?').get(config.id):null;
@@ -57,7 +66,7 @@ try{
       }catch(error){issues.push(`pricing_collection_unreadable:${config.id}:${redactTransitError(error.message)}`);}
     }
     if(!visible)issues.push(`not_published:${config.id}`);
-    if(station?.last_collect_ok===0)issues.push(`last_collection_failed:${config.id}`);
+    if(station?.last_collect_ok===0&&!sourceState)issues.push(`last_collection_failed:${config.id}`);
     if(missingFamilies.length)issues.push(`incomplete_families:${config.id}:${missingFamilies.join(',')}`);
     if(visible&&stored.length!==visible.offers)issues.push(`db_snapshot_offer_mismatch:${config.id}`);
     let detailCollection=null;
@@ -78,7 +87,7 @@ try{
         history:db.prepare('SELECT COUNT(*) AS probes,MIN(checked_at) AS firstProbe,MAX(checked_at) AS lastProbe FROM transit_runapi_probe_observations WHERE station_id=?').get(config.id),
         conflicts:db.prepare("SELECT name,model,group_hint,mapping_status FROM transit_runapi_probe_targets WHERE station_id=? AND active=1 AND mapping_status<>'matched'").all(config.id)};
     }
-    return {id:config.id,collectorKind:config.collectorKind,published:Boolean(visible),station:station??null,
+    return {id:config.id,collectorKind:config.collectorKind,published:Boolean(visible),station:station??null,sourceState,
       ...(config.collectorKind==='runapi_v1'?{pricingCollection,runapiMonitoring}:{}),
       ...(config.collectorKind==='cubence_v1'?{pricingCollection,monitoring:{status:'login_required',pollingEnabled:false},priceBasis:'public_usd_base'}:{}),
       ...(config.collectorKind==='crazyrouter_v1'?{pricingCollection,monitoring:table('transit_crazyrouter_metric_subjects')?db.prepare(`SELECT COUNT(*) subjects,SUM(CASE WHEN last_success_at IS NOT NULL THEN 1 ELSE 0 END) saved,
@@ -93,6 +102,7 @@ try{
   });
   console.log(JSON.stringify({cwd,revision,buildId,dbPath,snapshotPath,generatedAt:snapshot?.generatedAt??null,
     snapshotFingerprint:snapshot?createHash('sha256').update(JSON.stringify(snapshot)).digest('hex').slice(0,16):null,
-    stations,configured,issues},null,2));
+    stations,configured,runtime,issues},null,2));
   if(!snapshot)process.exitCode=1;
+  else if(process.argv.includes('--strict')&&issues.length)process.exitCode=2;
 }finally{db?.close();}

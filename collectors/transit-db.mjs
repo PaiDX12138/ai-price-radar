@@ -192,6 +192,16 @@ CREATE TABLE IF NOT EXISTS transit_collect_schedule (
   last_attempt_at TEXT,
   last_error TEXT
 );
+CREATE TABLE IF NOT EXISTS transit_worker_heartbeats (
+  owner TEXT PRIMARY KEY, pid INTEGER NOT NULL, hostname TEXT NOT NULL,
+  started_at TEXT NOT NULL, heartbeat_at TEXT NOT NULL, stopped_at TEXT,
+  active_children INTEGER NOT NULL DEFAULT 0, last_error TEXT
+);
+CREATE TABLE IF NOT EXISTS transit_packy_metric_subjects (
+  station_id TEXT NOT NULL REFERENCES transit_stations(id), model TEXT NOT NULL,
+  next_attempt_at TEXT NOT NULL, last_success_at TEXT, fail_count INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT, PRIMARY KEY(station_id,model)
+);
 CREATE INDEX IF NOT EXISTS idx_transit_due ON transit_collect_schedule(next_collect_at, lease_until);
 
 CREATE TABLE IF NOT EXISTS transit_performance_schedule (
@@ -827,7 +837,8 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
     try {
       const meta=JSON.parse(raw??"{}");
       if (meta.service && typeof meta.service.allowSignup === "boolean" && typeof meta.service.allowTopup === "boolean")
-        station.service_state={allowSignup:meta.service.allowSignup,allowTopup:meta.service.allowTopup,observedAt:meta.service.observedAt};
+        station.service_state={allowSignup:meta.service.allowSignup,allowTopup:meta.service.allowTopup,observedAt:meta.service.observedAt,
+          ...(meta.service.closed===true?{closed:true,closedAt:meta.service.closedAt}: {})};
       if(meta.groupOrigin === "synthetic_public_catalog") station.catalog_only=true;
       if(meta.currencyKind === "usd_base") station.currency_kind="usd_base";
       if(meta.currencyKind === "usd_cash") station.currency_kind="usd_cash";
