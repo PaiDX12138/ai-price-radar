@@ -38,6 +38,6 @@ node scripts/reclassify-catalog-snapshot.mjs --platform claude --apply
 
 `--platform claude` 包含旧分类或新分类属于 Claude 的报价，因此可以修复 Claude Pro → 多模型中转、通用中转 → Claude 中转两个方向，不会顺手重标其他平台的历史问题。省略参数保留原有全量重分类行为。
 
-应用时先备份，再替换 `data/catalog/public.json` 和 `latest.json`；保留价格、库存、上下架状态和采集时间，不伪装为新采集。回滚可用命令输出的 `backup` 路径覆盖原快照。
+应用时原子替换 `data/catalog/public.json` 和 `latest.json`，不额外生成备份副本；保留价格、库存、上下架状态和采集时间，不伪装为新采集。写入前仍检查文件是否被并发修改。需要刷新实际报价时重新运行对应采集任务，不清空已有记录。
 
 worker 发布快照时会从磁盘重新加载规则。线上还需部署更新后的文件并执行以上快照重分类；若页面存在缓存，沿用 `scripts/prewarm-catalog.mjs` 的刷新流程。

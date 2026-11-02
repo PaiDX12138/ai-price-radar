@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Reclassify existing snapshots offline; preserve all stock/price/lifecycle timestamps. */
-import { copyFileSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { reclassifyOffers } from "../collectors/persist.mjs";
@@ -47,14 +47,11 @@ for (const path of paths) {
     delete publicOffer.classified;
     return publicOffer;
   });
-  let backup = null;
   if (apply && changed) {
     if (readFileSync(path, "utf8") !== originalText) {
       throw new Error(`Snapshot changed during classification; retry instead of overwriting newer offers: ${path}`);
     }
     const stamp = `${Date.now()}-${process.pid}`;
-    backup = `${path}.before-reclassify-${stamp}.json`;
-    copyFileSync(path, backup);
     const temp = `${path}.${stamp}.tmp`;
     writeFileSync(temp, `${JSON.stringify({
       ...snapshot,
@@ -66,6 +63,6 @@ for (const path of paths) {
     }, null, 2)}\n`);
     renameSync(temp, path);
   }
-  results.push({ path, offers: offers.length, changed, moves, backup });
+  results.push({ path, offers: offers.length, changed, moves });
 }
 console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", ...(platform ? { platform } : {}), results }, null, 2));

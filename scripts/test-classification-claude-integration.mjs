@@ -58,8 +58,8 @@ assert.equal(success().results[0].changed, 10);
 assert.equal(readFileSync(path, "utf8"), input, "dry-run must not write");
 assert.equal(readdirSync(catalogDir).length, 1);
 const applied = success(true);
-assert.ok(applied.results[0].backup);
-assert.equal(readFileSync(applied.results[0].backup, "utf8"), input);
+assert.equal("backup" in applied.results[0], false);
+assert.deepEqual(readdirSync(catalogDir), ["public.json"], "apply must not create backup or leave temporary files");
 const snapshot = JSON.parse(readFileSync(path, "utf8"));
 assert.equal(snapshot.generatedAt, at, "classification is not a new price confirmation");
 assert.deepEqual(snapshot.sources, original.sources);
@@ -113,7 +113,7 @@ try {
   assert.equal(multi.lowestPrice, 0.2);
   assert.equal(multi.channelCount, 5);
 } finally { Date.now = realNow; process.chdir(cwd); }
-console.log("PASS Claude integration: screenshot offers, scoped migration, backup, idempotence, fresh worker, original fields preserved, real UI minima/channel/stock counts");
+console.log("PASS Claude integration: screenshot offers, scoped migration, no extra backups, idempotence, fresh worker, original fields preserved, real UI minima/channel/stock counts");
 } finally {
   const inside = relative(scratchRoot, resolve(dir));
   if (inside && !isAbsolute(inside) && !inside.startsWith("..") && basename(dir).startsWith("radar-claude-classify-")) {
