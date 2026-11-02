@@ -4,13 +4,16 @@ import type {TransitSite} from "./types";
 import {toTransitView} from "./view";
 import {loadTransitModelCatalog} from "./model-catalog";
 import {orderTransitStations} from "./station-order.mjs";
+import {inactiveTransitIds} from "./station-policy.mjs";
+import {refreshChickenerOffer} from "./chickener-pricing.mjs";
 
 export function listTransitSites(): TransitSite[] {
   const snapshot=loadTransitSnapshot();
   if(!snapshot) return [];
+  const inactive=inactiveTransitIds();
   const offersByGroup=new Map<string,typeof snapshot.offers>();
   for(const offer of snapshot.offers) {
-    const rows=offersByGroup.get(offer.group_id)??[];rows.push(offer);offersByGroup.set(offer.group_id,rows);
+    const rows=offersByGroup.get(offer.group_id)??[];rows.push(refreshChickenerOffer(offer));offersByGroup.set(offer.group_id,rows);
   }
   const groupsByStation=new Map<string,TransitSite["groups"]>();
   for(const group of snapshot.groups) {
@@ -21,6 +24,7 @@ export function listTransitSites(): TransitSite[] {
   }
   const performance=snapshot.performance??[];
   return orderTransitStations(snapshot.stations,snapshot.groups,snapshot.offers)
+    .filter(station=>!inactive.has(station.id))
     .map(station=>({station,groups:groupsByStation.get(station.id)??[],performance:performance.find(row=>row.stationId===station.id)}));
 }
 export function listTransitViews() {const catalog=loadTransitModelCatalog();return listTransitSites().map(site=>toTransitView(site,catalog));}

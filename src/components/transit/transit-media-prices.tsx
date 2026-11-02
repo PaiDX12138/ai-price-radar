@@ -34,7 +34,7 @@ export function TransitMediaPrices({ prices }: { prices: TransitPrice[] }) {
                     { label: "单价", value: `${formatTransitMediaPrice(price.mediaPricing, price.fixedPrice)}${quote === "未披露" || exactToken ? "" : `/${unit}`}` },
                     { label: "计费", value: billingLabel },
                     { label: price.currencyKind==="usd_base"?"报价范围":"分组", value: price.currencyKind==="usd_base"?"公开基础价":price.mediaPricing?.groupKey ?? "未披露" },
-                  ]} note={price.currencyKind==="usd_base" ? exactToken ? "USD基础价 / 百万Token，输入输出分开计费，不是固定单张价；不含分组及峰谷倍率。" : "USD基础价，按返回图片数量计费；不含分组及峰谷倍率。" : price.currencyKind==="cny_credit" ? `Credits，公开基准1 Credit=¥1。${exactToken?"图片输出按Token，输入另计。":"按所示单位计费，规格见完整报价。"}` : price.currencyKind==="usd_credit" ? exactToken ? "美元额度 / 百万Token，输入与图片输出分开计费。" : `美元额度报价，按${unit}计费；不跨单位换算。` : exactToken ? "USD / 百万Token，已含折扣；站点未提供固定单张价。" : `${token ? "输出参考价，输入另计。" : price.category === "video" ? "依时长、分辨率计费。" : billing === "upstream_cost" ? "按上游账单结算。" : billing === "per_request" ? "按次计费。" : "依质量、尺寸计费。"}$ 为站内额度，不含峰时变化。`} />
+                  ]} note={price.currencyKind==="usd_base" ? exactToken ? "USD基础价 / 百万Token，输入输出分开计费，不是固定单张价；不含分组及峰谷倍率。" : "USD基础价，按返回图片数量计费；不含分组及峰谷倍率。" : price.currencyKind==="cny_credit" ? `站内Credits标价，实际充值以站点为准。${exactToken?"图片输出按Token，输入另计。":"按所示单位计费，规格见完整报价。"}` : price.currencyKind==="usd_credit" ? exactToken ? "美元额度 / 百万Token，输入与图片输出分开计费。" : `美元额度报价，按${unit}计费；不跨单位换算。` : exactToken ? "USD / 百万Token，已含折扣；站点未提供固定单张价。" : `${token ? "输出参考价，输入另计。" : price.category === "video" ? "依时长、分辨率计费。" : billing === "upstream_cost" ? "按上游账单结算。" : billing === "per_request" ? "按次计费。" : "依质量、尺寸计费。"}$ 为站内额度，不含峰时变化。`} />
                 </TooltipContent>
               </Tooltip>
             </td>

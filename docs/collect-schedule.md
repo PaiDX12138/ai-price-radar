@@ -104,6 +104,8 @@ node scripts/reclassify-catalog-snapshot.mjs --apply  # 自动备份并原子替
 
 ### 中转站点独立调度
 
+2026-11-02：鸡哥AI通过独立`chickener_v1`正式接入，价格6小时、性能1小时、持久化逐型号续采。ZetaAPI按维护者要求暂停展示并移除全部定时任务，不再每日探测停服站；旧说明中的Zeta频率只描述历史。详见[鸡哥AI运行说明](chickener-collection.md)。
+
 SudoCode已接入同一调度：报价/公式/目录每6小时，版本性能每1小时，Logo每日复核；独立持久化next-due、租约、失败退避，不需要新增cron。接口可直接回填15日，小时事实持续保存35日。版本性能不会伪装成渠道独立观测，详见 [SudoCode运行说明](sudocode-collection.md)。
 
 `pnpm worker` 每分钟发现并检查 `config/transit/*.json` 的到期任务，按站点启动独立采集子进程，不需要为每个站点单独新增cron。报价默认6小时，Right Code可用率每小时，ZetaAPI公开心跳每5分钟；详细的分表保存、35日保留和监控范围见 `docs/zetaapi-integration-plan.md`。`start`只读快照，不负责持续采集。

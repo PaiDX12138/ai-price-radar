@@ -50,7 +50,7 @@ try{
       WHERE g.station_id=? AND g.status='active' AND o.status='active'`).all(config.id):[];
     const missingFamilies=(config.requiredFamilies??[]).filter(f=>!stored.some(o=>o.family===f));
     let pricingCollection=null;
-    if(['packyapi_v1','soleapi_v1','runapi_v1','cubence_v1','crazyrouter_v1','sudocode_v1'].includes(config.collectorKind)&&table('transit_stations')) {
+    if(['packyapi_v1','soleapi_v1','runapi_v1','cubence_v1','crazyrouter_v1','sudocode_v1','chickener_v1'].includes(config.collectorKind)&&table('transit_stations')) {
       try {
         const row=db.prepare('SELECT raw_meta_json FROM transit_stations WHERE id=?').get(config.id);
         const collection=JSON.parse(row?.raw_meta_json??'{}').pricingCollection;
@@ -97,6 +97,9 @@ try{
         COUNT(DISTINCT tier) versions,MIN(bucket_at) earliestHour,MAX(bucket_at) latestHour,MAX(observed_at) lastObservedAt
         FROM transit_sudocode_tier_hourly WHERE station_id=?`).get(config.id):null,monitoringScope:'version_model_hour_not_independent_channel'}:{}),
       ...(config.collectorKind==='packyapi_v1'?{apiOrigins:config.apiOrigins??[new URL(config.pricingUrl).origin],pricingCollection}:{}),
+      ...(config.collectorKind==='chickener_v1'?{pricingCollection,monitoring:table('transit_chickener_metric_subjects')?db.prepare(`SELECT COUNT(*) subjects,
+        SUM(CASE WHEN last_success_at IS NOT NULL THEN 1 ELSE 0 END) saved,SUM(CASE WHEN last_error IS NOT NULL THEN 1 ELSE 0 END) failed,
+        MIN(next_attempt_at) nextSubjectAt,MAX(last_success_at) lastSubjectSuccessAt FROM transit_chickener_metric_subjects WHERE station_id=? AND active=1`).get(config.id):null}:{}),
       ...(config.collectorKind==='soleapi_v1'?{pricingCollection,detailCollection}:{}),
       missingFamilies,network:{mode:setting.mode,setting:setting.key},runs,schedule:schedule??null,performanceSchedule:performanceSchedule??null};
   });

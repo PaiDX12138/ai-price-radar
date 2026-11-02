@@ -2,6 +2,7 @@
  * leases, env, transport bodies, private shop data or local absolute paths. */
 import {createHash} from 'node:crypto';
 import {gzipSync,gunzipSync} from 'node:zlib';
+import {syncTransitLifecycle} from '../../src/lib/transit/station-policy.mjs';
 export const BASELINE_TABLES=[
   'transit_stations','transit_groups','transit_offers',
   'transit_monitor_identities','transit_monitor_probes','transit_monitor_hourly','transit_monitor_summaries','transit_service_states',
@@ -13,6 +14,7 @@ export const BASELINE_TABLES=[
   'transit_crazyrouter_catalog_versions','transit_crazyrouter_metadata_versions','transit_crazyrouter_metric_summaries',
   'transit_sudocode_catalog_versions','transit_sudocode_metadata_versions','transit_sudocode_tier_hourly',
   'transit_performance_observations',
+  'transit_chickener_catalog_versions','transit_chickener_metadata_versions',
 ];
 const CURRENT=new Set(['transit_stations','transit_groups','transit_offers','transit_model_detail_state','transit_offer_charge_items','transit_runapi_memberships','transit_runapi_probe_targets','transit_monitor_identities']);
 const IMMUTABLE=new Set(['transit_monitor_probes','transit_model_probe_observations','transit_runapi_probe_observations']);
@@ -81,13 +83,15 @@ export function decodeBaseline(bytes,manifest){
     if(!BASELINE_TABLES.includes(table)||!Array.isArray(rows)||rows.length!==manifest.rows[table])throw new Error('baseline_invalid_table');
     for(const row of rows)if(!row||typeof row!=='object'||Array.isArray(row)||Object.values(row).some(v=>v!==null&&!['string','number'].includes(typeof v)))throw new Error('baseline_invalid_row');
   }
-  if(BASELINE_TABLES.some(t=>!bundle.tables[t]))throw new Error('baseline_missing_table');
+  const optional=new Set(['transit_chickener_catalog_versions','transit_chickener_metadata_versions']);
+  if(BASELINE_TABLES.some(t=>!optional.has(t)&&!bundle.tables[t]))throw new Error('baseline_missing_table');
+  for(const table of optional)bundle.tables[table]??=[];
   return bundle;
 }
 /** Merge a dated baseline. Newer server catalogs/points and all server schedules
  * stay authoritative; absent rows are inactivated, never deleted. */
 export function mergeBaseline(db,bundle,{dryRun=false}={}){
-  return db.transaction(()=>mergeBaselineLocked(db,bundle,{dryRun})).immediate();
+  return db.transaction(()=>{const result=mergeBaselineLocked(db,bundle,{dryRun});if(!dryRun)syncTransitLifecycle(db);return result;}).immediate();
 }
 function mergeBaselineLocked(db,bundle,{dryRun}){
   const groupStation=new Map(bundle.tables.transit_groups.map(g=>[g.id,g.station_id]));

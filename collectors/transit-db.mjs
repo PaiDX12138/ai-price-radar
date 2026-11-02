@@ -30,6 +30,9 @@ import { refreshCrazyOffer } from "../src/lib/transit/crazyrouter-pricing.mjs";
 import { syncTransitSponsorships } from "./transit/sponsorship.mjs";
 import { normalizeTransitSponsorship } from "../src/lib/transit/sponsorship.mjs";
 import { orderTransitStations } from "../src/lib/transit/station-order.mjs";
+import {syncTransitLifecycle} from "../src/lib/transit/station-policy.mjs";
+import {CHICKENER_SCHEMA_SQL} from "./transit/chickener-storage.mjs";
+import {refreshChickenerOffer} from "../src/lib/transit/chickener-pricing.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -245,6 +248,7 @@ ${RUN_SCHEMA_SQL}
 ${CUBENCE_SCHEMA_SQL}
 ${CRAZY_SCHEMA_SQL}
 ${SUDO_SCHEMA_SQL}
+${CHICKENER_SCHEMA_SQL}
 
 `;
 
@@ -819,6 +823,7 @@ export function upsertTransitPerformance(db, input) {
 
 export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPath()) {
   return db.transaction(() => {
+  syncTransitLifecycle(db);
   syncTransitSponsorships(db);
   // Explicit public projection: never ship collector configs or raw payloads.
   let stations = db.prepare(`
@@ -861,7 +866,7 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
       JOIN transit_stations s ON s.id=g.station_id
     WHERE o.status='active' AND g.status='active' AND s.status='published'
     ORDER BY o.group_id, o.standard_model COLLATE NOCASE, o.raw_model COLLATE NOCASE
-  `).all().map(offer=>refreshCrazyOffer(refreshRunApiOffer(offer)));
+  `).all().map(offer=>refreshChickenerOffer(refreshCrazyOffer(refreshRunApiOffer(offer))));
   stations=orderTransitStations(stations,groups,offers);
   for (const g of groups) { delete g.raw_group_json; delete g.endpoint_overrides_json; }
   const cubenceGroups=new Set(groups.filter(g=>stations.some(s=>s.id===g.station_id&&s.collector_kind==='cubence_v1')).map(g=>g.id));
@@ -887,12 +892,16 @@ export function exportTransitSnapshot(db, outputPath = resolveTransitSnapshotPat
       station:{...buildPerformanceMonitor([],{now:performanceNow}),capabilities:{ttft:false,latency:false,throughput:false},scope:{stationId:s.id,groupKey:null}},
       groups:{},models:{}};
     const capabilities = { ttft: s.collector_kind !== "rightapi_v1", latency: s.collector_kind !== "rightapi_v1", throughput: s.collector_kind !== "rightapi_v1" };
-    const rows=performanceRows.filter(r=>r.station_id===s.id);
+    const ownOffers=offers.filter(o=>groups.some(g=>g.id===o.group_id&&g.station_id===s.id));
+    const currentMembers=new Set(ownOffers.map(o=>`${o.raw_model}\u0000${groups.find(g=>g.id===o.group_id)?.group_key}`));
+    const rows=performanceRows.filter(r=>r.station_id===s.id&&(s.collector_kind!=='chickener_v1'||currentMembers.has(`${r.model_name}\u0000${r.group_key}`)));
     const stationGroups=groups.filter(g=>g.station_id===s.id);
     const ownGroupIds=new Set(stationGroups.map(g=>g.id));
     const modelNames=[...new Set(offers.filter(o=>ownGroupIds.has(o.group_id)).map(o=>o.raw_model))];
     if (s.collector_kind === "sudocode_v1") return buildSudoPerformance(db,s.id,stationGroups,offers,{now:performanceNow});
-    const finish = result => withModelDerivedGroups(result,stationGroups,offers,{now:performanceNow});
+    const finish = result => s.collector_kind==='chickener_v1'
+      ? {...result,models:Object.fromEntries(Object.entries(result.models??{}).map(([name,stats])=>{const copy={...stats};delete copy._hourly;return [name,copy];}))}
+      : withModelDerivedGroups(result,stationGroups,offers,{now:performanceNow});
     if (s.collector_kind === "zetaapi_v1") return finish(buildZetaPerformance(db,s.id,modelNames,{now:performanceNow}));
     if (s.collector_kind === "soleapi_v1") return finish(buildSolePerformance(db,s.id,modelNames,{now:performanceNow}));
     if (s.collector_kind === "runapi_v1") return finish(buildRunPerformance(db,s.id,modelNames,{now:performanceNow}));

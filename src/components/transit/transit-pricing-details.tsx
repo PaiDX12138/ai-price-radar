@@ -14,10 +14,10 @@ function timeWindows(value:unknown):string {
   const hm=(v:unknown)=>typeof v==="number"?`${String(Math.floor(v/60)).padStart(2,"0")}:${String(v%60).padStart(2,"0")}`:"—";
   return value.filter(object).map(i=>`${Array.isArray(i.days)&&i.days.join(",")==="1,2,3,4,5"?"周一至周五 ":""}${hm(i.start)}–${hm(i.end)}`).join("、");
 }
-function ruleDescription(value:unknown):string|null {
+function ruleDescription(value:unknown,currencyKind?:string):string|null {
   if(!object(value)||typeof value.label!=="string")return null;
-  if(typeof value.description==="string")return `${value.label}：${value.description}`;
-  if(object(value.prices))return `${value.label}：${Object.entries(value.prices).map(([key,price])=>`${({p:"输入",c:"输出",cr:"缓存读",cc:"缓存写",cc1h:"缓存写1h",cc12h:"缓存写12h",ai:"音频输入"} as Record<string,string>)[key]??key} $${String(price)}`).join("、")} / 百万Token`;
+  if(typeof value.description==="string"&&!object(value.prices))return `${value.label}：${value.description}`;
+  if(object(value.prices))return `${value.label}：${Object.entries(value.prices).map(([key,price])=>`${({p:"输入",c:"输出",cr:"缓存读",cc:"缓存写",cc1h:"缓存写1h",cc12h:"缓存写12h",ai:"音频输入"} as Record<string,string>)[key]??key} ${currencyKind==="cny_credit"?"¥":"$"}${String(price)}`).join("、")} / 百万Token`;
   const triggers=Array.isArray(value.triggers)?value.triggers.filter(object):[];
   const when=triggers.map(t=>t.kind==="body_field_matches"?`${String(t.field)}=${String(t.pattern).replace(/^\^|\$$/g,"")}`:t.kind==="time_window"?`${String(t.timezone??"UTC")} ${timeWindows(t.intervals)}`:String(t.kind)).join("；");
   const factors=object(value.chargeFactors)?Object.entries(value.chargeFactors).map(([k,v])=>`${labels[k]??k} ×${formatTransitMultiplierAmount(v)}`).join("、"):`×${formatTransitMultiplierAmount(value.factor??1)}`;
@@ -35,7 +35,7 @@ export function TransitPricingDetails({rows}:{rows:PricingRow[]}) {
       <div className="space-y-3">{known.map((row,i)=><section key={`${row.model??row.modelName}:${row.groupKey??i}`} className="space-y-1.5 text-[11px]">
         <p className="break-words font-medium [overflow-wrap:anywhere]">{row.model??row.modelName}{row.groupKey&&<span className="ml-1 text-[10px] font-normal text-muted-foreground">· {row.groupKey}</span>}</p>
         <dl className="space-y-1">{row.chargeItems!.map(c=><div key={c.key} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3"><dt className="text-muted-foreground">{labels[c.key]??c.key}</dt><dd className="text-right font-mono tabular-nums">{c.creditPrice} / {units[c.unit]??c.unit}</dd></div>)}</dl>
-        {row.pricingRules?.length?<ul className="space-y-1 border-t border-border/40 pt-1 text-[10px] text-muted-foreground">{row.pricingRules.map(ruleDescription).filter((s):s is string=>s!==null).map((text,index)=><li key={index} className="break-words [overflow-wrap:anywhere]">{text}</li>)}</ul>:<p className="text-[10px] text-muted-foreground">{base?"源目录未列额外阶梯":"规格规则待补采"}</p>}
+        {row.pricingRules?.length?<ul className="space-y-1 border-t border-border/40 pt-1 text-[10px] text-muted-foreground">{row.pricingRules.map(rule=>ruleDescription(rule,row.currencyKind)).filter((s):s is string=>s!==null).map((text,index)=><li key={index} className="break-words [overflow-wrap:anywhere]">{text}</li>)}</ul>:<p className="text-[10px] text-muted-foreground">{base?"源目录未列额外阶梯":"源目录未列额外规格"}</p>}
         {row.pricingDetailsAt&&<p className="text-[9px] text-muted-foreground">规则更新 {formatTransitBucketTime(row.pricingDetailsAt)}</p>}
       </section>)}</div><p className="mt-2 border-t border-border/60 pt-2 text-[10px] text-muted-foreground">{base?"公开基础价，不含分组与峰谷倍率。阶梯按输入＋缓存Token匹配，命中后替代基础价；主卡片展示首档。":"已含本组倍率。条件档位依请求参数生效，不在当前价上重复叠乘。"}</p>
     </TooltipContent></Tooltip></TooltipProvider>;

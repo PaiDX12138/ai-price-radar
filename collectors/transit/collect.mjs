@@ -15,6 +15,7 @@ import { collectCrazyRouterSource } from "./crazyrouter.mjs";
 import { collectSudoCodeSource } from "./sudocode.mjs";
 import { fetchTransitPublic, describeTransitError } from "./transport.mjs";
 import { collectPackyPerformance } from "./packyapi-performance.mjs";
+import {collectChickenerSource} from "./chickener.mjs";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 export const TRANSIT_INTERVAL_MS=6*60*60*1000;
@@ -225,7 +226,10 @@ export async function runTransitCollection(db,options={}) {
   const results=[];
   for(const config of options.sources??loadTransitSources()) {
     try {
-      if(config.collectorKind === "sudocode_v1") {
+      if(!config.enabled){results.push({id:config.id,status:'skipped'});continue;}
+      if(config.collectorKind === "chickener_v1") {
+        results.push(await collectChickenerSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
+      } else if(config.collectorKind === "sudocode_v1") {
         results.push(await collectSudoCodeSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));
       } else if(config.collectorKind === "crazyrouter_v1") {
         results.push(await collectCrazyRouterSource(db,config,options,{fetchPublic,claimTransit,finishTransit}));

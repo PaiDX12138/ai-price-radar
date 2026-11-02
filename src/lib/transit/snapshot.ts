@@ -2,6 +2,7 @@ import "server-only";
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import {inactiveTransitIds} from "./station-policy.mjs";
 
 export type TransitSponsorship = { affiliateUrl?: string; code?: string; benefit?: string };
 
@@ -197,6 +198,15 @@ function isValidSnapshot(value: unknown): value is TransitSnapshot {
   );
 }
 
+function visibleSnapshot(snapshot: TransitSnapshot): TransitSnapshot {
+  const inactive=inactiveTransitIds();
+  if(!snapshot.stations.some(s=>inactive.has(s.id)))return snapshot;
+  const stations=snapshot.stations.filter(s=>!inactive.has(s.id)),groups=snapshot.groups.filter(g=>!inactive.has(g.station_id));
+  const ids=new Set(groups.map(g=>g.id)),offers=snapshot.offers.filter(o=>ids.has(o.group_id));
+  return {...snapshot,stations,groups,offers,performance:snapshot.performance?.filter(p=>!inactive.has(p.stationId)),
+    stats:{stationCount:stations.length,groupCount:groups.length,offerCount:offers.length}};
+}
+
 /**
  * Frontend read path: memory TTL + disk mtime invalidation.
  * It never opens SQLite and never calls a remote collector.
@@ -212,7 +222,8 @@ export function loadTransitSnapshot(): TransitSnapshot | null {
     try {
       const previous=JSON.parse(readFileSync(`${path}.last-good`,"utf8"));
       if(isValidSnapshot(previous)) {
-        memory={snapshot:previous,mtimeMs:0,path,loadedAtMs:now,checkedAtMs:now};return previous;
+        const visible=visibleSnapshot(previous);
+        memory={snapshot:visible,mtimeMs:0,path,loadedAtMs:now,checkedAtMs:now};return visible;
       }
     } catch { /* clean empty state on first boot */ }
     return null;
@@ -238,8 +249,9 @@ export function loadTransitSnapshot(): TransitSnapshot | null {
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
     if (!isValidSnapshot(parsed)) throw new Error(`Invalid transit snapshot at ${path}`);
-    memory = { snapshot: parsed, loadedAtMs: now, mtimeMs, path,checkedAtMs:now };
-    return parsed;
+    const visible=visibleSnapshot(parsed);
+    memory = { snapshot: visible, loadedAtMs: now, mtimeMs, path,checkedAtMs:now };
+    return visible;
   } catch (error) {
     console.warn("[transit] read snapshot failed:", error instanceof Error ? error.message : error);
     return fallback();

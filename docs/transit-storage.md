@@ -22,6 +22,8 @@ pnpm transit:migrate
 
 ## SQLite 表
 
+2026-11-02新增独立鸡哥AI采集，公开目录/元信息版本与私有运行队列分离，详见[采集说明](chickener-collection.md)。ZetaAPI已暂停展示及全部调度，历史不删除；本地停用配置优先于旧快照和历史基线导入。
+
 ### 赞助标记与自动排序
 
 - 取消赞助排序：配置、公开快照、视图均不再使用 `sponsorOrder` / `sponsor_order`。迁移会移除旧的实验列，赞助状态不影响顺序。
@@ -37,7 +39,7 @@ pnpm transit:migrate
 - 首页在原有筛选与自动排序之后分页，每页12个站点，详情分组仍为每页12个。页码写入`page`，保留平台、类型及搜索条件；非法页码回到第1页、超范围页码夹到最后一页，不修改数据或排序。
 - 沿用`ListPagination`，不足两页不显示分页栏。分页使用已加载的数据切片及原生History更新，无需等待网络请求；支持深链接、浏览器前进后退及修饰键打开新标签页。平台、类型、搜索切换回第1页。
 - 站点区在分页点击时暂时保留当前高度并恢复滚动坐标，避免最后一页较少时把页面向上拉；筛选变化后释放临时高度。首页赞助区放在分页/空态下方，独立于站点数据，不参与站点分页或自动排序，空筛选也保留。
-- 横图与链接配置位于`src/data/transit-sponsors.ts`；顺序固定为RightCode、Patrick Star Toll、阿里云。显示“赞助商”标题，横图保持原尺寸并靠左排列，不增加卡片下方文案；统一提示使用整张图片卡片作为固定锚点，宽度不超过卡片，键盘聚焦也可阅读简介。详见[品牌资源](assets/sponsors/README.md)。
+- 横图与链接配置位于`src/data/sponsors.ts`，公共组件为`src/components/layout/site-sponsors.tsx`；顺序固定为RightCode、Patrick Star Toll、阿里云。三个板块首页共享，横图保持原尺寸并靠左排列，不增加卡片下方文案；统一提示使用整张图片卡片作为固定锚点，宽度不超过卡片，键盘聚焦也可阅读简介。详见[品牌资源](assets/sponsors/README.md)。
 
 SudoCode新增 `transit_sudocode_catalog_versions`、`transit_sudocode_metadata_versions`、`transit_sudocode_tier_hourly`。前两者保存完整来源版本及政策hash；最后一张按“站点/原始型号/站方版本/UTC小时”唯一，不能把版本ID写成真实渠道分组。快照按明确版本与组员关系生成系统综合指标；既有报价表不变。详见 [SudoCode方案](sudocode-integration-plan.md)。
 

@@ -4,6 +4,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {hostname} from 'node:os';
 import {describeTransitError} from './transport.mjs';
+import {syncTransitLifecycle} from '../../src/lib/transit/station-policy.mjs';
 
 export function transitHasPerformance(config){
   return config.collectorKind!=='cubence_v1'&&(config.collectorKind==='soleapi_v1'||Boolean(config.performanceUrl));
@@ -31,6 +32,7 @@ export function createTransitDispatcher({db,root,env=process.env,spawnImpl=spawn
     try{
       lastError=null;
       beat();
+      db.transaction(()=>syncTransitLifecycle(db)).immediate();
       const disk=statfsSync(root),free=Number(disk.bavail)*Number(disk.bsize);
       if(free<64*1048576){note(new Error('transit_disk_space_low: less than 64MiB available; retaining last-good data'));beat();return;}
       const sources=[];

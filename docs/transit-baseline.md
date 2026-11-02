@@ -1,13 +1,13 @@
 # 已采集公开数据的发布与服务器更新
 
-本次2026-11-01发布把8个已接入站点的公开数据一起纳入Git，避免只更新代码而服务器仍只有旧Packy目录。
+2026-11-02公开数据包包含8个当前发布站点：原有7站及新增鸡哥AI；ZetaAPI已按维护者要求停用，历史仍保留在原数据库，不再随当前发布目录展示。避免只更新代码而服务器缺少新站与已补采历史。
 
 ## 数据包是什么
 
-- `config/transit-baseline/latest.json.gz`：约2.75 MB的结构化公开事实，8站当前有效报价1213条、109个含历史定义的分组、1259条含inactive的报价记录。
+- `config/transit-baseline/latest.json.gz`：约3.25 MB的结构化公开事实，8站当前有效报价1198条、118个含历史定义的分组、1268条含inactive的报价记录。
 - `config/transit-baseline/manifest.json`：压缩包SHA-256、打包时间、逐站有效库存及逐表行数。
-- 包括61,963条普通型号/分组小时事实、26,181条SudoCode型号/版本小时事实、Sole/Zeta/RunAPI探测原点及小时聚合、计费版本、型号排序参考目录。
-- 本轮已重新采集7个仍提供服务的站点，并合入源站允许回溯的历史小时，采集时间主要为2026-11-01 21:48–21:51（北京时间）。ZetaAPI于2026-10-31公告停服，保留其历史数据并附停服状态，不把停服页面当作新报价。所有事实保留原始时间，打包日期不冒充价格/探测时间。
+- 包括69,505条普通型号/分组小时事实、27,624条SudoCode型号/版本小时事实、Sole/RunAPI探测原点及小时聚合、计费版本、鸡哥AI公开目录/元信息版本、型号排序参考目录。
+- 包内事实保留各自原始时间；鸡哥AI首次采集于2026-11-02，性能按源站真实小时回填，不伪造连续覆盖。其它站点沿用各自已采历史，打包日期不冒充采价日期。ZetaAPI本地停用配置优先于旧包导入，不能被旧包重新发布。
 - 不含`.env.local`、代理/鉴权配置、整库文件、卡网私有数据、SQLite自增行ID、源站大响应原文、本机绝对路径、租约、进程状态、采集调度、运行错误日志或测试数据。
 - 只有公开Logo、生产代码、文档、白名单数据包进入Git；`work/`、运行数据库、备份和测试输出仍忽略。
 
@@ -46,6 +46,7 @@ pnpm transit:import              # 自动备份、事务合并、重新导出前
   pnpm build:server
   pnpm transit:migrate
   pnpm transit:import
+  node scripts/reclassify-catalog-snapshot.mjs --platform claude --apply
 
   pm2 restart quote-web quote-worker --update-env
   pm2 save
@@ -55,6 +56,8 @@ pnpm transit:import              # 自动备份、事务合并、重新导出前
 ```
 
 不删除`data`或`.env.local`，不执行`git reset --hard`，不覆盖整库。导入不访问外站，即使采集出口仍有问题也能先恢复现有已采数据。结束后查看`transit:status`的8站库存；线上已有更多新数据时，数量可以高于清单。
+
+本次同时部署卡网Claude分类修复，需执行上述限定平台的存量重分类；脚本自动备份并保留价格、库存、上下架状态与源采集时间，不重新抓店铺。正式部署保持既有`quote-web`与`quote-worker`名称，不对其他PM2业务执行stop/restart all。
 
 已有Worker由PM2恢复后按原有到期任务继续采集。导入不会新增一个此前不存在的Worker；若原PM2列表根本没有采集Worker，需要另行核对原进程配置，不猜测进程名或重复创建服务。
 

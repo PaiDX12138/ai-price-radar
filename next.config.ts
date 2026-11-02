@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "/*": ["./work/**/*", "./.git/**/*", "./data/transit/raw/**/*", "./data/transit-backups/**/*", "./config/transit-baseline/**/*"],
   },
+  outputFileTracingIncludes: {"/*":["./config/transit/*.json"]},
   partialPrefetching: true,
   serverExternalPackages: ["better-sqlite3"],
   images: {
