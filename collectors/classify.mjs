@@ -1311,7 +1311,7 @@ function isChatGptInviteQuotaService(value) {
 }
 
 function isNegatedApiMention(value) {
-  return /非\s*api|不是\s*api|无\s*api|不含\s*api/i.test(value);
+  return /(?:非|不是|无|不含|不提供|不支持)\s*api/i.test(value);
 }
 
 function isApiProductCoreSignal(value) {
@@ -3269,6 +3269,26 @@ function isMultiModelTransitHub(value) {
 }
 
 /**
+ * 明确的中转交付物优先于档位名和泛交付词（Pro / 独享 / 月卡 / 卡密）。
+ * 只看正向交付信号；「非 API」「账号支持反代/导入中转站」不是在卖中转。
+ * 不用单独的 api / token / 额度 / 号池判断，避免误伤账号及模型能力说明。
+ */
+function transitDeliveryText(value) {
+  return value
+    .replace(/(?:非|不是|不含|不提供|不支持|无需|无)\s*(?:api\s*(?:key|密钥|额度|卡密|中转|调用)?|中转(?:站|服务)?|镜像(?:站)?|反代(?:服务)?)/g, " ")
+    .replace(/(?:支持|可用于|可供|可以|可)\s*(?:直接\s*)?(?:导入\s*(?:中转站|号池)|中转(?:站|服务)|镜像站|api\s*(?:调用|key\s*(?:导出|提取))|反代|逆向)/g, " ")
+    .replace(/中转站\s*专供\s*(?=账号|账户|成品号)/g, " ");
+}
+
+function hasExplicitTransitDelivery(value) {
+  const delivery = transitDeliveryText(value);
+  if (/中转\s*(?:站|服务|余额|额度|充值|api)|网页镜像|镜像站|反代服务/.test(delivery)) return true;
+  if (/(?:^|[^a-z])api\s*(?:key\b|密钥|卡密|cdk\b|兑换码|额度|余额|充值|调用|中转|号池|月卡|年卡|日卡|周卡|天卡)/.test(delivery)) return true;
+  if (/(?:^|[^a-z])tokens?\s*(?:包|额度|充值)|调用\s*(?:额度|余额)|充值\s*api/.test(delivery)) return true;
+  return matches(delivery, ["中转"]) && matches(delivery, ["卡密", "兑换码", "余额", "额度", "月卡", "周卡", "日卡", "天卡"]);
+}
+
+/**
  * Max/Pro 档位「卖账号」：速刷号、号池专供账号、成品号等。
  * 标题里的「号池」是货源（批量出号），不是 API 中转号池。
  */
@@ -3314,6 +3334,9 @@ function isClaudeMaxTierAccountSale(value) {
  */
 function isClaudeMirrorProduct(value) {
   if (isMultiModelTransitHub(value)) return false;
+  value = transitDeliveryText(value);
+  // API 卡密 / 中转充值卡的「Pro」「独享」「质保订阅」不能触发账号豁免。
+  if (matches(value, ["claude", "克劳德", "anthropic"]) && hasExplicitTransitDelivery(value)) return true;
   // Max/Pro 速刷号、号池专供账号等 → 走 Max/Pro 订阅归类，禁止进中转
   if (isClaudeMaxTierAccountSale(value)) return false;
 
@@ -4415,12 +4438,19 @@ export function classifyTitle(title, opts = {}) {
     if (brandOther) return { productSlug: brandOther, warranty };
   }
 
-  if (isMirrorSiteProduct(text)) {
-    return { productSlug: classifyMirrorSite(text), warranty };
+  // 多模型中转先分流；否则 Claude 中转排除后会被 Pro/卡密等词吸进订阅。
+  // 必须有明确中转交付物，不能仅凭多品牌 + 直充/兑换码把官方订阅当中转。
+  const transitText = transitDeliveryText(text);
+  if (isMultiModelTransitHub(transitText) && hasExplicitTransitDelivery(transitText)) {
+    return { productSlug: "chatgpt-mirror", warranty };
+  }
+
+  if (isMirrorSiteProduct(transitText)) {
+    return { productSlug: classifyMirrorSite(transitText), warranty };
   }
 
   // 无「镜像」字样但明确网页中转/共享入口的 GPT 服务
-  if (isChatGptMirrorTransit(text)) {
+  if (isChatGptMirrorTransit(transitText)) {
     return { productSlug: "chatgpt-mirror", warranty };
   }
 
@@ -4436,7 +4466,7 @@ export function classifyTitle(title, opts = {}) {
   // Claude 中转 / 辅助：须在 Kiro 与通用 API 中转之前
   // （Claude-Kiro 反代、Claude API KEY → claude-mirror，不是 Kiro IDE）
   {
-    const claudeExtra = classifyClaudeMirrorOrService(text);
+    const claudeExtra = classifyClaudeMirrorOrService(transitText);
     if (claudeExtra) return { productSlug: claudeExtra, warranty };
   }
 
@@ -4453,7 +4483,7 @@ export function classifyTitle(title, opts = {}) {
   }
 
   // API 额度 / 号池倍率 / 中转线路 → ChatGPT「中转服务」（多模型合池等）
-  if (isApiCredit(text)) {
+  if (isApiCredit(transitText)) {
     return { productSlug: "chatgpt-mirror", warranty };
   }
 

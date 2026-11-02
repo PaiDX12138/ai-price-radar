@@ -16,6 +16,13 @@ if (index >= 0 && (!args[index + 1] || args[index + 1].startsWith("--"))) {
 const paths = index >= 0 ? [resolve(args[index + 1])] : ["public", "latest"].map((name) => join(root, "data", "catalog", `${name}.json`));
 const products = seedProducts();
 const slugs = new Set(products.map((product) => product.slug));
+// Scope by either old or new platform, so Claude -> multi-model transit is included.
+const platformIndex = args.indexOf("--platform");
+const platform = platformIndex >= 0 ? args[platformIndex + 1] : null;
+const productPlatforms = new Map(products.map((product) => [product.slug, product.platform]));
+if (platformIndex >= 0 && (!platform || !products.some((product) => product.platform === platform))) {
+  throw new Error("--platform requires a known catalog platform (e.g. claude)");
+}
 const results = [];
 for (const path of paths) {
   if (!existsSync(path)) throw new Error(`Snapshot missing: ${path}`);
@@ -26,8 +33,11 @@ for (const path of paths) {
   }
   const moves = {};
   let changed = 0;
+  const oldPlatforms = new Map(snapshot.products.map((product) => [product.slug, product.platform]));
   const offers = reclassifyOffers(snapshot.offers).map((offer, i) => {
     const old = snapshot.offers[i];
+    if (platform && (oldPlatforms.get(old.productSlug) || productPlatforms.get(old.productSlug)) !== platform &&
+      productPlatforms.get(offer.productSlug) !== platform) return old;
     if (old.productSlug !== offer.productSlug || old.warranty !== offer.warranty) changed++;
     if (old.productSlug !== offer.productSlug) {
       const key = `${old.productSlug} -> ${offer.productSlug}`;
@@ -58,4 +68,4 @@ for (const path of paths) {
   }
   results.push({ path, offers: offers.length, changed, moves, backup });
 }
-console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", results }, null, 2));
+console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", ...(platform ? { platform } : {}), results }, null, 2));
