@@ -14,14 +14,14 @@ export const PRODUCT_SEED = [
     name: "ChatGPT 普号",
     platform: "chatgpt",
     deliveryType: "成品账号",
-    summary: "ChatGPT 普号、Free 号、白号或 OpenAI 普通账号",
+    summary: "ChatGPT Free 普号、白号、未开通订阅的半成品或资格账号",
   },
   {
     slug: "chatgpt-plus",
     name: "ChatGPT Plus 试用订阅",
     platform: "chatgpt",
     deliveryType: "订阅/会员",
-    summary: "日抛、成品号、网页号、已/未接码等试用订阅；非官方正价代充",
+    summary: "Plus 日抛、成品号、网页号等试用订阅；不含未开通订阅的半成品、Free 或资格账号",
   },
   {
     slug: "chatgpt-plus-recharge",
@@ -779,6 +779,8 @@ function hasConcretePhoneAccountBundle(value) {
     .replace(/(?:最多(?:能)?\s*)?(?:可|能)?\s*(?:绑定|接|接收)\s*[\d一二两三四五六七八九十]+(?:\s*[~～至到-]\s*[\d一二两三四五六七八九十]+)?\s*(?:个)?\s*(?:账号|账户|号)/g, " ")
     .replace(/(?:可接|能接)\s*[\d一二两三四五六七八九十]+\s*次\s*(?:同一|不同)?\s*(?:账号|账户)/g, " ")
     .replace(/\b(?:rt|json)\s*渠道/g, " ")
+    // 「半成品专用接码」的半成品是服务对象，不是交付账号。
+    .replace(/半\s*成品(?:账号|号)?\s*专用/g, " ")
     .replace(/(?:不是|非|不含|不提供|不卖)\s*(?:成品(?:账号|号)?|账号|账户|账密)/g, " ");
   return /成品|账号|账户|账密|张密|密码|首登|直登|网页号|日抛|车位|席位|代充|充值|(?:带|发|交付)\s*(?:rt|json)|(?:rt|json)\s*(?:格式|交付|发货)/.test(accountText);
 }
@@ -1974,6 +1976,20 @@ function isExplicitlyNotFinishedPlus(value) {
   return false;
 }
 
+/** 半成品交付不证明有 Plus 订阅；首登、接码、RT/2FA 只说明账号状态。 */
+function isChatGptUnfinishedAccount(value) {
+  if (!matches(value, ["chatgpt", "gpt", "openai", "codex", "plus"])) return false;
+  if (matches(value, ["claude", "gemini", "grok", "cursor", "kiro"])) return false;
+  const accountText = value.replace(/(?:不是|并非|非|不卖|不售|不提供)\s*半\s*成品(?:账号|号)?/g, " ");
+  if (!/半\s*成品/.test(accountText)) return false;
+  if (hasExplicitTransitDelivery(value) || isMirrorSiteProduct(value)) return false;
+  if (isFreeStatusRechargePrerequisite(value) || hasChatGptPaidSubscriptionSignal(value)) return false;
+  // 明确「已开通 Plus」仍是订阅；否定句不能反过来作为开通证据。
+  const subscriptionText = accountText.replace(/(?:不是|并非|非|未|尚未|没有)\s*已\s*(?:开通|激活|订阅)\s*(?:(?:chatgpt|gpt)\s*)?(?:plus|pro|team|go)/g, " ");
+  if (/(?:已\s*(?:开通|激活|订阅)|当前(?:为|是)|现为)\s*(?:(?:chatgpt|gpt)\s*)?(?:plus|pro|team|go)|(?:plus|pro|team|go)\s*已\s*(?:开通|激活|订阅)/.test(subscriptionText)) return false;
+  return true;
+}
+
 /**
  * Plus 半价资格 / 名额号：卖的是可开 Plus 的普通号，不是成品 Plus 订阅。
  * → chatgpt-free-account（普号）
@@ -2151,6 +2167,7 @@ function isFreeStatusRechargePrerequisite(value) {
 
 function isChatGptFreeAccount(value) {
   if (isPlusQualificationAccount(value)) return true;
+  if (isChatGptUnfinishedAccount(value)) return true;
   if (isFreeStatusRechargePrerequisite(value)) return false;
   if (hasChatGptPaidSubscriptionSignal(value)) return false;
   // 「普号 / 资格号 + Pro 20x 充值」仍是 Pro 代充，不是普号成品
@@ -2294,6 +2311,7 @@ function isChatGptPlus(value) {
   if (isPlusQualificationAccount(value)) return false;
   if (isTutorialOrScriptListing(value)) return false;
   if (isExplicitlyNotFinishedPlus(value)) return false;
+  if (isChatGptUnfinishedAccount(value)) return false;
   if (hasChatGpt && hasPlus) return true;
 
   if (hasPlus && !hasChatGpt) {
@@ -2367,6 +2385,7 @@ function isChatGptPlus(value) {
 }
 
 function hasChatGptPlusAccountDeliverySignal(value) {
+  if (isFreeStatusRechargePrerequisite(value)) return false;
   if (
     matches(value, [
       "自备账号",
@@ -4436,6 +4455,11 @@ export function classifyTitle(title, opts = {}) {
   {
     const brandOther = classifyOtherBrands(text);
     if (brandOther) return { productSlug: brandOther, warranty };
+  }
+
+  // 必须先于 Plus/周边宽匹配；「半成品带重置卡」仍是未开通的账号交付。
+  if (isChatGptUnfinishedAccount(text)) {
+    return { productSlug: "chatgpt-free-account", warranty };
   }
 
   // 多模型中转先分流；否则 Claude 中转排除后会被 Pro/卡密等词吸进订阅。

@@ -19,6 +19,12 @@ const slugs = new Set(products.map((product) => product.slug));
 // Scope by either old or new platform, so Claude -> multi-model transit is included.
 const platformIndex = args.indexOf("--platform");
 const platform = platformIndex >= 0 ? args[platformIndex + 1] : null;
+// Literal title scope lets a repair leave unrelated pre-existing classifications alone.
+const titleIndex = args.indexOf("--title-contains");
+const titleContains = titleIndex >= 0 ? args[titleIndex + 1]?.trim() : null;
+if (titleIndex >= 0 && (!titleContains || titleContains.startsWith("--"))) {
+  throw new Error("--title-contains requires a non-empty literal title fragment");
+}
 const productPlatforms = new Map(products.map((product) => [product.slug, product.platform]));
 if (platformIndex >= 0 && (!platform || !products.some((product) => product.platform === platform))) {
   throw new Error("--platform requires a known catalog platform (e.g. claude)");
@@ -36,6 +42,7 @@ for (const path of paths) {
   const oldPlatforms = new Map(snapshot.products.map((product) => [product.slug, product.platform]));
   const offers = reclassifyOffers(snapshot.offers).map((offer, i) => {
     const old = snapshot.offers[i];
+    if (titleContains && !String(old.sourceTitle || "").includes(titleContains)) return old;
     if (platform && (oldPlatforms.get(old.productSlug) || productPlatforms.get(old.productSlug)) !== platform &&
       productPlatforms.get(offer.productSlug) !== platform) return old;
     if (old.productSlug !== offer.productSlug || old.warranty !== offer.warranty) changed++;
@@ -65,4 +72,4 @@ for (const path of paths) {
   }
   results.push({ path, offers: offers.length, changed, moves });
 }
-console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", ...(platform ? { platform } : {}), results }, null, 2));
+console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", ...(platform ? { platform } : {}), ...(titleContains ? { titleContains } : {}), results }, null, 2));
