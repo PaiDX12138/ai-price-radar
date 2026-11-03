@@ -6,6 +6,7 @@ import { SampleBars } from "@/components/transit/sample-bars";
 import { formatTransitDuration as duration } from "@/lib/transit/format";
 import { tooltipDetails } from "@/components/ui/tooltip-details";
 import { availabilityHint, metricHint } from "@/lib/transit/monitor-hints";
+import { transitAvailabilityTone } from "@/lib/transit/availability-tone";
 
 export function TransitMonitorSource({ stats, unavailableReason }: { stats?: TransitMonitorStats; unavailableReason?:string }) {
   if(stats?.aggregation?.kind==="group_models")return <ToneChip className="h-5 shrink-0 gap-1.5 px-2 text-xs" tone="sky" tooltip="按本分组有记录的模型、小时等权汇总；不是渠道独立实测。">系统汇总</ToneChip>;
@@ -17,11 +18,11 @@ export function TransitMonitorSource({ stats, unavailableReason }: { stats?: Tra
 export function TransitMonitor({ name, stats, showSource = true, unavailableReason }: { name: string; stats?: TransitMonitorStats; showSource?: boolean; unavailableReason?:string }) {
   const rate=stats?.availability??null;
   const latencyAvailable = stats?.capabilities?.latency !== false;
-  const cacheTone=rate===null?"muted":rate>=99?"emerald":rate>=95?"amber":"rose";
+  const cacheTone=transitAvailabilityTone(rate);
   return (
     <section aria-label={`${name} 近15日可用率监测`} className="grid h-[88px] grid-rows-[20px_28px_20px] content-start gap-2">
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <span className="inline-flex items-center gap-1.5" {...tooltipDetails(availabilityHint(name,stats))} aria-label={`${name} 近15日可用率`}><Database className="size-3.5 text-muted-foreground/70" aria-hidden /><TextBand tone={cacheTone} bandClassName={cacheTone === "amber" ? "bg-[var(--apr-amber)]/40 dark:bg-[var(--apr-amber)]/40" : cacheTone === "rose" ? "bg-rose-400/65 dark:bg-rose-400/45" : undefined} className="px-0.5 font-mono text-[13px] font-semibold leading-5 tabular-nums">{rate===null?"暂无数据":`${rate.toFixed(2)}%`}</TextBand></span>
+        <span className="inline-flex items-center gap-1.5" {...tooltipDetails(availabilityHint(name,stats))} aria-label={`${name} 近15日可用率`}><Database className="size-3.5 text-muted-foreground/70" aria-hidden /><TextBand tone={cacheTone} className="px-0.5 font-mono text-[13px] font-semibold leading-5 tabular-nums">{rate===null?"暂无数据":`${rate.toFixed(2)}%`}</TextBand></span>
         {showSource && <TransitMonitorSource stats={stats} unavailableReason={unavailableReason} />}
       </div>
       <SampleBars maxBars={60} periodMode placeholderBars={60} samples={stats?.bars??[]} latencyAvailable={latencyAvailable} probeMode={stats?.kind === "probe_availability"} modelProbeMode={stats?.kind==="model_probe_availability"} derivedFromModels={stats?.aggregation?.kind==="group_models"} />

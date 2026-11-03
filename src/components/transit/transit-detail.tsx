@@ -29,6 +29,7 @@ import { orderTransitModels } from "@/lib/transit/model-order";
 import { formatTransitCardAmount } from "@/lib/transit/media-price-format";
 import { cn } from "@/lib/utils";
 import { availabilityHint } from "@/lib/transit/monitor-hints";
+import { transitAvailabilityTone } from "@/lib/transit/availability-tone";
 import { tooltipDetails, type TooltipDetailsData } from "@/components/ui/tooltip-details";
 import { TransitServiceStatus } from "@/components/transit/transit-site-badges";
 import { TransitInfrastructure } from "@/components/transit/transit-infrastructure";
@@ -38,7 +39,7 @@ const priceText = (value: number | null) => value === null ? "—" : `$${formatT
 const MemoTransitModelDetection = memo(TransitModelDetection);
 const MemoQuoteCard = memo(QuoteCard);
 function RateBand({ value, tooltip }: { value: number | null; tooltip?:TooltipDetailsData }) {
-  return <TextBand tone={value === null || value === 0 ? "muted" : value >= 80 ? "emerald" : value >= 50 ? "amber" : "rose"} tooltip={tooltip} className="px-0.5 font-mono font-medium tabular-nums">{value === null ? "未披露" : `${value.toFixed(2)}%`}</TextBand>;
+  return <TextBand tone={transitAvailabilityTone(value)} tooltip={tooltip} className="px-0.5 font-mono font-medium tabular-nums">{value === null ? "未披露" : `${value.toFixed(2)}%`}</TextBand>;
 }
 
 export function TransitDetail({ site }: { site: TransitDemo }) {

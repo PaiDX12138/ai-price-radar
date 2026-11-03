@@ -10,6 +10,7 @@ import type { TransitMonitorStats } from "@/lib/transit/snapshot";
 import { formatTransitDuration, formatTransitThroughput, formatTransitBucketTime } from "@/lib/transit/format";
 import { tooltipDetails } from "@/components/ui/tooltip-details";
 import { availabilityHint, metricHint, compactMonitorTime } from "@/lib/transit/monitor-hints";
+import { transitAvailabilityTone } from "@/lib/transit/availability-tone";
 
 type ModelMonitorSite = { id: string; monitorsByModel?: Record<string, TransitMonitorStats> };
 
@@ -18,7 +19,7 @@ export function TransitModelMonitor({ site, model }: { site: ModelMonitorSite; m
   const stats = getTransitModelMonitor(site, model);
   const latencyAvailable = stats?.capabilities?.latency !== false;
   const rate = stats?.availability ?? null;
-  const tone = rate === null ? "muted" : rate >= 99 ? "emerald" : rate >= 95 ? "amber" : "rose";
+  const tone = transitAvailabilityTone(rate);
   const hours = stats?.samples ?? 0;
   const sole=stats?.kind==="model_probe_availability";
   const latest = formatTransitBucketTime(stats?.latestBucketAt);
