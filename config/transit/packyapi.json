@@ -1,6 +1,10 @@
 {
   "id": "packyapi",
   "name": "PackyAPI",
+  "sponsorship": {
+    "affiliateUrl": "https://www.packyapi.ai/register?aff=irEX",
+    "code": "irEX"
+  },
   "siteUrl": "https://www.packyapi.ai",
   "host": "www.packyapi.ai",
   "system": "new_api",

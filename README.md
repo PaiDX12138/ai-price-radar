@@ -29,8 +29,25 @@
       </td>
       <td valign="middle">
         <a href="https://rightapi.io/register?aff=434bbb9b"><strong>RightCode</strong></a><br />
-        AI 模型 API 中转服务，感谢 RightCode 对项目的赞助支持。<br /><br />
-        <strong>福利首冲5%返利</strong>
+        AI 模型 API 中转服务，感谢 RightCode 对项目的赞助支持。
+      </td>
+    </tr>
+    <tr>
+      <td width="220" align="left" valign="middle">
+        <a href="https://www.packyapi.ai/register?aff=irEX"><img src="./public/brand/sponsors/packyapi-official.svg" alt="PackyAPI" width="200" /></a>
+      </td>
+      <td valign="middle">
+        <a href="https://www.packyapi.ai/register?aff=irEX"><strong>PackyAPI</strong></a><br />
+        多模型 AI API 接入服务，感谢 PackyAPI 对项目的赞助支持。
+      </td>
+    </tr>
+    <tr>
+      <td width="220" align="left" valign="middle">
+        <a href="https://github.com/PaiDX12138/pdx-toll-releases"><img src="./public/brand/sponsors/patrick-star-toll.png" alt="Patrick Star Toll" width="200" /></a>
+      </td>
+      <td valign="middle">
+        <a href="https://github.com/PaiDX12138/pdx-toll-releases"><strong>Patrick Star Toll</strong></a><br />
+        AI 开发工具桌面工作台，集中管理账号、额度、服务商配置与 SSH。
       </td>
     </tr>
     <tr>

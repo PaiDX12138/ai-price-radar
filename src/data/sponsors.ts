@@ -9,6 +9,14 @@ export const SITE_SPONSORS = [
     sponsored: true,
   },
   {
+    id: "packyapi",
+    name: "PackyAPI",
+    image: "/brand/sponsors/packyapi-official.svg",
+    href: "https://www.packyapi.ai/register?aff=irEX",
+    description: "PackyAPI · 提供多模型 AI API 接入服务。",
+    sponsored: true,
+  },
+  {
     id: "patrick-star-toll",
     name: "Patrick Star Toll",
     image: "/brand/sponsors/patrick-star-toll.png",
