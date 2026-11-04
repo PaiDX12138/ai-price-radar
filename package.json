@@ -53,7 +53,7 @@
     "sync:favicons": "node scripts/sync-host-favicons.mjs",
     "prewarm:catalog": "node scripts/prewarm-catalog.mjs",
     "assert:catalog-cache": "node scripts/assert-catalog-cache-header.mjs",
-    "assert:classify": "node scripts/assert-classify-chatgpt.mjs && node scripts/assert-classify-grok.mjs && node scripts/assert-classify-claude.mjs"
+    "assert:classify": "node scripts/assert-classify-chatgpt.mjs && node scripts/assert-classify-grok.mjs && node scripts/assert-classify-claude.mjs && node scripts/assert-classify-other-audit.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

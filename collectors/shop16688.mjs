@@ -153,7 +153,7 @@ export async function collectShop16688(source, options = {}) {
       if (!title || price === null || !goodsNo) continue;
 
       const { status, stockCount } = statusFrom16688(item);
-      const { productSlug, warranty } = classifyCatalogTitle(title, { price });
+      const { productSlug, warranty } = classifyCatalogTitle(title, { price, url: `${base}/goods/${goodsNo}` });
       // 已探针：1=自动发货；2/3=人工发货（代充/现做常见，qty 多为 -1）
       const dm = Number(item?.delivery_method);
       const delivery = dm === 1 ? "自动发货" : dm === 2 || dm === 3 ? "人工发货" : null;

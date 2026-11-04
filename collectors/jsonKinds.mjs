@@ -50,7 +50,7 @@ function toOffer(source, fields, capturedAt) {
   const title = cleanText(fields.title);
   const price = numberOrNull(fields.price);
   if (!title || price === null) return null;
-  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
+  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price, url: fields.url || source.baseUrl, category: fields.tags });
   return {
     id: fields.id || `${source.id}-${offersIdSafe(title)}-${price}`,
     productSlug,

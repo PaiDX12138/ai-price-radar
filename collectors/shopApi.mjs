@@ -396,8 +396,8 @@ export async function collectShopApi(source, options = {}) {
           const stockCount = numberOrNull(item.extend?.stock_count);
           const disabled = Number(item.status ?? 1) !== 1;
           const status = disabled ? "out_of_stock" : statusFromStock(stockCount);
-          const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price: listedPrice });
           const categoryName = cleanText(item.category?.name || "");
+          const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price: listedPrice, url: itemUrl, category: categoryName });
 
           offers.push({
             id: `${source.id}-${goodsKey || offers.length}`,

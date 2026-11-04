@@ -110,8 +110,8 @@ export async function collectKami(source, options = {}) {
         const hidden = Number(item.hide || 0) !== 0;
         const disabled = Number(item.status ?? 1) !== 1 || hidden;
         const status = disabled ? "out_of_stock" : inventory.status;
-        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
         const categoryName = cleanText(item.category?.name || "");
+        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price, url: kamiCommodityUrl(base, item.id), category: categoryName });
         const stockCount =
           disabled && inventory.stockCount === null ? 0 : inventory.stockCount;
 

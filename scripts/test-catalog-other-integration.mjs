@@ -46,6 +46,45 @@ try {
     assert.equal(result.offers[0].sourceTitle, title);
     assert.equal(result.offers[0].price, 3);
   }
+  // A list category supplements an omitted brand; collectors and the fresh worker
+  // must make the same decision without rewriting the original title or tags.
+  const contextualTitle = "越南实卡渠道(质保一天)";
+  const category = "G Plus 成品号（质保）";
+  const contextual = await Promise.all([
+    collectKami(source("context-kami"), { fetchImpl: async () => response({ data: [{ id: 2, name: contextualTitle, price: 3, stock: 7, category: { name: category } }] }) }),
+    collectDujiao(source("context-dujiao"), { fetchImpl: async () => response({ data: [{ id: 2, title: contextualTitle, price_amount: 3, auto_stock_available: 7, category: { name: category } }] }) }),
+    collectPublicProductsApi(source("context-json"), { fetchImpl: async () => response([{ id: 2, name: contextualTitle, price: 3, stock: 7, project_title: category }]) }),
+    collectShopApi({ ...source("context-shopapi"), shopToken: "fixture-test" }, { shopDelayMs: 0, pageDelayMs: 0, fetchImpl: async url => response(
+      url.endsWith("/info") ? { code: 1, data: { name: "test", custom_status: 1 } } : url.endsWith("/categoryList") ? { code: 1, data: [] }
+        : { code: 1, data: { list: [{ goods_key: "test2", name: contextualTitle, price: 3, extend: { stock_count: 7 }, category: { name: category } }] } }) }),
+  ]);
+  for (const result of contextual) {
+    assert.equal(result.ok, true, result.error);
+    assert.equal(result.offers[0].productSlug, "chatgpt-plus", result.sourceId);
+    assert.equal(result.offers[0].sourceTitle, contextualTitle);
+    assert.ok(result.offers[0].tags.includes(category));
+    assert.equal(reclassifyOffer(result.offers[0]).productSlug, "chatgpt-plus");
+  }
+  const detailBacked = await collectShop16688({ id: "audited", baseUrl: "https://www.16688.com.cn", shopNo: "fixture" }, {
+    shopDelayMs: 0, fetchImpl: async url => response(url.endsWith("/shop/detail")
+      ? { code: 1, data: { name: "test" } }
+      : { code: 1, data: { list: [{ goods_no: "G82995760", name: "GP|t成品号质保20天", price: 90, stock_available_quantity: 7 }] } }),
+  });
+  assert.equal(detailBacked.offers[0].productSlug, "chatgpt-plus");
+  const freshContext = reclassifyOffersInFreshProcess([...contextual.flatMap(result => result.offers), ...detailBacked.offers]);
+  assert.equal(freshContext.offers.length, 5);
+  assert.ok(freshContext.offers.every(offer => offer.productSlug === "chatgpt-plus"));
+  const multiTitle = "ChatGPT PLUS、PRO 5X、PRO 20X、PRO 50X 一个月 正价直冲 CDK自助充值";
+  const variants = ["正价PLUS", "正价PRO5X", "正价PRO20X", "正价PRO50X", "新帳號(沒有帳號的可以搭配CDK一起拍)"];
+  const expectedVariants = ["chatgpt-plus-recharge", "chatgpt-pro-5x", "chatgpt-pro-20x", "chatgpt-pro-500", "chatgpt-free-account"];
+  const multi = await collectDujiao(source("multi"), { fetchImpl: async () => response({ data: [{
+    id: 13, slug: "topup", title: { "zh-CN": multiTitle }, category: { name: { "zh-CN": "ChatGPT" } },
+    skus: variants.map((variant, index) => ({ id: index + 1, spec_values: { "zh-CN": variant }, price_amount: 100 + index, auto_stock_available: 7 })),
+  }] }) });
+  assert.equal(multi.ok, true, multi.error);
+  assert.deepEqual(multi.offers.map(offer => offer.productSlug), expectedVariants);
+  assert.deepEqual(multi.offers.map(offer => offer.sourceTitle), variants.map(variant => `${multiTitle} / ${variant}`));
+  assert.deepEqual(reclassifyOffersInFreshProcess(multi.offers).offers.map(offer => offer.productSlug), expectedVariants);
   const at = "2026-11-04T04:00:00.000Z";
   const make = (id, sourceTitle, productSlug = "other-unclassified", extra = {}) => ({ id, sourceId: "shop", sourceTitle, productSlug,
     price: 3, listedPrice: 3, stockCount: 7, status: "in_stock", tags: [], warranty: false,

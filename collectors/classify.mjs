@@ -1,3 +1,5 @@
+import { auditedClassification } from "./classification-evidence.mjs";
+
 /**
  * Title → product slug + long-warranty flag.
  * Match order & rules aligned with 参考站 `src/lib/catalog.ts`
@@ -63,7 +65,7 @@ export const PRODUCT_SEED = [
     name: "ChatGPT Pro 500",
     platform: "chatgpt",
     deliveryType: "订阅/会员",
-    summary: "ChatGPT Pro 500 刀 / 50x 档充值、代开或卡密",
+    summary: "明确标注 500 美元的 ChatGPT Pro 订阅充值、代开或卡密（含 25x / 50x 渠道标注）",
   },
   {
     slug: "chatgpt-codex-service",
@@ -542,6 +544,7 @@ function matches(value, needles) {
 /** 参考站-style title normalize (typos, separators, brand aliases). */
 function normalizeTitle(title) {
   return String(title || "")
+    .normalize("NFKC")
     .toLowerCase()
     .replace(/美國/g, "美国")
     .replace(/虛擬/g, "虚拟")
@@ -549,6 +552,28 @@ function normalizeTitle(title) {
     .replace(/[＄￥]/g, "$")
     .replace(/[\ufe0e\ufe0f]/g, "")
     .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+    // 实际商品标题里的品牌错拼/遮挡；不能把裸 G、裸 Pro 当作具体套餐。
+    .replace(/(?<![a-z])g\s*[!:：.。,·|/()*\-]*\s*p\s*[!:：.。,·|/()*\-]*\s*t(?![a-z])/g, "gpt")
+    .replace(/(?<![a-z])g(?=pro\s*(?:x?\d|\b))/g, "gpt ")
+    .replace(/(?<![a-z])g\s*(?=(?:5|20)\s*x(?:\b|pro))/g, "gpt pro ")
+    .replace(/(?<![a-z])g[\s!.*\-]+t[\s!.*\-]+p(?![a-z])/g, "gpt")
+    .replace(/\bjpt\b/g, "gpt")
+    .replace(/(?<![a-z])(?:g皮t|g皮提|gp替|gp提|gp踢|gqt|oai|鸡pt|🐔pt|🐓pt)(?![a-z])/g, "gpt")
+    .replace(/\b(?:gemni|gmeini)\b/g, "gemini")
+    .replace(/\bgem(?=学生认证)/g, "gemini")
+    .replace(/\bperplextiy\b/g, "perplexity")
+    .replace(/\bg[01]rk\b/g, "grok")
+    .replace(/\bx\s+ai(?=\s+(?:super|premium|ultra|plus))/g, "grok")
+    .replace(/\bgor(?=\s+ultra)/g, "grok")
+    .replace(/\bsuper\s*heavy\b(?=\s*(?:三个月|\d+\s*个月|速刷号|直充|成品号))/g, "grok ultra")
+    .replace(/\bgro(?=\d+(?:\.\d+)?\s*build)/g, "grok ")
+    .replace(/纸飞几/g, "纸飞机")
+    .replace(/接\s*m\b/g, "接码")
+    .replace(/接吗/g, "接码")
+    .replace(/谱号/g, "普号")
+    // 这些是可选升级/不适用套餐说明，不是本商品的第二个交付档位。
+    .replace(/支持(?:菲律宾|菲区)?\s*plus\s*\d+x\s*补差价升级/g, "支持抵扣升级")
+    .replace(/premium\s*➕/g, "premium+")
     .replace(/[｜|/【】[\]()（）,，:：\-_/–—]+/g, " ")
     .replace(/gptplus/g, "gpt plus")
     .replace(/\bgplus\b/g, "gpt plus")
@@ -588,7 +613,7 @@ function normalizeTitle(title) {
     // 避免商品描述里随口提到马斯克时把无关商品误归到 Grok。
     .replace(/格洛克/g, "grok")
     .replace(
-      /马斯克(?=\s*(?:\d+(?:\.\d+)?\s*(?:美金|美元|刀|\$)\s*)?(?:plus|会员|订阅|充值|代充|cdk|卡密))/g,
+      /马斯克(?:的ai)?(?=\s*(?:\d+(?:\.\d+)?\s*(?:美金|美元|刀|\$)\s*)?(?:plus|super|premium|ultra|会员|订阅|充值|代充|cdk|卡密))/g,
       "grok",
     )
     .replace(/(接|收|来)\s*[🐎🐴🦆鸭马]/g, "$1码")
@@ -782,7 +807,8 @@ function hasConcretePhoneAccountBundle(value) {
     // 「半成品专用接码」的半成品是服务对象，不是交付账号。
     .replace(/半\s*成品(?:账号|号)?\s*专用/g, " ")
     .replace(/(?:不是|非|不含|不提供|不卖)\s*(?:成品(?:账号|号)?|账号|账户|账密)/g, " ");
-  return /成品|账号|账户|账密|张密|密码|首登|直登|网页号|日抛|车位|席位|代充|充值|(?:带|发|交付)\s*(?:rt|json)|(?:rt|json)\s*(?:格式|交付|发货)/.test(accountText);
+  return /成品|账号|账户|账密|张密|密码|首登|直登|网页号|日抛|车位|席位|代充|充值|(?:带|发|交付)\s*(?:rt|json)|(?:rt|json)\s*(?:格式|交付|发货)/.test(accountText) ||
+    /(?:^|\s)g\s*free(?:号|普号)(?!\s*专用)/.test(accountText);
 }
 
 /** Standalone phone rental / SMS delivery: duration and target plan must not imply subscription. */
@@ -1007,6 +1033,7 @@ function isGooglePhoneVerification(value) {
 
 /** OpenAI / ChatGPT / Codex / Plus 接码（对照参考站 openai-phone-verification） */
 function isOpenaiPhoneVerification(value) {
+  if (/只能接\s*(?:codex|chatgpt).*码/.test(value)) return true;
   if (isPaypalPhoneVerification(value) || isGooglePhoneVerification(value)) return false;
   if (matches(value, ["cursor", "claude", "kiro", "grok"]) && !matches(value, ["openai", "chatgpt", "codex", "gpt"])) return false;
   if (isCodexPhoneVerification(value)) return true;
@@ -1178,12 +1205,15 @@ function isExplicitVerificationServiceDelivery(value) {
 
 function isCodexPhoneVerification(value) {
   if (!matches(value, ["codex"])) return false;
+  if (/手机号自动验证|一次性接码/.test(value) && !/成品|账密|独享/.test(value)) return true;
   if (isAiSubscriptionOrAccountTitle(value)) return false;
   if (hasConcretePhoneAccountBundle(value)) return false;
   return matches(value, ["接码", "验证码", "短信", "手机号", "手机", "号码", "2fa", "二验", "验证"]);
 }
 
 function isVerificationService(value) {
+  if (/只能接\s*(?:codex|chatgpt).*码|号码租用平台.*cdk|\d+sms\s*兑换码/.test(value)) return true;
+  if (/esim/.test(value) && /纯接卡|纯接码卡/.test(value) && !/账号|成品/.test(value)) return true;
   if (isStandaloneVerificationService(value)) return true;
   if (isBundledVerificationAccount(value)) return false;
   if (isExplicitVerificationServiceDelivery(value)) return true;
@@ -1197,7 +1227,7 @@ function isVerificationService(value) {
 /* ---------- ChatGPT peripheral / API ---------- */
 
 function isChatGptPaymentLinkExtractionService(value) {
-  const hasPay = matches(value, ["upi", "ideal", "i deal", "paypal", "荷兰渠道"]);
+  const hasPay = matches(value, ["upi", "ideal", "i deal", "paypal", "kakao", "荷兰渠道"]);
   const hasGpt = matches(value, [
     "chatgpt",
     "gpt",
@@ -1229,6 +1259,7 @@ function isChatGptPaymentLinkExtractionService(value) {
     "team提链",
     "team 提链",
     "扫码对接",
+    "扫码单条次卡",
     "提取upi支付二维码",
     "提取支付二维码",
     "支付二维码",
@@ -1386,6 +1417,10 @@ function hasPositiveApiWord(value) {
 
 /** 参考站 hasExplicitApiProductSignal */
 function hasExplicitApiProductSignal(value) {
+  if (/gpt|openai/.test(value) && /api|platform/.test(value) && /账号额度|正价卡付/.test(value)) return true;
+  if (/sub2api|newapi/.test(value) && /充值码|充值卡|额度|余额/.test(value) && !/成品号|账号|json|rt/.test(value)) return true;
+  if (/中转(?:充值卡密|兑换|cdk)/.test(value)) return true;
+  if (/^api\s+(?:g|gpt\s*pro)\s*\d+x\s*订阅/.test(value)) return true;
   if (isNegatedApiMention(value) && !/openai-\d+-astra|image-[\d.]+-flare|倍率|号池/i.test(value)) {
     return false;
   }
@@ -1594,6 +1629,8 @@ function isChatGptAccountQuotaRecharge(value) {
     return false;
   }
   if (hasPositiveApiWord(value) && !isNegatedApiMention(value)) return false;
+  if (/codex\s*(?:点数|积分|余额)\s*(?:250|500|1000|2500|5000|25000)(?!\d)/.test(value) &&
+    !/账号|成品|月卡|年卡|源码|教程/.test(value)) return true;
 
   const hasQuotaWord = matches(value, [
     "额度",
@@ -1706,6 +1743,9 @@ function isApiCredit(value) {
  * Codex+Cursor 合卡：有 Codex/GPT 信号时归本站 GPT 辅助（避免只被 Cursor 兜底吸走）。
  */
 function isChatGptPoJiaTool(value) {
+  // Cyber 是这些成品订阅的渠道标注，单凭品牌 + Cyber 不能当成工具。
+  if (/cyber/.test(value) && /成品号/.test(value) && /plus|pro/.test(value) &&
+    !/工具|源码|脚本|教程|兑换|合卡/.test(value)) return false;
   // 「Plus 账号支持反代/逆向/破甲」卖的是订阅账号，能力说明不能抢占辅助分类。
   // 仅在明确订阅交付信号下排除；真正的破甲工具/兑换卡仍走原规则。
   const supportIndex = value.indexOf("支持");
@@ -1817,7 +1857,10 @@ function isChatGptPeripheralService(value) {
  * 有显式倍率时，刀数/$ 只能作无倍率标题的兜底，禁止 `PRO 10X 200$` 因 200$ 进 20x。
  */
 function extractExplicitProMultipliers(value) {
+  value = value.replace(/(?:不支持|不可|不能|不含)\s*(?:升级|充值)?\s*(?:菲区|菲律宾|智利|埃及)?\s*\d+x/g, "");
   const set = new Set();
+  for (const m of value.matchAll(/(?:^|[^0-9])(\d+)\s*x(?=pro\b|cdk\b)/g)) set.add(Number(m[1]));
+  for (const m of value.matchAll(/pro\s*x\s*(\d+)(?!\d)/g)) set.add(Number(m[1]));
   // 尾边界用 lookahead，避免 `5x 20x` 只吃到 5（分隔符被消费导致漏 20）
   for (const m of value.matchAll(/(?:^|[^0-9])(\d+)\s*x(?=$|[^0-9a-z])/gi)) {
     set.add(Number(m[1]));
@@ -1844,7 +1887,11 @@ function extractExplicitProMultipliers(value) {
  */
 function hasChatGptPro500SignalRaw(value) {
   const mults = extractExplicitProMultipliers(value);
-  if (mults.size > 0) return mults.has(50);
+  if (mults.size > 0) {
+    // 现有卡名是 Pro 500。25x 只有明确写 500 美元才归这里，不凭售价猜套餐。
+    if (mults.size === 1 && mults.has(25)) return /pro\s*500\b|\$\s*500\b|(?:^|[^\d.])500\s*(?:刀|美元|美金|美刀|\$)/.test(value);
+    return mults.has(50);
+  }
   return (
     matches(value, ["500刀", "500 美元", "500美元", "500美金", "500 美金", "promax", "pro max"]) ||
     /\$\s*500\b|\b500\s*\$/.test(value) ||
@@ -1862,7 +1909,7 @@ function hasChatGptPro20SignalRaw(value) {
     /\$\s*200\b|\b200\s*\$/.test(value) ||
     /\bpro\s*20\b/.test(value) ||
     /\bpro\s*200\b/.test(value) ||
-    /(?:^|[^0-9])200\s*(?:刀|美元|美金|档|套餐)/.test(value)
+    /(?:^|[^0-9])200\s*(?:刀|美元|美金|美刀|档|套餐)/.test(value)
   );
 }
 
@@ -1904,6 +1951,7 @@ function isMixedChatGptProTier(value) {
   if (matches(value, ["gemini", "claude", "cursor"])) return false;
   if (!matches(value, ["pro", "gpt pro", "chatgpt pro", "openai pro", "codex pro"])) return false;
   if (isPrimaryChatGptPro5Tier(value)) return false;
+  if (extractExplicitProMultipliers(value).size > 1) return true;
   // 用 raw 信号：标题同时写 5x/20x（或再带 500）→ 不进任一 Pro 卡
   const tiers = [
     hasChatGptPro5SignalRaw(value),
@@ -1914,7 +1962,7 @@ function isMixedChatGptProTier(value) {
 }
 
 function isChatGptProFamily(value) {
-  return matches(value, ["pro", "gpt pro", "chatgpt pro", "openai", "codex"]);
+  return matches(value, ["pro", "gpt", "openai", "codex"]);
 }
 
 function isChatGptPro500(value) {
@@ -1947,10 +1995,10 @@ function isChatGptPro5(value) {
 
 function isChatGptGoProduct(value) {
   if (matches(value, ["opencode", "open code"])) return false;
-  const hasChatGpt = matches(value, ["chatgpt", "gpt", "openai"]);
+  const hasChatGpt = matches(value, ["chatgpt", "gpt", "openai", "codex"]) || /(?:^|\s)g\s+go\b/.test(value);
   const standaloneGo =
     /\bgo\b/.test(value) &&
-    matches(value, ["月卡", "年卡", "直充", "充值", "激活", "会员", "订阅", "独享", "自助", "卡密", "成品号"]);
+    matches(value, ["月卡", "年卡", "直充", "充值", "卡付", "卡充", "秒充", "秒冲", "激活", "会员", "订阅", "独享", "自助", "卡密", "成品号", "菲区"]);
   if (!hasChatGpt && !standaloneGo) return false;
   if (matches(value, ["google", "gojek", "gopay"])) return false;
   return /\bgo\b/.test(value) || /\bgo(?=\d|月|年|直充|充值|激活|会员|订阅|独享)/.test(value);
@@ -2039,6 +2087,9 @@ function isPlusQualificationAccount(value) {
  * ChatGPT 相关 → chatgpt-codex-service；其它平台 → 不进订阅卡（由调用方决定）。
  */
 function isTutorialOrScriptListing(value) {
+  // 「看教程不会的别拍」是邮箱/账号的购买提示，不是在卖教程。
+  const mainText = value.replace(/看教程[^。！!]{0,30}(?:别拍|慎拍)|不会(?:使用|用|操作)[^。！!]{0,12}别拍/g, "");
+  if (!/教程|教学|自动化脚本|全套脚本|附带脚本/.test(mainText)) return false;
   if (
     !matches(value, [
       "教程",
@@ -2074,9 +2125,16 @@ function isTutorialOrScriptListing(value) {
 }
 
 function isLikelyChatGptFreeAccountTitle(value) {
-  if (!matches(value, ["free", "普号", "普通号", "普通账号", "白号"])) return false;
+  if (!matches(value, ["free", "免费版", "普号", "普通号", "普通账号", "白号"])) return false;
   if (isFreeStatusRechargePrerequisite(value)) return false;
   if (hasChatGptPaidSubscriptionSignal(value)) return false;
+  if (/kyc|已过k/.test(value) && /无订阅/.test(value) && !/chatgpt|gpt|openai|codex/.test(value)) return false;
+  if (/(?:^|\s)g\s*free(?:普号|号)/.test(value) && !/claude|gemini|grok|cursor|kiro|muse/.test(value)) return true;
+  // G Free + 账密/2FA/AT 是账号交付；微软/ic/gmail 只是该账号的邮箱。
+  if (!matches(value, ["claude", "gemini", "grok", "cursor", "kiro", "muse"]) &&
+    (/(?:^|\s)g\s*(?:free|普通账号|高质量普号)/.test(value) ||
+      /未接码\s*free号/.test(value)) &&
+    /账密|2fa|(?:^|\s)at(?:\s|$)|普通账号|高质量普号/.test(value)) return true;
   if (
     matches(value, [
       "google",
@@ -2181,6 +2239,7 @@ function isChatGptFreeAccount(value) {
   }
   if (isLikelyChatGptFreeAccountTitle(value)) return true;
   if (matches(value, ["free", "普号", "白号", "普通号", "普通账号", "空白账号"])) return true;
+  if (/免费版/.test(value) && !/(?:非|不是|不含)\s*免费版/.test(value)) return true;
   return matches(value, ["长效"]) && !matches(value, ["plus", "pro", "team", "business"]);
 }
 
@@ -2312,6 +2371,8 @@ function isChatGptPlus(value) {
   if (isTutorialOrScriptListing(value)) return false;
   if (isExplicitlyNotFinishedPlus(value)) return false;
   if (isChatGptUnfinishedAccount(value)) return false;
+  // 只知道 GPT 订阅/充值、没有套餐名时不能默认成 Plus。
+  if (!hasPlus && hasChatGptPaidSubscriptionSignal(value)) return false;
   if (hasChatGpt && hasPlus) return true;
 
   if (hasPlus && !hasChatGpt) {
@@ -2362,6 +2423,22 @@ function isChatGptPlus(value) {
       "卡密",
       "cc 渠道",
       "谷歌正规付款",
+      "成品",
+      "未接码",
+      "直冲",
+      "直卡",
+      "实卡",
+      "官充",
+      "正价",
+      "独享",
+      "拼车",
+      "成品plus",
+      "质保",
+      "卡充",
+      "卡冲",
+      "upi",
+      "kakao",
+      "菲区",
     ]);
   }
 
@@ -2403,6 +2480,8 @@ function hasChatGptPlusAccountDeliverySignal(value) {
   ) {
     return false;
   }
+  if (/plus\s*(?:正规代充)?\s*成品|成品\s*plus|账号\s*\+\s*充值卡密发货/.test(value)) return true;
+  if (/周限号|(?:已经|已)接好[马码]/.test(value)) return true;
 
   if (
     matches(value, [
@@ -2488,7 +2567,7 @@ function isChatGptPlusPixTrial(value) {
 }
 
 function hasChatGptPlusRechargeOfficialDirectSignal(text) {
-  return /官方直充|官方充值|官方代充|官方订阅|正价(?:代充|充值|直充|实付)?|正规充值|正规官方|正规卡付|正规卡冲|官网直充|官网直冲|官网代充|真实付费(?:开通|充值)?/i.test(
+  return /官方直充|官方充值|官方代充|官方订阅|官方正规流水|菲区(?:自动)?卡充|菲区官充|正价(?:代充|充值|直充|实付)?|正规充值|正规代充|正规官方|正规卡付|正规卡冲|官网直充|官网直冲|官网代充|真实付费(?:开通|充值)?/i.test(
     text,
   );
 }
@@ -2518,6 +2597,7 @@ function isChatGptAccountTitle(value) {
   // 正价卡充 / 倍率订阅成品 ≠ 普号账号
   if (hasChatGptPaidSubscriptionSignal(value)) return false;
   if (extractExplicitProMultipliers(value).size > 0) return false;
+  if (/已注册\s*(?:gpt|chatgpt|openai)/.test(value) && /密码|账密|2fa/.test(value)) return true;
   return matches(value, ["成品号", "账号", "独享号", "直登", "日抛", "网页号", "半成品"]);
 }
 
@@ -3418,6 +3498,7 @@ function isClaudeMirrorProduct(value) {
  */
 function isClaudeService(value) {
   if (!matches(value, ["claude", "克劳德", "anthropic"])) return false;
+  if (/代退款/.test(value) && !/成品号|独享账号/.test(value)) return true;
   if (isClaudeMirrorProduct(value)) return false;
   if (isNonClaudePrimaryWithClaudeMention(value) && !matches(value, ["代提链", "提链接", "提链"])) {
     return false;
@@ -3629,6 +3710,8 @@ function isClaudeProMonth(value) {
 
 function isGeminiProduct(value) {
   if (matches(value, ["失败的号", "失败号", "非gemini", "非 gemini"])) return false;
+  if (/反重力|antigravity/.test(value) && /pro/.test(value) && /账号|成品|会员|号|凭证|rt/.test(value) &&
+    !/邮箱.*(?:可开|支持开|不包)|(?:未开|无)订阅/.test(value)) return true;
   // 虚拟卡标题夹带 Gemini 适用性说明（别拍/用不了）——不是在卖 Gemini
   if (
     matches(value, ["visa", "虚拟卡", "0刀", "0 刀"]) &&
@@ -3699,6 +3782,7 @@ function isGeminiFinishedDelivery(value) {
       "包首登",
       "老邮箱",
       "老号",
+      "老账号",
       "直登号",
       "直登",
       "账密",
@@ -3736,7 +3820,7 @@ function isGeminiLinkActivation(value) {
   // 「18个月/一年 + 链接」且无成品交付
   if (
     matches(value, ["链接"]) &&
-    matches(value, ["18个月", "18 个月", "12个月", "12 个月", "一年", "一年半", "pro"]) &&
+    (matches(value, ["18个月", "18 个月", "12个月", "12 个月", "一年", "一年半", "pro"]) || /\d+\s*个月\s*链接/.test(value)) &&
     !matches(value, ["成品号", "成品会员", "质保首登", "包首登", "老邮箱"])
   ) {
     return true;
@@ -4002,6 +4086,7 @@ function isGeminiFamilySeatService(value) {
  */
 function isGeminiService(value) {
   if (!matches(value, ["gemini", "google ai"])) return false;
+  if (/学生认证/.test(value) && !/成品|代充|官方充值|订阅直充/.test(value)) return true;
   if (isGeminiMirrorProduct(value) || isGeminiFlowAccount(value)) return false;
   // 家庭组/拼车/自动邀请优先（可压过 Ultra 字样）
   if (isGeminiFamilySeatService(value)) return true;
@@ -4031,8 +4116,10 @@ function classifyGeminiMirrorOrService(value) {
 
 /** 是否为纯 X/推特会员标题（未捆绑 Grok） */
 function isPureXMembershipTitle(value) {
+  // x会员不能命中 Netflix会员 等词尾。
+  const scoped = value.replace(/[a-z]+x(?=会员)/g, "");
   if (
-    !matches(value, [
+    !(/推特.{0,6}premium/.test(scoped)) && !matches(scoped, [
       "x premium",
       "xpremium",
       "x premium+",
@@ -4078,6 +4165,15 @@ function classifyXMembership(value) {
   if (isPureXPremiumPlus(value)) return "x-twitter-premium-plus";
   if (isPureXPremium(value)) return "x-twitter-premium";
   return null;
+}
+
+/** X/Twitter 的实际账号交付；粉丝/点赞代刷并不是账号。 */
+function isXAccountProduct(value) {
+  if (isGrokProduct(value)) return false;
+  if (!/twitter|twitte\b|推特|(?<![a-z])x\s*(?:账号|老账号|高权重带粉老号)/.test(value)) return false;
+  if (/粉丝|点赞|转发|关注/.test(value) && !/账号|老号|账密|2fa|token登录|附带|注册/.test(value)) return false;
+  if (/教程|代刷|涨粉|刷粉服务/.test(value)) return false;
+  return /账号|老号|账密|2fa|token登录|注册|推特号/.test(value);
 }
 
 /** 「对标 SuperGrok / 替代 gro」类提及，不是在卖 Grok（如 Muse / 即梦文案） */
@@ -4390,13 +4486,22 @@ function classifyMirrorSite(value) {
  * @param {{ price?: number | null }} [opts] 报价（元），用于 Grok Super 旧名按月均价判档
  * @returns {{ productSlug: string | null, warranty: boolean }}
  */
-export function classifyTitle(title, opts = {}) {
+function classifyTitleWithoutContext(title, opts = {}) {
   const text = normalizeTitle(title);
   const warranty = isLongWarrantyTitle(title);
   if (!text) return { productSlug: null, warranty };
 
   // 参考站 order (trimmed to seeds we ship)
   if (isPriceAdjustmentListing(text)) return { productSlug: null, warranty };
+  if (/plus\s+pro\s+成品|卡充\s*plus\s+pro.*升级pro/.test(text)) return { productSlug: null, warranty };
+  // 多种独立订阅打包交付，没有对应单一类型；不能选中其中一个品牌。
+  if (/全家桶/.test(text) &&
+    ["gemini", "perplexity", "chatgpt", "grok", "claude"].filter((brand) => text.includes(brand)).length >= 2) {
+    return { productSlug: null, warranty };
+  }
+  // Runway/CapCut/Firefly 的账号仅「支持」Seedance，不等于即梦账号。
+  if (/runway|capcut|adobe\s*firefly/.test(text) && /seedance|即梦/.test(text) &&
+    /pro|max|会员|账号|成品|积分|代充/.test(text)) return { productSlug: null, warranty };
 
   // 其他板抢先：礼品卡 / 虚拟卡 / Apple ID / TG（避免误进 GPT/Claude/邮箱）
   {
@@ -4409,6 +4514,7 @@ export function classifyTitle(title, opts = {}) {
     const xSlug = classifyXMembership(text);
     if (xSlug) return { productSlug: xSlug, warranty };
   }
+  if (isXAccountProduct(text)) return { productSlug: "grok-account", warranty };
 
   // 教程 / 脚本：ChatGPT / Cursor / Grok / Kiro / Gemini / Claude → 各平台辅助服务；其余不进订阅卡
   if (isTutorialOrScriptListing(text)) {
@@ -4437,6 +4543,10 @@ export function classifyTitle(title, opts = {}) {
   }
 
   // 明确卖手机号/SMS时，"Plus / 非成品号"只是服务对象/说明，不能先判成资格号。
+  if (/plus/.test(text) && /学生认证|单认证|人工绑卡/.test(text) && !/成品/.test(text) &&
+    !/claude|gemini|grok|cursor|kiro/.test(text)) return { productSlug: "chatgpt-codex-service", warranty };
+  if (/codex|gpt|chatgpt/.test(text) && /一站式安装|远程安装|环境搭建|远程陪跑/.test(text) &&
+    !/成品号|独享账号/.test(text)) return { productSlug: "chatgpt-codex-service", warranty };
   if (hasStandalonePhoneDeliverySignal(text)) {
     return { productSlug: classifyVerificationService(text), warranty };
   }
@@ -4601,6 +4711,87 @@ export function classifyTitle(title, opts = {}) {
   return { productSlug: null, warranty };
 }
 
+/**
+ * 原站分类只补足缺失的品牌，不能覆盖已有明确判定，也不能代替套餐证据。
+ * 商品详情经人工核实的例外必须同时匹配 URL 与原始标题，避免同名商品串店。
+ * @param {string} title
+ * @param {{price?: number|null, url?: string, category?: string|string[]}} [opts]
+ */
+export function classifyTitle(title, opts = {}) {
+  const audited = auditedClassification(title, opts.url);
+  if (audited && PRODUCT_SEED.some((product) => product.slug === audited)) {
+    return { productSlug: audited, warranty: isLongWarrantyTitle(title) };
+  }
+  // 独角数卡多套餐父商品：保留完整原始标题展示，但只按末尾的明确 SKU 分档。
+  // 仅允许明确的 GPT 多套餐目录；一般的「A / B」混售不能被任意末尾片段覆盖。
+  const divider = String(title || "").lastIndexOf(" / ");
+  if (divider >= 0) {
+    const parent = normalizeTitle(String(title).slice(0, divider));
+    const variant = normalizeTitle(String(title).slice(divider + 3));
+    if (/chatgpt|gpt/.test(parent) && /plus/.test(parent) &&
+      /pro\s*5x/.test(parent) && /pro\s*20x/.test(parent) &&
+      !/claude|gemini|cursor|grok|kiro/.test(parent)) {
+      if (/^新(?:账号|帳號)\s*(?:没有|沒有)(?:账号|帳號)的可以搭配cdk一起拍/.test(variant)) {
+        return { productSlug: "chatgpt-free-account", warranty: isLongWarrantyTitle(title) };
+      }
+      if (/^(?:正价\s*)?(?:plus|pro\s*(?:5|20|50)x)(?:\s|$)/.test(variant)) {
+        const result = classifyTitleWithoutContext(`chatgpt 正价直充 ${variant}`, opts);
+        if (result.productSlug) return { ...result, warranty: isLongWarrantyTitle(title) };
+      }
+    }
+  }
+  const result = classifyTitleWithoutContext(title, opts);
+  if (result.productSlug && result.productSlug !== "other-product") return result;
+  const text = normalizeTitle(title);
+  if (isPriceAdjustmentListing(text) || isBarePro(text) || isMixedChatGptProTier(text) ||
+    isTutorialOrScriptListing(text) || /全家桶/.test(text)) return result;
+  // 不把其它独立产品的会员、账号、积分借用品牌归进现有 AI 分类。
+  if (/notion|runway|capcut|firefly|adobe|tavily|windsurf|qoder|copilot|youtube|netflix|discord|facebook|instagram|tiktok|豆包|dola|kling|可灵|minimax|deepseek|智谱|剪映|figma/.test(text)) return result;
+  if (/plus\s+pro\s+成品|卡充\s*plus\s+pro.*升级pro/.test(text)) return result;
+  const categories = (Array.isArray(opts.category) ? opts.category : [opts.category]).filter(Boolean);
+  const candidates = new Set();
+  for (const rawCategory of categories) {
+    const category = normalizeTitle(rawCategory);
+    // 综合分类中出现几个品牌，不能任取一个作为商品的品牌。
+    const brands = [/chatgpt|gpt|codex|plus/, /gemini|反重力|antigravity/, /claude/, /grok/, /cursor/, /kiro/, /telegram|电报|纸飞机/];
+    if (brands.filter((pattern) => pattern.test(category)).length > 1) continue;
+    let prefix = null;
+    if (/^(?:codex|gpt|chatgpt)官方额度$/.test(category) && /g\s*\d+\s*点数官方充值/.test(text)) prefix = "codex";
+    if (/^(?:gpt|chatgpt|codex|g\b|g最稳|gp\.t)/.test(category) &&
+      /(?:^|\s)g\s*(?:5|20)\s*x\b|^\s*(?:5|20)\s*x/.test(text) &&
+      /pro|充值|官充|正价|卡充/.test(category)) prefix = "chatgpt pro";
+    if (/中转|api\s*(?:充值|余额)|充值token额度/.test(category) &&
+      /额度|余额|充值|兑换|\d+\s*刀/.test(text) && !/账号|成品|质保订阅|卡付|月卡/.test(text)) {
+      candidates.add("chatgpt-mirror");
+      continue;
+    }
+    if ((/^(?:苹果id|apple id)$/.test(category) && /号|id|密保/.test(text)) ||
+      /已购shadowrocke.*id/.test(category) && /小火箭|shadowrocket/.test(text)) {
+      candidates.add("apple-id-account");
+      continue;
+    }
+    if ((/谷歌邮箱|gmail/.test(category) || /^(?:谷歌|google|谷歌账号)$/.test(category)) && /邮箱|谷歌|google|账号|老号|新号/.test(text) &&
+      !/plus|pro|team|free|gpt|codex|已注册|会员|成品|已过k/.test(text)) {
+      candidates.add("gmail-account");
+      continue;
+    }
+    if (prefix) { /* 已由标题与原站分类同时确定 Pro 档位 */ }
+    else if (/telegram|电报|纸飞机/.test(category) && !/接码|短信|手机号/.test(category) &&
+      (/账号|老号|新号|直登|协议|api|会员/.test(text) ||
+        /账号|飞机|首登|年|月|号/.test(category) && /\+\d{1,3}|区号|随机国家|盲盒/.test(text))) prefix = "telegram";
+    else if (/grok/.test(category) && /账号|号|成品|build|premium|super|ultra|会员/.test(text)) prefix = "grok";
+    else if (/plus/.test(category) && !/pro|team|free|普号/.test(text) &&
+      /实卡|成品|首登|质保|未接码|已接码|独享|upi|kakao/.test(text)) prefix = "chatgpt plus";
+    else if (/gemini|反重力|antigravity/.test(category) && /反重力|antigravity/.test(text) && /pro|会员/.test(text)) prefix = "gemini";
+    else if (/^claude$/.test(category) && /代退款|退款|协助|安装/.test(text)) prefix = "claude";
+    else if (/^(?:chatgpt|gpt|codex|g free)$/.test(category) && /free|普号|白号|普通账号/.test(text)) prefix = "chatgpt";
+    if (!prefix) continue;
+    const contextual = classifyTitleWithoutContext(`${prefix} ${text}`, opts).productSlug;
+    if (contextual && contextual !== "other-product") candidates.add(contextual);
+  }
+  return candidates.size === 1 ? { ...result, productSlug: [...candidates][0] } : result;
+}
+
 /** 礼品卡 / 虚拟卡 / Apple ID / Telegram——须先于 AI 订阅与邮箱 */
 function classifyOtherEarly(value) {
   if (isGiftCardProduct(value)) return "gift-card";
@@ -4612,6 +4803,9 @@ function classifyOtherEarly(value) {
 }
 
 function isGiftCardProduct(value) {
+  // 主卖已经开通的订阅或代充，「礼品卡渠道」仅说明付款方式。
+  if (/礼品卡\s*(?:正规充值|渠道|兑换)|(?:ios|ios\s*)\s*礼品卡\s*正规充值/.test(value) &&
+    /cursor|pro\s*5x|5x\s*pro/.test(value) && /月卡|月|成品|充值|代充/.test(value)) return false;
   if (matches(value, ["礼品卡", "gift card", "giftcard", "app store 卡", "appstore卡"])) {
     return true;
   }
@@ -4620,14 +4814,25 @@ function isGiftCardProduct(value) {
 }
 
 function isVirtualCardProduct(value) {
+  const cardText = value.replace(/(?:非|不是|不使用|不用|不含)\s*0\s*刀卡(?:激活)?/g, "");
+  // 绑定卡是激活条件；虚拟卡是代充商的支付工具，而非买家收到的商品。
+  if (/gemini/.test(value) && /\d+\s*个月\s*链接/.test(value) && /自行绑卡|绑定/.test(value)) return false;
+  if (/claude/.test(value) && /质保订阅/.test(value) && /卡付代充|卡充代充/.test(value)) return false;
+  if (/gork|grok/.test(value) && /半价\s*\d+\s*刀卡充卡密/.test(value)) return false;
   return (
-    matches(value, ["虚拟卡", "0刀卡", "0 刀卡", "0刀虚拟", "0 刀虚拟"]) ||
+    /虚拟卡(?!密)/.test(cardText) ||
+    matches(cardText, ["虚拟信用 卡", "虚拟信用卡", "0刀卡", "0 刀卡", "0刀虚拟", "0 刀虚拟"]) ||
     (matches(value, ["visa", "mastercard", "master card"]) &&
-      matches(value, ["0刀", "0 刀", "虚拟", "卡号", "4859", "485954"]))
+      /(?:^|[^\d])\d+\s*刀卡|0\s*刀|虚拟|卡号|卡台|4859|自己充/.test(value))
   );
 }
 
 function isAppleIdProduct(value) {
+  if (/苹果\s*id|\bios\s+id\b/.test(value)) return true;
+  if (/苹果(?:商城|商店)|appl\s*美区账号id|租号下载小火箭/.test(value) && /账号|独享|租号/.test(value)) return true;
+  if (/(?:台湾|日本(?:japan)?|韩国|美国|土耳其)\s*id/.test(value) &&
+    /密保|小火箭|下app|可下币安/.test(value)) return true;
+  if (/区商店账号/.test(value) && /密保|下app/.test(value)) return true;
   if (
     matches(value, [
       "apple id",
@@ -4657,14 +4862,16 @@ function isTelegramPremiumProduct(value) {
     matches(value, ["telegram", "电报", "纸飞机", "tg premium", "tg会员", "飞机会员"]) ||
     (/\btg\b/.test(value) && matches(value, ["premium", "会员", "stars"]));
   if (!tg) return false;
-  return matches(value, ["premium", "会员", "stars", "代开", "订阅"]);
+  return matches(value, ["premium", "会员", "stars", "星星代充", "代开", "订阅"]);
 }
 
 function isTelegramAccountProduct(value) {
   if (isTelegramPremiumProduct(value)) return false;
   if (matches(value, ["telegram", "电报号", "纸飞机号", "tg账号", "tg 账号"])) return true;
+  if (/电宝/.test(value) && /号|双向/.test(value)) return true;
+  if (/✈/.test(value) && /老号|新号|协议号|直登/.test(value) && /\+\d{1,3}|印度|美国|俄罗斯/.test(value)) return true;
   // TG🌎 / TG💥 地区号
-  if (/\btg\b/.test(value) && matches(value, ["直登", "协议号", "新号", "实卡账号", "亚洲", "欧美", "非洲"])) {
+  if (/\btg\b/.test(value) && matches(value, ["直登", "协议号", "新号", "实卡账号", "半年号", "老号", "亚洲", "欧美", "非洲"])) {
     return true;
   }
   return false;
@@ -4679,12 +4886,13 @@ function isSunoProduct(value) {
 }
 
 function isMuseAiProduct(value) {
-  // 接码/接马归接码板，不进 Muse
-  if (matches(value, ["接码", "接马", "sms", "验证码渠道", "自动换号"])) return false;
+  // 单独接码服务才属于接码；成品号首登接码仍是 Muse 账号。
+  if (matches(value, ["sms", "验证码渠道", "自动换号"]) ||
+    (/接码|接马/.test(value) && !/成品|账号|首登/.test(value))) return false;
   return (
     matches(value, ["muse ai", "muse邀请", "muse成品", "muse 邀请", "muse 成品", "muse成品号"]) ||
     (matches(value, ["muse"]) &&
-      matches(value, ["邀请码", "token", "成品号", "成品", "meta", "微软邮箱", "验证码登录"]))
+      matches(value, ["邀请码", "token", "成品号", "成品", "meta", "微软邮箱", "验证码登录", "账号", "单助力", "邀请", "代注册激活"]))
   );
 }
 
@@ -4853,6 +5061,13 @@ function isEmailBackedAiAccountProduct(value) {
 
 /** 纯邮箱商品；对照 参考站 isPureEmail（Team/Plus/Claude 成品不算邮箱）。 */
 function isPureEmailProduct(value) {
+  if (isLikelyChatGptFreeAccountTitle(value)) return false;
+  // 邮箱只是其他成品账号的注册介质，不能因为含 GMX/Hotmail 就抢进邮箱板。
+  if (/discord|facebook|instagram|tiktok|steam|poe|领英|lnkdn/.test(value) &&
+    !/隐私邮箱|邮箱.{0,8}注册|注册.{0,10}专用.*邮箱/.test(value)) return false;
+  if ((/claude|克劳德/.test(value) && /账号|账户|成品/.test(value) || /已过k.*无订阅.*成品/.test(value)) &&
+    !/注册(?:claude|克劳德)专用/.test(value)) return false;
+  if (/kyc|已过k/.test(value) && /无订阅/.test(value) && /成品|白号/.test(value)) return false;
   const explicitEmail = matches(value, [
     "gmail",
     "谷歌邮箱",
@@ -4886,7 +5101,7 @@ function isPureEmailProduct(value) {
     "yahoo",
     "邮箱账号",
     "邮箱成品",
-  ]);
+  ]) || /(?:google|谷歌).{0,8}(?:邮箱|普通账号|账户)|微软.{0,6}邮箱|(?:firstmail|gmx|mail\.tm|rambler(?:\.ru)?|(?<![a-z])mail)\s*(?:长效)?邮箱|(?:大学|高校|学生|\.edu).{0,12}邮箱|自建邮箱/.test(value);
   if (!explicitEmail) return false;
   // X/推特成品号常写 outlook 注册，不进邮箱板
   if (
@@ -4963,6 +5178,7 @@ function isPureEmailProduct(value) {
 
 /** 教育邮箱（强信号）；「企业 Edu 谷歌」无「教育」字样仍归 Gmail。 */
 function isEducationEmailProduct(value) {
+  if (/(?:大学|高校|学生|\.edu).{0,12}邮箱/.test(value)) return true;
   if (matches(value, ["教育邮箱", "edu邮箱", "edu 邮箱", "校友邮箱", "大学邮箱"])) {
     return true;
   }
@@ -4974,6 +5190,7 @@ function isEducationEmailProduct(value) {
 
 function isOutlookEmailProduct(value) {
   if (matches(value, ["outlook", "hotmail"])) return true;
+  if (/微软令牌邮箱/.test(value)) return true;
   // 微软邮箱 + 令牌/OAuth 形态（对照参考站 outlook 货）
   if (
     matches(value, ["微软邮箱"]) &&
@@ -5005,7 +5222,7 @@ function isIcloudEmailProduct(value) {
 }
 
 function isGmailEmailProduct(value) {
-  return matches(value, [
+  return /(?:google|谷歌).{0,8}(?:邮箱|普通账号|账户)/.test(value) || matches(value, [
     "gmail",
     "谷歌邮箱",
     "google 邮箱",

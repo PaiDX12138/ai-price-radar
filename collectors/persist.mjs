@@ -29,7 +29,7 @@ export function reclassifyOffer(offer, classify) {
   const title = offer.sourceTitle || "";
   const classifyFn = classify?.classifyTitle || classifyTitle;
   const legacyMap = classify?.LEGACY_PRODUCT_SLUG_MAP || LEGACY_PRODUCT_SLUG_MAP;
-  const { productSlug, warranty } = classifyFn(title, { price: offer.price });
+  const { productSlug, warranty } = classifyFn(title, { price: offer.price, url: offer.url, category: offer.tags });
   const candidate = productSlug ? legacyMap[productSlug] || productSlug : null;
   const resolved = CATALOG_SLUGS.has(candidate) ? candidate : null;
   return {

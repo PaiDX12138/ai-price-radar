@@ -36,7 +36,9 @@ export async function collectDujiao(source, options = {}) {
       const skus = Array.isArray(product.skus) && product.skus.length ? product.skus : [null];
 
       skus.forEach((sku, index) => {
-        const skuTitle = localized(sku?.title || sku?.name || sku?.label || sku?.spec);
+        // 已对照公开 products 响应：不少站把真正套餐名放在 spec_values 中。
+        const skuTitle = [sku?.title, sku?.name, sku?.label, sku?.spec, sku?.spec_values]
+          .map(localized).find(Boolean) || "";
         const title = cleanText(
           skuTitle && skuTitle !== productTitle
             ? `${productTitle} / ${skuTitle}`
@@ -57,8 +59,8 @@ export async function collectDujiao(source, options = {}) {
         const stockStatus = String(sku?.stock_status || product.stock_status || "");
         const status =
           isSoldOut || stockStatus === "out_of_stock" ? "out_of_stock" : statusFromStock(stockCount);
-        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
         const categoryName = localized(product.category?.name);
+        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price, url: `${base}/products/${encodeURIComponent(String(product.slug || product.id))}`, category: categoryName });
 
         offers.push({
           id: `${source.id}-${product.id ?? product.slug}-${index}`,

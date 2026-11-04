@@ -16,7 +16,7 @@ function pushOffer(offers, source, fields, capturedAt) {
   const title = cleanText(fields.title);
   const price = numberOrNull(fields.price);
   if (!title || price === null) return;
-  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
+  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price, url: fields.url || source.sourceUrl || source.baseUrl, category: fields.tags });
   offers.push({
     id: fields.id || `${source.id}-${offers.length}`,
     productSlug,
