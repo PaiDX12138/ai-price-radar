@@ -2,7 +2,7 @@
  * 独角数卡采集器。
  * GET {base}/api/v1/public/products
  */
-import { classifyTitle } from "./classify.mjs";
+import { classifyCatalogTitle } from "./classify.mjs";
 import {
   cleanText,
   compact,
@@ -57,12 +57,12 @@ export async function collectDujiao(source, options = {}) {
         const stockStatus = String(sku?.stock_status || product.stock_status || "");
         const status =
           isSoldOut || stockStatus === "out_of_stock" ? "out_of_stock" : statusFromStock(stockCount);
-        const { productSlug, warranty } = classifyTitle(title, { price });
+        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
         const categoryName = localized(product.category?.name);
 
         offers.push({
           id: `${source.id}-${product.id ?? product.slug}-${index}`,
-          productSlug: productSlug || "other-unclassified",
+          productSlug,
           sourceId: source.id,
           sourceTitle: title,
           price,
@@ -78,7 +78,7 @@ export async function collectDujiao(source, options = {}) {
           ]),
           capturedAt,
           warranty,
-          classified: Boolean(productSlug),
+          classified,
         });
       });
     }

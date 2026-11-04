@@ -5,7 +5,7 @@
  * stock 字段可能是数字，也可能是文案：非常多 / 充足 / 一般 / 即将售罄 / 已售罄；
  * 另有 stock_state：0 售罄 · 1 紧张 · 2 一般 · 3 充足 · 4 非常多。
  */
-import { classifyTitle } from "./classify.mjs";
+import { classifyCatalogTitle } from "./classify.mjs";
 import {
   cleanText,
   compact,
@@ -110,14 +110,14 @@ export async function collectKami(source, options = {}) {
         const hidden = Number(item.hide || 0) !== 0;
         const disabled = Number(item.status ?? 1) !== 1 || hidden;
         const status = disabled ? "out_of_stock" : inventory.status;
-        const { productSlug, warranty } = classifyTitle(title, { price });
+        const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
         const categoryName = cleanText(item.category?.name || "");
         const stockCount =
           disabled && inventory.stockCount === null ? 0 : inventory.stockCount;
 
         offers.push({
           id: `${source.id}-${item.id ?? offers.length}`,
-          productSlug: productSlug || "other-unclassified",
+          productSlug,
           sourceId: source.id,
           sourceTitle: title,
           price,
@@ -135,7 +135,7 @@ export async function collectKami(source, options = {}) {
           ]),
           capturedAt,
           warranty,
-          classified: Boolean(productSlug),
+          classified,
         });
       }
 

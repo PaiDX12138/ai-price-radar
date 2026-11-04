@@ -2,7 +2,7 @@
  * HTML / 专用目录类采集器（改版易失效；失败只记 crawl，不改旧报价）。
  * mooncakeCatalog / blackcatWholesale / genericHtml / unicornHtml / opensora / makerich / beibei
  */
-import { classifyTitle } from "./classify.mjs";
+import { classifyCatalogTitle } from "./classify.mjs";
 import {
   absolutize,
   cleanText,
@@ -16,10 +16,10 @@ function pushOffer(offers, source, fields, capturedAt) {
   const title = cleanText(fields.title);
   const price = numberOrNull(fields.price);
   if (!title || price === null) return;
-  const { productSlug, warranty } = classifyTitle(title, { price });
+  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
   offers.push({
     id: fields.id || `${source.id}-${offers.length}`,
-    productSlug: productSlug || "other-unclassified",
+    productSlug,
     sourceId: source.id,
     sourceTitle: title,
     price,
@@ -30,7 +30,7 @@ function pushOffer(offers, source, fields, capturedAt) {
     tags: compact([...(fields.tags || []), source.collectorKind || source.kind]),
     capturedAt,
     warranty,
-    classified: Boolean(productSlug),
+    classified,
   });
 }
 

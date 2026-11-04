@@ -90,6 +90,7 @@ const LEGACY_OFFER_SLUG: Record<string, string> = {
   "google-phone-verification": "sms-google",
   "phone-verification": "sms-generic",
   "identity-verification": "sms-kyc",
+  "other-unclassified": "other-product",
 };
 
 function normalizeOfferSlug(slug: string): string {
@@ -99,11 +100,19 @@ function normalizeOfferSlug(slug: string): string {
 function resolveCatalog(): CatalogBundle {
   const entry = loadPersistedCatalogEntry();
   if (entry) {
+    const products = entry.snapshot.products.map(normalizeProduct);
+    if (!products.some(product => product.slug === "other-product")) {
+      products.push({ slug: "other-product", name: "其他商品", platform: "other", deliveryType: "其他",
+        summary: "未命中其他分类的商品，保留原始标题和店铺信息供排查" });
+    }
+    const slugs = new Set(products.map(product => product.slug));
     return {
       sources: entry.snapshot.sources,
-      products: entry.snapshot.products.map(normalizeProduct),
+      products,
       offers: entry.snapshot.offers.filter((offer) => isOfferVisible(offer)).map((offer) => {
-        const productSlug = normalizeOfferSlug(offer.productSlug);
+        const normalized = normalizeOfferSlug(offer.productSlug);
+        const unmatched = offer.productSlug === "other-unclassified" || !slugs.has(normalized);
+        const productSlug = unmatched ? "other-product" : normalized;
         return productSlug === offer.productSlug ? offer : { ...offer, productSlug };
       }),
       isDemo: false,

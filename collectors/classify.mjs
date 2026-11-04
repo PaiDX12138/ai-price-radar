@@ -514,7 +514,7 @@ export const PRODUCT_SEED = [
     name: "其他商品",
     platform: "other",
     deliveryType: "其他",
-    summary: "售前说明、杂项工具等未单列商品",
+    summary: "未命中其他分类的商品及售前说明、杂项；保留原始标题和店铺信息供排查",
   },
 ];
 
@@ -5040,4 +5040,14 @@ export function seedProducts() {
     deliveryType,
     ...(summary ? { summary } : {}),
   }));
+}
+
+/** Publication fallback: unresolved titles remain inspectable, never a paid-plan guess. */
+export function classifyCatalogTitle(title, opts = {}) {
+  const result = classifyTitle(title, opts);
+  return {
+    ...result,
+    productSlug: result.productSlug || "other-product",
+    classified: Boolean(result.productSlug),
+  };
 }

@@ -8,7 +8,8 @@
  * out: { products: Product[], offers: Offer[] }
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { classifyTitle, LEGACY_PRODUCT_SLUG_MAP, seedProducts } from "../collectors/classify.mjs";
+import { seedProducts } from "../collectors/classify.mjs";
+import { reclassifyOffer } from "../collectors/persist.mjs";
 
 const inPath = process.argv[2];
 const outPath = process.argv[3];
@@ -25,14 +26,7 @@ const seedSlugs = new Set(products.map((p) => p.slug));
 const offers = offersIn
   .map((offer) => {
     if (!offer || typeof offer !== "object") return null;
-    const title = offer.sourceTitle || "";
-    const { productSlug, warranty } = classifyTitle(title, { price: offer.price });
-    const resolved = productSlug ? LEGACY_PRODUCT_SLUG_MAP[productSlug] || productSlug : null;
-    const next = {
-      ...offer,
-      productSlug: resolved || "other-unclassified",
-      warranty: warranty ?? offer.warranty,
-    };
+    const next = reclassifyOffer(offer);
     delete next.goodsKey;
     delete next.classified;
     return next;

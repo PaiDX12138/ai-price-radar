@@ -207,6 +207,7 @@ pnpm dev:all             # 网站 + 采集 worker
 | [脚手架说明](./docs/scaffold.md) | 目录与选型 |
 | [店铺 SQLite](./docs/shops-sqlite.md) | 店铺档案与收录 |
 | [ChatGPT 普号分类](./docs/chatgpt-free-classification.md) | 半成品 / Free 与 Plus 订阅边界、存量修复 |
+| [其他商品兜底](./docs/catalog-other.md) | 未命中分类商品统一收录、历史原始记录回补 |
 | [采集调度](./docs/collect-schedule.md) | worker 与限流 |
 | [官网定价](./docs/official-prices.md) | 官方地区价采集 |
 | [免责声明](./docs/disclaimer.md) | 风险与边界 |

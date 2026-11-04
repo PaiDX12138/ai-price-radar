@@ -6,7 +6,7 @@
  *   https://wzyp.cn → https://www.ldxp.cn → https://pay.ldxp.cn
  * 禁止把 CSV「对接码」当 shopToken。
  */
-import { classifyTitle } from "./classify.mjs";
+import { classifyCatalogTitle } from "./classify.mjs";
 import { sanitizeShopDisplayName } from "./sanitize-shop-name.mjs";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -396,12 +396,12 @@ export async function collectShopApi(source, options = {}) {
           const stockCount = numberOrNull(item.extend?.stock_count);
           const disabled = Number(item.status ?? 1) !== 1;
           const status = disabled ? "out_of_stock" : statusFromStock(stockCount);
-          const { productSlug, warranty } = classifyTitle(title, { price: listedPrice });
+          const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price: listedPrice });
           const categoryName = cleanText(item.category?.name || "");
 
           offers.push({
             id: `${source.id}-${goodsKey || offers.length}`,
-            productSlug: productSlug || "other-unclassified",
+            productSlug,
             sourceId: source.id,
             sourceTitle: title,
             price: listedPrice,
@@ -416,7 +416,7 @@ export async function collectShopApi(source, options = {}) {
             capturedAt,
             warranty,
             goodsKey: goodsKey || null,
-            classified: Boolean(productSlug),
+            classified,
           });
         }
 

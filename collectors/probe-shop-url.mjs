@@ -5,7 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { classifyTitle, PRODUCT_SEED } from "./classify.mjs";
+import { classifyCatalogTitle, PRODUCT_SEED } from "./classify.mjs";
 import { collectByKind } from "./dispatch.mjs";
 import { collectShop16688 } from "./shop16688.mjs";
 import { resolveWorkingBase, LIANDONG_BASE_FAILOVER } from "./shopApi.mjs";
@@ -635,7 +635,7 @@ export function verifyDetailOfferAgainstType(input) {
     };
   }
 
-  const { productSlug } = classifyTitle(title);
+  const { productSlug } = classifyCatalogTitle(title);
   const resolved = productSlug ? LEGACY_OR_SEED(productSlug) : null;
 
   if (!productSlug || !resolved) {

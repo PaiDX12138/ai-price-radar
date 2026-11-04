@@ -8,6 +8,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlin
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { classifyTitle, LEGACY_PRODUCT_SLUG_MAP, seedProducts } from "./classify.mjs";
+const CATALOG_SLUGS = new Set(seedProducts().map(product => product.slug));
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const RECLASSIFY_SCRIPT = join(root, "scripts", "reclassify-offers-once.mjs");
@@ -29,10 +30,11 @@ export function reclassifyOffer(offer, classify) {
   const classifyFn = classify?.classifyTitle || classifyTitle;
   const legacyMap = classify?.LEGACY_PRODUCT_SLUG_MAP || LEGACY_PRODUCT_SLUG_MAP;
   const { productSlug, warranty } = classifyFn(title, { price: offer.price });
-  const resolved = productSlug ? legacyMap[productSlug] || productSlug : null;
+  const candidate = productSlug ? legacyMap[productSlug] || productSlug : null;
+  const resolved = CATALOG_SLUGS.has(candidate) ? candidate : null;
   return {
     ...offer,
-    productSlug: resolved || "other-unclassified",
+    productSlug: resolved || "other-product",
     warranty: warranty ?? offer.warranty,
     classified: Boolean(resolved),
   };
@@ -223,25 +225,34 @@ export function loadCatalogSnapshot() {
  * Skips fixture-* files.
  * @returns {Map<string, { sourceId: string, sourceMeta: object|null, offers: any[], capturedAt: string|null }>}
  */
-export function loadRawLastGoodBySourceId() {
+export function loadRawLastGoodBySourceId(rawDir = RAW_DIR) {
   /** @type {Map<string, { sourceId: string, sourceMeta: object|null, offers: any[], capturedAt: string|null }>} */
   const map = new Map();
-  if (!existsSync(RAW_DIR)) return map;
-  for (const name of readdirSync(RAW_DIR)) {
+  const withdrawnAt = new Map();
+  if (!existsSync(rawDir)) return map;
+  for (const name of readdirSync(rawDir)) {
     if (!name.endsWith(".json")) continue;
     if (name.startsWith("fixture-")) continue;
-    const filePath = join(RAW_DIR, name);
+    const filePath = join(rawDir, name);
     try {
       const payload = JSON.parse(readFileSync(filePath, "utf8"));
       const offers = Array.isArray(payload?.offers) ? payload.offers : [];
-      const ok = payload?.result?.ok === true;
-      if (!ok || offers.length === 0) continue;
       const sourceId = String(
         payload?.source?.id || offers[0]?.sourceId || name.replace(/\.json$/, ""),
       );
       if (!sourceId) continue;
-      const prev = map.get(sourceId);
       const capturedAt = payload?.capturedAt || offers[0]?.capturedAt || null;
+      if (payload?.result?.withdrawDisplay || ["dayang", "banned", "closed"].includes(payload?.result?.displayState)) {
+        const blocked = withdrawnAt.get(sourceId);
+        if (!withdrawnAt.has(sourceId) || !capturedAt || (blocked && capturedAt > blocked)) withdrawnAt.set(sourceId, capturedAt);
+        const previous = map.get(sourceId);
+        if (previous && (!capturedAt || !previous.capturedAt || previous.capturedAt <= capturedAt)) map.delete(sourceId);
+        continue;
+      }
+      const ok = payload?.result?.ok === true;
+      if (!ok || offers.length === 0) continue;
+      if (withdrawnAt.has(sourceId) && (!withdrawnAt.get(sourceId) || !capturedAt || capturedAt <= withdrawnAt.get(sourceId))) continue;
+      const prev = map.get(sourceId);
       if (prev && prev.capturedAt && capturedAt && prev.capturedAt > capturedAt) continue;
       const src = payload?.source || {};
       const shopInfo = payload?.result?.shopInfo || {};

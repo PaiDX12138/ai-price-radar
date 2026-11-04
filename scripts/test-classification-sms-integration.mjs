@@ -37,8 +37,8 @@ assert.equal(run().results[0].changed, 2);
 assert.equal(readFileSync(path, "utf8"), input, "dry-run must not write");
 assert.equal(readdirSync(join(dir, "data", "catalog")).length, 1);
 const applied = run(true);
-assert.ok(applied.results[0].backup);
-assert.equal(readFileSync(applied.results[0].backup, "utf8"), input);
+assert.equal("backup" in applied.results[0], false);
+assert.deepEqual(readdirSync(join(dir, "data", "catalog")), ["public.json"]);
 const snapshot = JSON.parse(readFileSync(path, "utf8"));
 assert.equal(snapshot.offers.length, original.offers.length);
 assert.deepEqual(snapshot.sources, original.sources);
@@ -81,4 +81,4 @@ try {
   assert.equal(sms.lowestPrice, 6.85, "delisted phone must not be resurrected");
   assert.equal(sms.channelCount, 1);
 } finally { Date.now = realNow; process.chdir(cwd); }
-console.log("PASS SMS classification: dry-run, backup, idempotent migration, original fields/lifecycle preserved, real UI prices/channel/stock counts isolated from subscriptions");
+console.log("PASS SMS classification: dry-run, no extra backups, idempotent migration, original fields/lifecycle preserved, real UI prices/channel/stock counts isolated from subscriptions");

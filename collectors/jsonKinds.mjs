@@ -2,7 +2,7 @@
  * 其余公开 JSON 类卡网采集器（对照 参考站 collect-prices 入口）。
  * getgptApi / ikunloveApi / publicProductsApi / xiaoheiwan / shopUserProductsApi
  */
-import { classifyTitle } from "./classify.mjs";
+import { classifyCatalogTitle } from "./classify.mjs";
 import {
   absolutize,
   cleanText,
@@ -50,10 +50,10 @@ function toOffer(source, fields, capturedAt) {
   const title = cleanText(fields.title);
   const price = numberOrNull(fields.price);
   if (!title || price === null) return null;
-  const { productSlug, warranty } = classifyTitle(title, { price });
+  const { productSlug, warranty, classified } = classifyCatalogTitle(title, { price });
   return {
     id: fields.id || `${source.id}-${offersIdSafe(title)}-${price}`,
-    productSlug: productSlug || "other-unclassified",
+    productSlug,
     sourceId: source.id,
     sourceTitle: title,
     price,
@@ -64,7 +64,7 @@ function toOffer(source, fields, capturedAt) {
     tags: compact([...(fields.tags || []), source.collectorKind || source.kind]),
     capturedAt,
     warranty,
-    classified: Boolean(productSlug),
+    classified,
   };
 }
 
