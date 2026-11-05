@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
-
-const evidence = JSON.parse(readFileSync(new URL("../config/catalog-classification-evidence.json", import.meta.url), "utf8"));
+import evidence from "./classification-evidence-data.cjs";
 
 function canonicalUrl(value) {
   try {
