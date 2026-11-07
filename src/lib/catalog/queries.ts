@@ -565,8 +565,11 @@ export function summarizeProduct(
   const offers =
     offersOverride ??
     catalog.offers.filter((offer) => offer.productSlug === product.slug);
-  const inStock = offers.filter((offer) => offer.status !== "out_of_stock" && (catalog.isDemo || isOfferLive(offer)));
-  const outStock = offers.filter((offer) => offer.status === "out_of_stock");
+  const failedSourceIds = new Set(catalog.sources.filter((source) => source.collectStatus === "failed").map((source) => source.id));
+  const unconfirmed = (offer: Offer) => !catalog.isDemo && (!isOfferLive(offer) || failedSourceIds.has(offer.sourceId));
+  const confirmed = offers.filter((offer) => !unconfirmed(offer));
+  const inStock = confirmed.filter((offer) => offer.status !== "out_of_stock");
+  const outStock = confirmed.filter((offer) => offer.status === "out_of_stock");
   const priced = inStock.filter((offer) => Number.isFinite(offer.price));
   const warrantyPriced = priced.filter((offer) => offer.warranty);
   const nonWarrantyPriced = priced.filter((offer) => !offer.warranty);
@@ -577,12 +580,21 @@ export function summarizeProduct(
     nonWarrantyPriced.slice().sort((a, b) => a.price - b.price)[0] ?? null;
   const updatedAt = offers.map((offer) => offer.capturedAt).sort().at(-1) ?? null;
   const lowestSource = lowest ? sourceById(catalog.sources, lowest.sourceId) : null;
+  const availability = (warranty: boolean): ProductSummary["warrantyAvailability"] => {
+    const group = offers.filter((offer) => offer.warranty === warranty);
+    if (priced.some((offer) => offer.warranty === warranty)) return "in_stock";
+    if (group.some(unconfirmed)) return "unconfirmed";
+    if (group.some((offer) => offer.status === "out_of_stock")) return "out_of_stock";
+    return group.length ? "unconfirmed" : "unavailable";
+  };
 
   return {
     ...product,
     lowestPrice: lowest?.price ?? null,
     nonWarrantyLowestPrice: nonWarrantyLowest?.price ?? null,
     warrantyLowestPrice: warrantyLowest?.price ?? null,
+    nonWarrantyAvailability: availability(false),
+    warrantyAvailability: availability(true),
     inStockCount: inStock.length,
     outStockCount: outStock.length,
     channelCount: offers.length,

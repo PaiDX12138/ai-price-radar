@@ -139,7 +139,7 @@ export function OfferCard({ offer }: OfferCardProps) {
                     data-tooltip={
                       offer.source.collectStatus === "failed"
                         ? "最近一次采集失败，显示的是上次成功采到的数据"
-                        : offer.lifecycle === "pending" ? "商品待复核，旧报价不代表实时有货" : "超过 2 小时未确认，不参与实时最低价"
+                        : offer.lifecycle === "pending" ? "商品未在最新完整列表中确认，暂不参与最低价" : "超过 2 小时未更新，价格和库存沿用上次成功采集，不代表实时库存"
                     }
                     className="h-5 shrink-0 px-1.5 text-[11px] font-medium text-muted-foreground"
                   >

@@ -90,6 +90,9 @@ export type Product = {
 };
 
 export type ProductSummary = Product & {
+  /** Distinguish explicit empty stock from unconfirmed/missing quotes. */
+  nonWarrantyAvailability: "in_stock" | "out_of_stock" | "unconfirmed" | "unavailable";
+  warrantyAvailability: "in_stock" | "out_of_stock" | "unconfirmed" | "unavailable";
   /** Overall in-stock lowest (any warranty flag). */
   lowestPrice: number | null;
   /** In-stock lowest among non-warranty offers. */

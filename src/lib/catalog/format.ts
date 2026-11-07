@@ -119,9 +119,12 @@ export function resolveOfferStockLabel(offer: {
   return fromLabel;
 }
 /** 报价超过这个时长没在成功采集里出现，就算数据较旧 */
-export const OFFER_STALE_MS = 24 * 60 * 60 * 1000;
+// Slow, rate-limited shop rotations can exceed two hours. Freshness is not
+// evidence of a stock change: retain last-good stock within the public window.
+export const OFFER_STALE_MS = 2 * 60 * 60 * 1000;
+export const OFFER_VISIBLE_MS = 24 * 60 * 60 * 1000;
 
-/** 店铺最近一轮采集失败，或报价 lastSeenAt 超过 24 小时 */
+/** 店铺最近一轮采集失败，或超过两小时未更新；只提示时效，不改库存。 */
 export function isOfferStale(
   offer: { lastSeenAt?: string | null; capturedAt: string; source?: { collectStatus?: string } },
   nowMs: number = Date.now(),
@@ -131,16 +134,16 @@ export function isOfferStale(
   return Number.isFinite(seen) && nowMs - seen > OFFER_STALE_MS;
 }
 
-/** Missing/unconfirmed offers are historical evidence, not live-stock candidates. */
+/** Last-good stock stays usable within the public window; missing/delisted goods do not. */
 export function isOfferLive(offer: { lifecycle?: string; lastSeenAt?: string | null; lastVerifiedAt?: string | null; capturedAt: string }, nowMs = Date.now()): boolean {
   if (offer.lifecycle === "pending" || offer.lifecycle === "delisted") return false;
   const seen = Date.parse(offer.lastSeenAt || offer.capturedAt);
-  return Number.isFinite(seen) && nowMs - seen <= 2 * 60 * 60 * 1000;
+  return Number.isFinite(seen) && nowMs - seen <= OFFER_VISIBLE_MS;
 }
 
 /** Default public list omits delisted and >24h unconfirmed quotes; persistence retains history. */
 export function isOfferVisible(offer: { lifecycle?: string; lastSeenAt?: string | null; capturedAt: string }, nowMs = Date.now()): boolean {
   if (offer.lifecycle === "delisted") return false;
   const seen = Date.parse(offer.lastSeenAt || offer.capturedAt);
-  return Number.isFinite(seen) && nowMs - seen <= 24 * 60 * 60 * 1000;
+  return Number.isFinite(seen) && nowMs - seen <= OFFER_VISIBLE_MS;
 }

@@ -110,13 +110,13 @@ export function ProductCard({ product, q }: ProductCardProps) {
               label="无质保最低"
               value={product.nonWarrantyLowestPrice}
               tone="ink"
-              inStock={product.nonWarrantyLowestPrice !== null && product.inStockCount > 0}
+              availability={product.nonWarrantyAvailability}
             />
             <PriceBlock
               label="有质保最低"
               value={product.warrantyLowestPrice}
               tone="amber"
-              inStock={product.warrantyLowestPrice !== null && product.inStockCount > 0}
+              availability={product.warrantyAvailability}
             />
           </div>
 
@@ -200,12 +200,12 @@ function PriceBlock({
   label,
   value,
   tone,
-  inStock,
+  availability,
 }: {
   label: string;
   value: number | null;
   tone: "ink" | "amber";
-  inStock: boolean;
+  availability: ProductSummary["warrantyAvailability"];
 }) {
   const soft =
     tone === "amber"
@@ -214,7 +214,9 @@ function PriceBlock({
   const priceClass =
     tone === "amber" ? "text-[var(--apr-amber)]" : "text-[var(--apr-ink)]";
   const hasPrice = value !== null && Number.isFinite(value);
-  const showInStock = Boolean(inStock && hasPrice);
+  const showInStock = availability === "in_stock" && hasPrice;
+  const stockLabel = showInStock ? "有货" : availability === "out_of_stock" ? "无货"
+    : availability === "unconfirmed" ? "待核验" : "暂无报价";
 
   return (
     <div className={cn("relative rounded-lg border px-2.5 py-2 pr-12", soft)}>
@@ -225,7 +227,7 @@ function PriceBlock({
           !showInStock && "text-muted-foreground"
         )}
       >
-        {showInStock ? "有货" : "无货"}
+        {stockLabel}
       </Badge>
       <div className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground">
         {label}
