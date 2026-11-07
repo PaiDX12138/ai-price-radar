@@ -16,6 +16,9 @@
 
 - G Free、未开通的半成品、附带微软/iCloud 邮箱的 GPT 账号 → GPT 普号；独立邮箱商品才进邮箱。
 - 已开通的 Plus 成品号与充到本人账号的官方 Plus 代充分开；账号的接码状态不等于单独售卖短信服务。
+- Plus 按次扫码（1/5/10次等）属于 GPT 辅助服务，不是订阅；扫码登录或成品号附带扫码不因此变成辅助商品。
+- Plus 天/周/月卡等短标题若原站分类明确为网页镜像，且没有成品账号或官方代充交付信号，归 GPT 中转服务；不能只看标题中的 Plus，也不能只凭“天卡”就推断镜像。
+- “Codex plus 一号一码，超高质量美国实卡”公开详情交付手机号和短信查看链接（20–30天），归 GPT 接码，不是支付虚拟卡；带 VISA/虚拟信用卡等明确支付工具交付才进虚拟卡。单独出现“美国实卡渠道”不能把真正的 Plus 成品号移走。
 - Claude 订阅的“虚拟卡代付”、Cursor 订阅的“礼品卡渠道”只是付款方式，不是交付银行卡或礼品卡。
 - CapCut/Runway/Firefly 支持 Seedance，不等于卖即梦账号；五大 AI 全家桶也不等于只卖 Perplexity。这些没有对应现有类型时留在其他。
 - 不把显式 Pro 10x 凭 100/200 美元硬改成 5x/20x；Pro 500 只接收明确 500 美元或已核实详情的相应套餐。无兼容类型、多档混售、定金/差价仍保留其他。
@@ -66,6 +69,7 @@ node scripts/test-offer-lifecycle.mjs
 node scripts/test-classification-chatgpt-free-integration.mjs
 node scripts/test-classification-claude-integration.mjs
 node scripts/test-classification-sms-integration.mjs
+node scripts/test-classify-plus-boundaries.mjs
 ```
 
 新增集成测试覆盖六类采集器的模拟响应、只有未命中商品的店铺、Worker 发布不丢条目、原始记录回补、幂等、撤展/失败/下架边界、旧分类兼容，以及真实前端查询的“其他”汇总、标题/店铺搜索；不增加标记或改变已识别商品分类。

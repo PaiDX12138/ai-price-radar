@@ -6,6 +6,19 @@
 import { classifyTitle, PRODUCT_SEED, isLongWarrantyTitle } from "../collectors/classify.mjs";
 
 const cases = [
+  // Plus 是用途/档位说明，不能覆盖实际的号码与按次辅助交付。
+  ["Codex plus 一号一码，超高质量美国实卡", "sms-openai"],
+  ["ChatGPT Plus 美国实卡 一号一码", "sms-openai"],
+  ["Codex Plus 一号一码 美国实卡 成品号 账密2FA", "chatgpt-plus"],
+  ["Codex Plus 美国实卡 成品账号 未接码 质保30天", "chatgpt-plus"],
+  ["Codex Plus VISA 虚拟信用卡 一号一码", "virtual-card"],
+  ["upi plus 扫码1次", "chatgpt-codex-service"],
+  ["UPI Plus 扫码 2 次", "chatgpt-codex-service"],
+  ["GPT Plus 扫码一次", "chatgpt-codex-service"],
+  ["ChatGPT Plus 按次扫码", "chatgpt-codex-service"],
+  ["upi plus 扫码次卡", "chatgpt-codex-service"],
+  ["UPI Plus 成品号 账密 扫码1次", "chatgpt-plus"],
+  ["ChatGPT Plus 成品号 扫码登录", "chatgpt-plus"],
   // Plus vs Team disambiguation (参考站)
   ["ChatGPT Plus 拼车｜专属席位｜月付", "chatgpt-plus"],
   ["UPI渠道-PLUS成品号30天（iCloud高权重母号邮箱）", "chatgpt-plus"],

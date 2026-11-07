@@ -815,6 +815,9 @@ function hasConcretePhoneAccountBundle(value) {
 function hasStandalonePhoneDeliverySignal(value) {
   const delivery = standalonePhoneDeliveryText(value);
   if (hasConcretePhoneAccountBundle(value)) return false;
+  // “一号一码 + 美国实卡”卖号码/短信，不是已开通 Plus 的账号。
+  if (/一[号號]\s*一[码碼]/.test(delivery) && /实卡|实体卡|手机号|电话号码/.test(delivery) &&
+    /codex|chatgpt|openai|gpt|plus/.test(delivery)) return true;
   return /(?:长效|长期|短效|短信|实卡|实体卡|独立|自助|无限)\s*接码|\d+\s*天\s*(?:无限\s*)?接码|接码\s*(?:服务|手机号|号码)|质保不来码|(?:接码|收码).{0,24}(?:绑定|可接)\s*[\d一二两三四五六七八九十]/.test(delivery) ||
     (matches(delivery, ["实卡", "实体卡", "手机号", "电话号码"]) && matches(delivery, ["接码", "收码"]));
 }
@@ -1240,6 +1243,9 @@ function isChatGptPaymentLinkExtractionService(value) {
     "codex",
   ]);
   if (!hasPay && !hasGpt) return false;
+  // 按次扫码是支付辅助交付；“扫码登录”或成品账号附带扫码不能算服务。
+  if (/扫码\s*(?:[1-9]\d*|[一二两三四五六七八九十]+)\s*次|按次扫码|扫码次卡/.test(value) &&
+    !hasConcretePhoneAccountBundle(value) && !/登录|登陆/.test(value)) return true;
   return matches(value, [
     "提链",
     "提炼",
@@ -4712,7 +4718,7 @@ function classifyTitleWithoutContext(title, opts = {}) {
 }
 
 /**
- * 原站分类只补足缺失的品牌，不能覆盖已有明确判定，也不能代替套餐证据。
+ * 原站分类可补足品牌与明确镜像交付；不能覆盖明确账号/支付工具/充值判定，也不能代替套餐证据。
  * 商品详情经人工核实的例外必须同时匹配 URL 与原始标题，避免同名商品串店。
  * @param {string} title
  * @param {{price?: number|null, url?: string, category?: string|string[]}} [opts]
@@ -4741,8 +4747,21 @@ export function classifyTitle(title, opts = {}) {
     }
   }
   const result = classifyTitleWithoutContext(title, opts);
-  if (result.productSlug && result.productSlug !== "other-product") return result;
   const text = normalizeTitle(title);
+  // 原分类只能补充明确的交付类型，不得凭“Plus”吞掉镜像天卡，
+  // 也不能把官方充值或已交付成品账号因为店铺分类名而改成中转。
+  if (result.productSlug === "chatgpt-plus" &&
+    /chatgpt|gpt|openai|codex|plus/.test(text) &&
+    !hasConcretePhoneAccountBundle(text) &&
+    !/官方|正价|官充|卡充|代充|直充|claude|gemini|grok|cursor|kiro/.test(text)) {
+    const categories = (Array.isArray(opts.category) ? opts.category : [opts.category]).filter(Boolean);
+    if (categories.some((category) => {
+      const delivery = normalizeTitle(category).replace(/(?:非|不是|不含|不支持)\s*(?:(?:网页)?镜像(?:站|服务)?|网页中转|共享中转)/g, "");
+      return /镜像站|网页镜像|网页中转|共享中转/.test(delivery) &&
+        !/claude|gemini|grok|cursor|kiro/.test(delivery);
+    })) return { ...result, productSlug: "chatgpt-mirror" };
+  }
+  if (result.productSlug && result.productSlug !== "other-product") return result;
   if (isPriceAdjustmentListing(text) || isBarePro(text) || isMixedChatGptProTier(text) ||
     isTutorialOrScriptListing(text) || /全家桶/.test(text)) return result;
   // 不把其它独立产品的会员、账号、积分借用品牌归进现有 AI 分类。
